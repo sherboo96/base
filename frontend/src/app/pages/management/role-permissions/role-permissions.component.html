@@ -1,4 +1,6 @@
 <div class="p-6 mx-auto max-w-full">
+  <!-- Hidden component reference for dialog usage (prevents Angular warning) -->
+  <app-role-permission-form *ngIf="false"></app-role-permission-form>
   <!-- Add app-loading component for global loading -->
   <app-loading *ngIf="isLoading$ | async"></app-loading>
 

@@ -1,10 +1,8 @@
 import { Component } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { LoginComponent } from './pages/login/login.component';
 import { SideMenuComponent } from './components/side-menu/side-menu.component';
 import { NavBarComponent } from './components/nav-bar/nav-bar.component';
 import { CommonModule } from '@angular/common';
-import { LoadingComponent } from './components/loading/loading.component';
 import { DialogComponent } from './components/dialog/dialog.component';
 
 @Component({
@@ -12,11 +10,9 @@ import { DialogComponent } from './components/dialog/dialog.component';
   standalone: true,
   imports: [
     RouterOutlet,
-    LoginComponent,
     SideMenuComponent,
     NavBarComponent,
     CommonModule,
-    LoadingComponent,
     DialogComponent,
   ],
   template: `

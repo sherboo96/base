@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { NavBarComponent } from '../../components/nav-bar/nav-bar.component';
-import { SideMenuComponent } from '../../components/side-menu/side-menu.component';
 import { CommonModule } from '@angular/common';
 import { LoadingService } from '../../services/loading.service';
 import { finalize } from 'rxjs';
@@ -8,7 +6,7 @@ import { finalize } from 'rxjs';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavBarComponent, SideMenuComponent, CommonModule],
+  imports: [CommonModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })

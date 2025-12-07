@@ -14,12 +14,10 @@ import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { DialogService } from '../../../services/dialog.service';
 import { PositionFormComponent } from './position-form/position-form.component';
-import { DialogComponent } from '../../../components/dialog/dialog.component';
-
 @Component({
   selector: 'app-position',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent, DialogComponent],
+  imports: [CommonModule, FormsModule, LoadingComponent],
   templateUrl: './position.component.html',
 })
 export class PositionComponent implements OnInit, OnDestroy {
