@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { UserService } from '../../../services/user.service';
 import { DialogService } from '@ngneat/dialog';
 import { LoadingService } from '../../../services/loading.service';
@@ -8,6 +9,7 @@ import { ToastrService } from 'ngx-toastr';
 import { LoadingComponent } from '../../../components/loading/loading.component';
 import { BehaviorSubject } from 'rxjs';
 import { RoleFormComponent } from './role-form/role-form.component';
+import { RolePermissionsComponent } from '../role-permissions/role-permissions.component';
 
 @Component({
   selector: 'app-roles',
@@ -28,7 +30,8 @@ export class RolesComponent implements OnInit {
     private userService: UserService,
     private dialogService: DialogService,
     public loadingService: LoadingService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -84,12 +87,23 @@ export class RolesComponent implements OnInit {
   addNewRole(): void {
     const dialogRef = this.dialogService.open(RoleFormComponent, {
       width: '500px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
     });
 
     dialogRef.afterClosed$.subscribe((result) => {
       if (result) {
         this.loadRoles();
       }
+    });
+  }
+
+  managePermissions(role: any): void {
+    // Navigate to role permissions page with role filter
+    this.router.navigate(['/management/rolePermissions'], {
+      queryParams: { roleId: role.id, roleName: role.name }
     });
   }
 }

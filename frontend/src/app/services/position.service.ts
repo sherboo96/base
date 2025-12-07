@@ -5,11 +5,16 @@ import { environment } from '../../environments/environment';
 
 export interface Position {
   id: number;
-  title: string;
-  departmentId: number;
+  nameEn: string;
+  nameAr: string;
+  title?: string; // For backward compatibility
+  code?: string;
+  description?: string;
+  departmentId?: number;
   department: {
     id: number;
-    name: string;
+    nameEn: string;
+    nameAr: string;
     organizationId: number;
     organization: {
       id: number;
@@ -49,7 +54,7 @@ export class PositionService {
   constructor(private http: HttpClient) {}
 
   getPositions(page: number, pageSize: number): Observable<PositionResponse> {
-    return this.http.get<PositionResponse>(`${this.baseUrl}/Positions`, {
+    return this.http.get<PositionResponse>(`${this.baseUrl}/JobTitles`, {
       params: {
         page: page.toString(),
         pageSize: pageSize.toString(),
@@ -61,6 +66,6 @@ export class PositionService {
     title: string;
     departmentId: number;
   }): Observable<any> {
-    return this.http.post(`${this.baseUrl}/Positions`, position);
+    return this.http.post(`${this.baseUrl}/JobTitles`, position);
   }
 }

@@ -24,7 +24,7 @@ public class UserRolesController : ControllerBase
     {
         var skip = (page - 1) * pageSize;
         var total = await _unitOfWork.UserRoles.CountAsync(_ => true);
-        var data = await _unitOfWork.UserRoles.GetAllAsync(pageSize, skip, new[] { "Role", "User", "Role.System" });
+        var data = await _unitOfWork.UserRoles.GetAllAsync(pageSize, skip, new[] { "Role", "User" });
 
         return Ok(new BaseResponse<IEnumerable<UserRole>>
         {
@@ -44,7 +44,7 @@ public class UserRolesController : ControllerBase
     [HttpGet("by-role/{roleId}")]
     public async Task<IActionResult> GetByRole(int roleId)
     {
-        var data = await _unitOfWork.UserRoles.GetAllAsync(x => x.RoleId == roleId, new[] { "User", "Role", "Role.System" });
+        var data = await _unitOfWork.UserRoles.GetAllAsync(x => x.RoleId == roleId, new[] { "User", "Role" });
         return Ok(new BaseResponse<IEnumerable<UserRole>>
         {
             StatusCode = 200,
@@ -54,9 +54,9 @@ public class UserRolesController : ControllerBase
     }
 
     [HttpGet("{userId}/{roleId}")]
-    public async Task<IActionResult> GetById(int userId, int roleId)
+    public async Task<IActionResult> GetById(string userId, int roleId)
     {
-        var item = await _unitOfWork.UserRoles.FindAsync(x => x.UserId == userId && x.RoleId == roleId, new[] { "Role", "User", "Role.System" });
+        var item = await _unitOfWork.UserRoles.FindAsync(x => x.UserId == userId && x.RoleId == roleId, new[] { "Role", "User" });
         if (item == null)
         {
             return NotFound(new BaseResponse<UserRole>
@@ -89,7 +89,7 @@ public class UserRolesController : ControllerBase
     }
 
     [HttpDelete("{userId}/{roleId}")]
-    public async Task<IActionResult> Delete(int userId, int roleId)
+    public async Task<IActionResult> Delete(string userId, int roleId)
     {
         var item = await _unitOfWork.UserRoles.FindAsync(x => x.UserId == userId && x.RoleId == roleId);
         if (item == null)
@@ -114,7 +114,7 @@ public class UserRolesController : ControllerBase
     }
 
     [HttpDelete("remove-user-from-role")]
-    public async Task<IActionResult> RemoveUserFromRole([FromQuery] int userId, [FromQuery] int roleId)
+    public async Task<IActionResult> RemoveUserFromRole([FromQuery] string userId, [FromQuery] int roleId)
     {
         var item = await _unitOfWork.UserRoles.FindAsync(x => x.UserId == userId && x.RoleId == roleId);
         if (item == null)

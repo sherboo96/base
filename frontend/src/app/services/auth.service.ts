@@ -52,9 +52,26 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  // Get user permissions from token
+  getUserPermissions(): Observable<any> {
+    return this.http.get(`${environment.baseUrl}/Authentications/permissions`).pipe(
+      tap((response: any) => {
+        if (response && response.result) {
+          // Store permissions array
+          this.storageService.setItem('userPermissions', response.result.permissions || []);
+          // Store side menu permissions
+          this.storageService.setItem('sideMenuPermissions', response.result.sideMenu || []);
+        }
+      })
+    );
+  }
+
   logout(): void {
     this.storageService.removeItem('token');
     this.storageService.removeItem('currentUser');
+    this.storageService.removeItem('userPermissions');
+    this.storageService.removeItem('sideMenuPermissions');
+    this.storageService.removeItem('userRoles');
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']); // Redirect to login page
   }

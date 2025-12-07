@@ -2,7 +2,7 @@
 
 public class UserRole
 {
-    public int UserId { get; set; }
+    public string UserId { get; set; } // Changed to string for Identity
     public User User { get; set; }
 
     public int RoleId { get; set; }

@@ -26,14 +26,21 @@ public class DepartmentsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? organization = null)
     {
-        Expression<Func<Department, bool>> filter = org =>
-            !org.IsDeleted &&
-            (!organization.HasValue || org.OrganizationId == organization);
-
         page = page <= 0 ? 1 : page;
         pageSize = pageSize <= 0 ? 10 : pageSize;
 
         var skip = (page - 1) * pageSize;
+        
+        // Get all main organization IDs first
+        var mainOrganizations = await _unitOfWork.Organizations.GetAllAsync(o => o.IsMain && !o.IsDeleted);
+        var mainOrgIds = mainOrganizations.Select(o => o.Id).ToList();
+        
+        // Only show departments for main organizations
+        Expression<Func<Department, bool>> filter = dept =>
+            !dept.IsDeleted &&
+            mainOrgIds.Contains(dept.OrganizationId) && // Only departments from main organizations
+            (!organization.HasValue || dept.OrganizationId == organization);
+
         var total = await _unitOfWork.Departments.CountAsync(filter);
         var data = await _unitOfWork.Departments.GetAllAsync(take: pageSize, skip: skip, filter, null, null, new[] { "Organization" });
 
@@ -65,6 +72,26 @@ public class DepartmentsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] DepartmentDto dto)
     {
+        // Verify that the organization is a main organization
+        var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == dto.OrganizationId);
+        if (organization == null)
+        {
+            return NotFound(new BaseResponse<Department>
+            {
+                StatusCode = 404,
+                Message = "Organization not found."
+            });
+        }
+
+        if (!organization.IsMain)
+        {
+            return BadRequest(new BaseResponse<Department>
+            {
+                StatusCode = 400,
+                Message = "Departments can only be created for main organizations."
+            });
+        }
+
         var entity = await _unitOfWork.Departments.AddAsync(dto);
         await _unitOfWork.CompleteAsync();
 
@@ -83,6 +110,29 @@ public class DepartmentsController : ControllerBase
         if (existing == null)
         {
             return NotFound(new BaseResponse<Department> { StatusCode = 404, Message = "Department not found." });
+        }
+
+        // Verify that the organization is a main organization if organization is being changed
+        if (dto.OrganizationId != existing.OrganizationId)
+        {
+            var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == dto.OrganizationId);
+            if (organization == null)
+            {
+                return NotFound(new BaseResponse<Department>
+                {
+                    StatusCode = 404,
+                    Message = "Organization not found."
+                });
+            }
+
+            if (!organization.IsMain)
+            {
+                return BadRequest(new BaseResponse<Department>
+                {
+                    StatusCode = 400,
+                    Message = "Departments can only be assigned to main organizations."
+                });
+            }
         }
 
         existing.NameEn = dto.NameEn;

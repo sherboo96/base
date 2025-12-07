@@ -136,6 +136,12 @@
             >
               Created On
             </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -163,6 +169,16 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               {{ role.createdOn | date : "mediumDate" }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                (click)="managePermissions(role)"
+                class="bg-[#c9ae81] hover:bg-[#b89a6e] text-white px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-colors duration-200 text-sm"
+                title="Manage Permissions"
+              >
+                <i class="material-icons text-sm">admin_panel_settings</i>
+                <span>Permissions</span>
+              </button>
             </td>
           </tr>
         </tbody>

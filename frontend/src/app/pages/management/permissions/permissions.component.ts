@@ -82,6 +82,10 @@ export class PermissionsComponent implements OnInit {
   addNewPermission(): void {
     const dialogRef = this.dialogService.open(PermissionFormComponent, {
       width: '500px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
     });
 
     dialogRef.afterClosed$.subscribe((result) => {

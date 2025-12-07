@@ -78,7 +78,10 @@ export class UserService {
     fullName: string;
     email: string;
     adUsername: string;
-    positionId: number;
+    jobTitleId?: number;
+    positionId?: number;
+    organizationId: number;
+    departmentId?: number;
   }): Observable<any> {
     return this.http.post(`${this.baseUrl}/Users`, user);
   }
@@ -88,7 +91,10 @@ export class UserService {
     fullName: string;
     email: string;
     adUsername: string;
-    positionId: number;
+    jobTitleId?: number;
+    positionId?: number;
+    organizationId: number;
+    departmentId?: number;
   }): Observable<any> {
     return this.http.put(`${this.baseUrl}/Users/${user.id}`, user);
   }

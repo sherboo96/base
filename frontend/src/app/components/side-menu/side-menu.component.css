@@ -1,3 +1,10 @@
+/* Side menu width */
+:host {
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+}
+
 /* Custom scrollbar for the menu */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;

@@ -66,7 +66,9 @@ export class PositionComponent implements OnInit, OnDestroy {
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
         },
         error: (error) => {
-          this.toastr.error(error.error.message || 'Failed to fetch positions');
+          const errorMessage = error?.error?.message || error?.message || 'Failed to fetch positions';
+          this.toastr.error(errorMessage);
+          console.error('Error fetching positions:', error);
         },
       });
 

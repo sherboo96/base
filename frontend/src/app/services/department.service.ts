@@ -4,18 +4,21 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface Department {
-  id: string;
-  name: string;
+  id: number;
+  nameEn: string;
+  nameAr: string;
   code: string;
-  organizationId: string;
+  type: string;
+  level: string;
+  organizationId: number;
   organization: {
-    id: string;
+    id: number;
     name: string;
     code: string;
   };
   isActive: boolean;
+  isDeleted: boolean;
   createdOn: string;
-  updatedOn: string;
 }
 
 export interface DepartmentResponse {

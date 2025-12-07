@@ -1,5 +1,6 @@
 <div
   class="h-screen flex flex-col bg-white shadow-lg border-r border-gray-100 relative"
+  style="width: 250px;"
 >
   <!-- Top Logo Section -->
   <div class="flex flex-col items-center pt-6 pb-4 border-b border-gray-100">
@@ -36,7 +37,7 @@
       <!-- Dashboard -->
       <li>
         <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/dashboard'),
@@ -77,9 +78,9 @@
 
     <ul class="space-y-1">
       <!-- Organization -->
-      <li *ngIf="hasPermission('UMS0000')">
+      <li *ngIf="hasPermission('ORGANIZATIONS_VIEW')">
         <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/organization'),
@@ -112,9 +113,9 @@
       </li>
 
       <!-- Department -->
-      <li *ngIf="hasPermission('UMS0001')">
+      <li *ngIf="hasPermission('DEPARTMENTS_VIEW')">
         <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/department'),
@@ -147,9 +148,9 @@
       </li>
 
       <!-- Positions -->
-      <li *ngIf="hasPermission('UMS0010')">
+      <li *ngIf="hasPermission('JOB_TITLES_VIEW')">
         <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/positions'),
@@ -181,6 +182,41 @@
         </a>
       </li>
 
+      <!-- Job Titles -->
+      <li *ngIf="hasPermission('JOB_TITLES_VIEW')">
+        <a
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          [ngClass]="{
+            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+              isActiveRoute('/management/job-titles'),
+            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+              '/management/job-titles'
+            )
+          }"
+          (click)="navigateToJobTitles()"
+        >
+          <div
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            [ngClass]="{
+              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+                '/management/job-titles'
+              )
+            }"
+          >
+            <i class="material-icons text-lg">badge</i>
+          </div>
+          <span
+            class="ml-3 text-sm"
+            [ngClass]="{
+              'text-[#c9ae81]': isActiveRoute('/management/job-titles'),
+              'text-gray-700': !isActiveRoute('/management/job-titles')
+            }"
+          >
+            Job Titles
+          </span>
+        </a>
+      </li>
+
       <!-- User Management Section -->
       <div class="my-4 pl-3">
         <h2
@@ -190,9 +226,9 @@
         </h2>
       </div>
       <!-- Users -->
-      <li *ngIf="hasPermission('UMS0011')">
+      <li *ngIf="hasPermission('USERS_VIEW')">
         <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/users'),
@@ -220,118 +256,6 @@
           </span>
         </a>
       </li>
-      <!-- User Systems -->
-      <li *ngIf="hasPermission('UMS0111')">
-        <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
-          [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
-              isActiveRoute('/management/userRoles'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
-              '/management/userRoles'
-            )
-          }"
-          (click)="navigateToUserRoles()"
-        >
-          <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
-            [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
-                '/management/userRoles'
-              )
-            }"
-          >
-            <i class="material-icons text-lg">assignment_ind</i>
-          </div>
-          <span
-            class="ml-3 text-sm"
-            [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/userRoles'),
-              'text-gray-700': !isActiveRoute('/management/userRoles')
-            }"
-          >
-            User Roles
-          </span>
-        </a>
-      </li>
-      <!-- User Systems -->
-      <li *ngIf="hasPermission('UMS1000')">
-        <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
-          [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
-              isActiveRoute('/management/userSystems'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
-              '/management/userSystems'
-            )
-          }"
-          (click)="navigateToUserSystems()"
-        >
-          <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
-            [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
-                '/management/userSystems'
-              )
-            }"
-          >
-            <i class="material-icons text-lg">settings</i>
-          </div>
-          <span
-            class="ml-3 text-sm"
-            [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/userSystems'),
-              'text-gray-700': !isActiveRoute('/management/userSystems')
-            }"
-          >
-            User Systems
-          </span>
-        </a>
-      </li>
-
-      <!-- Permissions Management Section -->
-      <div class="my-4 pl-3">
-        <h2
-          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold"
-        >
-          Permission Management
-        </h2>
-      </div>
-
-      <!-- Permissions -->
-      <li *ngIf="hasPermission('UMS0100')">
-        <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
-          [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
-              isActiveRoute('/management/permissions'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
-              '/management/permissions'
-            )
-          }"
-          (click)="navigateToPermissions()"
-        >
-          <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
-            [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
-                '/management/permissions'
-              )
-            }"
-          >
-            <i class="material-icons text-lg">security</i>
-          </div>
-          <span
-            class="ml-3 text-sm"
-            [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/permissions'),
-              'text-gray-700': !isActiveRoute('/management/permissions')
-            }"
-          >
-            Permissions
-          </span>
-        </a>
-      </li>
 
       <!-- Role Management Section -->
       <div class="my-4 pl-3">
@@ -343,9 +267,9 @@
       </div>
 
       <!-- Roles -->
-      <li *ngIf="hasPermission('UMS0101')">
+      <li *ngIf="hasPermission('ROLES_VIEW')">
         <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/roles'),
@@ -374,119 +298,6 @@
         </a>
       </li>
 
-      <!-- Role Permissions -->
-      <li *ngIf="hasPermission('UMS1001')">
-        <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
-          [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
-              isActiveRoute('/management/rolePermissions'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
-              '/management/rolePermissions'
-            )
-          }"
-          (click)="navigateToRolePermissions()"
-        >
-          <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
-            [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
-                '/management/rolePermissions'
-              )
-            }"
-          >
-            <i class="material-icons text-lg">admin_panel_settings</i>
-          </div>
-          <span
-            class="ml-3 text-sm"
-            [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/rolePermissions'),
-              'text-gray-700': !isActiveRoute('/management/rolePermissions')
-            }"
-          >
-            Role Permissions
-          </span>
-        </a>
-      </li>
-
-      <!-- Role Systems -->
-      <li *ngIf="hasPermission('UMS1010')">
-        <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
-          [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
-              isActiveRoute('/management/roleSystems'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
-              '/management/roleSystems'
-            )
-          }"
-          (click)="navigateToRoleSystems()"
-        >
-          <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
-            [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
-                '/management/roleSystems'
-              )
-            }"
-          >
-            <i class="material-icons text-lg">apps</i>
-          </div>
-          <span
-            class="ml-3 text-sm"
-            [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/roleSystems'),
-              'text-gray-700': !isActiveRoute('/management/roleSystems')
-            }"
-          >
-            Role Systems
-          </span>
-        </a>
-      </li>
-
-      <!-- Systems Management Section -->
-      <div class="my-4 pl-3">
-        <h2
-          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold"
-        >
-          System Management
-        </h2>
-      </div>
-
-      <!-- Systems -->
-      <li *ngIf="hasPermission('UMS0110')">
-        <a
-          class="px-4 py-2 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
-          [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
-              isActiveRoute('/management/systems'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
-              '/management/systems'
-            )
-          }"
-          (click)="navigateToSystems()"
-        >
-          <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
-            [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
-                '/management/systems'
-              )
-            }"
-          >
-            <i class="material-icons text-lg">settings</i>
-          </div>
-          <span
-            class="ml-3 text-sm"
-            [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/systems'),
-              'text-gray-700': !isActiveRoute('/management/systems')
-            }"
-          >
-            Systems
-          </span>
-        </a>
-      </li>
     </ul>
   </div>
 

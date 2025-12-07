@@ -14,6 +14,7 @@ export class SideMenuComponent {
   activeRoute: string = '';
   currentYear: number = new Date().getFullYear();
   userPermissions: any[] = [];
+  sideMenuPermissions: any[] = [];
 
   constructor(private router: Router, private storageService: StorageService) {
     this.router.events.subscribe((event: any) => {
@@ -22,12 +23,16 @@ export class SideMenuComponent {
       }
     });
 
-    // Load user permissions from localStorage
-    const storedPermissions =
-      this.storageService.getItem<string>('userPermissions');
-
+    // Load user permissions from storage
+    const storedPermissions = this.storageService.getItem<any[]>('userPermissions');
     if (storedPermissions) {
-      this.userPermissions = JSON.parse(storedPermissions);
+      this.userPermissions = storedPermissions;
+    }
+
+    // Load side menu permissions from storage
+    const storedSideMenu = this.storageService.getItem<any[]>('sideMenuPermissions');
+    if (storedSideMenu) {
+      this.sideMenuPermissions = storedSideMenu;
     }
   }
 
@@ -36,7 +41,17 @@ export class SideMenuComponent {
   }
 
   hasPermission(permissionCode: string): boolean {
+    // First check side menu permissions (more efficient)
+    const sideMenuItem = this.sideMenuPermissions.find((item) => item.code === permissionCode);
+    if (sideMenuItem) {
+      return sideMenuItem.hasAccess;
+    }
+    // Fallback to checking user permissions
     return this.userPermissions.some((p) => p.code === permissionCode);
+  }
+
+  getSideMenuItems(section: string): any[] {
+    return this.sideMenuPermissions.filter((item) => item.section === section && item.hasAccess);
   }
 
   // Main Navigation
@@ -47,79 +62,36 @@ export class SideMenuComponent {
 
   // Management
   navigateToOrganization() {
-    if (this.hasPermission('UMS0000')) {
-      this.activeRoute = '/management/organization';
-      this.router.navigate(['/management/organization']);
-    }
+    this.activeRoute = '/management/organization';
+    this.router.navigate(['/management/organization']);
   }
 
   navigateToDepartment() {
-    if (this.hasPermission('UMS0001')) {
-      this.activeRoute = '/management/department';
-      this.router.navigate(['/management/department']);
-    }
+    this.activeRoute = '/management/department';
+    this.router.navigate(['/management/department']);
   }
 
   navigateToPositions() {
-    if (this.hasPermission('UMS0010')) {
-      this.activeRoute = '/management/positions';
-      this.router.navigate(['/management/positions']);
-    }
+    this.activeRoute = '/management/positions';
+    this.router.navigate(['/management/positions']);
+  }
+
+  navigateToJobTitles() {
+    this.activeRoute = '/management/job-titles';
+    this.router.navigate(['/management/job-titles']).then((success) => {
+      if (!success) {
+        console.error('Failed to navigate to job titles page');
+      }
+    });
   }
 
   navigateToUsers() {
-    if (this.hasPermission('UMS0011')) {
-      this.activeRoute = '/management/users';
-      this.router.navigate(['/management/users']);
-    }
-  }
-
-  navigateToUserRoles() {
-    if (this.hasPermission('UMS0111')) {
-      this.activeRoute = '/management/userRoles';
-      this.router.navigate(['/management/userRoles']);
-    }
-  }
-
-  navigateToPermissions() {
-    if (this.hasPermission('UMS0100')) {
-      this.activeRoute = '/management/permissions';
-      this.router.navigate(['/management/permissions']);
-    }
+    this.activeRoute = '/management/users';
+    this.router.navigate(['/management/users']);
   }
 
   navigateToRoles() {
-    if (this.hasPermission('UMS0101')) {
-      this.activeRoute = '/management/roles';
-      this.router.navigate(['/management/roles']);
-    }
-  }
-
-  navigateToRolePermissions() {
-    if (this.hasPermission('UMS1001')) {
-      this.activeRoute = '/management/rolePermissions';
-      this.router.navigate(['/management/rolePermissions']);
-    }
-  }
-
-  navigateToRoleSystems() {
-    if (this.hasPermission('UMS1010')) {
-      this.activeRoute = '/management/roleSystems';
-      this.router.navigate(['/management/roleSystems']);
-    }
-  }
-
-  navigateToSystems() {
-    if (this.hasPermission('UMS0110')) {
-      this.activeRoute = '/management/systems';
-      this.router.navigate(['/management/systems']);
-    }
-  }
-
-  navigateToUserSystems() {
-    if (this.hasPermission('UMS1000')) {
-      this.activeRoute = '/management/userSystems';
-      this.router.navigate(['/management/userSystems']);
-    }
+    this.activeRoute = '/management/roles';
+    this.router.navigate(['/management/roles']);
   }
 }

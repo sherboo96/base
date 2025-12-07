@@ -89,6 +89,21 @@
       </div>
     </div>
 
+    <!-- Name (Arabic) -->
+    <div class="space-y-2">
+      <label for="nameAr" class="block text-sm font-medium text-gray-700">
+        Name (Arabic)
+      </label>
+      <input
+        type="text"
+        id="nameAr"
+        formControlName="nameAr"
+        dir="rtl"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        placeholder="أدخل اسم المنظمة بالعربية"
+      />
+    </div>
+
     <!-- Code -->
     <div class="space-y-2">
       <label for="code" class="block text-sm font-medium text-gray-700">
@@ -142,6 +157,78 @@
         </svg>
         Code is required
       </div>
+    </div>
+
+    <!-- Domain -->
+    <div class="space-y-2">
+      <label for="domain" class="block text-sm font-medium text-gray-700">
+        Domain
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+            />
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="domain"
+          formControlName="domain"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+          placeholder="moo.gov.kw"
+        />
+      </div>
+      <div
+        *ngIf="form.get('domain')?.invalid && form.get('domain')?.touched"
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span *ngIf="form.get('domain')?.errors?.['required']">
+          Domain is required
+        </span>
+        <span *ngIf="form.get('domain')?.errors?.['invalidDomain']">
+          Please enter a valid domain (e.g., moo.gov.kw)
+        </span>
+      </div>
+    </div>
+
+    <!-- Is Main -->
+    <div class="space-y-2">
+      <label class="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          formControlName="isMain"
+          class="w-4 h-4 text-[#c9ae81] border-gray-300 rounded focus:ring-[#c9ae81]"
+        />
+        <span class="text-sm font-medium text-gray-700">Is Main Organization</span>
+      </label>
     </div>
 
     <!-- Form Actions -->

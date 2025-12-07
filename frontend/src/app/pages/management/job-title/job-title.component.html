@@ -1,0 +1,297 @@
+<div class="p-6 mx-auto max-w-full">
+  <!-- Add app-loading component for global loading -->
+  <app-loading></app-loading>
+
+  <!-- Dashboard-style Loading Spinner (local component loading) -->
+  <div
+    *ngIf="isLoading && !jobTitles.length"
+    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
+    id="custom-loader"
+  >
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="mt-4 text-[#c9ae81] font-medium">Loading job titles...</p>
+    </div>
+  </div>
+
+  <!-- Page Header -->
+  <div class="mb-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-xl font-bold text-gray-800">Job Titles</h1>
+      <p class="text-sm text-gray-500 mt-0.5">Manage and monitor job titles</p>
+    </div>
+  </div>
+
+  <!-- Job Titles Table Card -->
+  <div
+    class="job-title-card relative flex flex-col w-full h-full bg-white shadow-md rounded-lg overflow-hidden"
+  >
+    <div
+      class="bg-gradient-to-r from-gray-50 to-white py-3 px-4 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
+    >
+      <!-- Search Input and Add Job Title Button -->
+      <div class="flex justify-between items-center gap-3 w-full">
+        <!-- Search Input -->
+        <div class="flex items-center w-1/3">
+          <div class="relative w-full">
+            <div
+              class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none"
+            >
+              <i class="fas fa-search text-gray-400 text-sm"></i>
+            </div>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup)="onSearch()"
+              placeholder="Search by job title name..."
+              class="form-control w-full border border-gray-300 rounded-lg py-1.5 pl-8 pr-3 text-sm focus:ring focus:ring-opacity-50"
+            />
+          </div>
+        </div>
+
+        <!-- Add Job Title Button -->
+        <button
+          (click)="addNewJobTitle()"
+          class="bg-[#c9ae81] hover:bg-[#b89a6e] text-white px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-colors duration-200 text-sm"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span>Add Job Title</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="jobTitles.length === 0 && !isLoading"
+      class="empty-state py-16 flex flex-col items-center justify-center"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-16 w-16 text-gray-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
+      </svg>
+      <h3 class="text-lg font-medium mb-1 mt-4">No job titles found</h3>
+      <p class="text-sm text-gray-500 text-center max-w-sm">
+        There are no job titles matching your criteria. Try changing your search.
+      </p>
+    </div>
+
+    <!-- Loading Placeholder for Table (only when no data is available) -->
+    <div
+      *ngIf="isLoading && jobTitles.length === 0"
+      class="py-16 flex flex-col items-center justify-center"
+    >
+      <div class="spinner-container">
+        <div class="spinner"></div>
+        <p class="mt-4 text-[#c9ae81] font-medium">Loading job title data...</p>
+      </div>
+    </div>
+
+    <!-- Small loading indicator when refreshing with existing data -->
+    <div
+      *ngIf="isLoading && jobTitles.length > 0"
+      class="absolute top-4 right-4 z-10"
+    >
+      <div class="spinner" style="width: 20px; height: 20px"></div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Name (English)
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Name (Arabic)
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Code
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Department
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Created On
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let jobTitle of jobTitles" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ jobTitle.nameEn }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" dir="rtl">
+              {{ jobTitle.nameAr }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ jobTitle.code || '-' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">
+                {{ jobTitle.department?.nameEn || '-' }}
+              </div>
+              <div class="text-sm text-gray-500">
+                {{ jobTitle.department?.organization?.name || '' }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                [ngClass]="getStatusClass(jobTitle.isActive)"
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+              >
+                {{ getStatusText(jobTitle.isActive) }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ formatDate(jobTitle.createdOn) }}
+            </td>
+            <td
+              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+            >
+              <div class="flex items-center justify-end space-x-2">
+                <button
+                  (click)="editJobTitle(jobTitle)"
+                  class="inline-flex items-center px-3 py-1.5 border border-[#c9ae81] rounded-md text-[#c9ae81] bg-white hover:bg-[#c9ae81] hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#c9ae81] focus:ring-opacity-50"
+                  title="Edit"
+                >
+                  <i class="fas fa-edit mr-1"></i>
+                  <span class="text-xs">Edit</span>
+                </button>
+                <button
+                  (click)="deleteJobTitle(jobTitle)"
+                  class="inline-flex items-center px-3 py-1.5 border border-red-600 rounded-md text-red-600 bg-white hover:bg-red-600 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50"
+                  title="Delete"
+                >
+                  <i class="fas fa-trash mr-1"></i>
+                  <span class="text-xs">Delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="jobTitles.length > 0"
+      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-4 border-t border-gray-200"
+    >
+      <div class="text-sm text-gray-500 mb-2 sm:mb-0">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to
+        {{ Math.min(currentPage * pageSize, totalItems) }} of
+        {{ totalItems }} entries
+      </div>
+      <div class="flex items-center space-x-2">
+        <select
+          [(ngModel)]="pageSize"
+          (change)="onPageSizeChange()"
+          class="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#c9ae81]"
+        >
+          <option [value]="5">5 per page</option>
+          <option [value]="10">10 per page</option>
+          <option [value]="20">20 per page</option>
+          <option [value]="50">50 per page</option>
+        </select>
+        <div class="flex space-x-1">
+          <button
+            class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(1)"
+            title="First Page"
+          >
+            <i class="fas fa-angle-double-left"></i>
+          </button>
+          <button
+            class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+            title="Previous Page"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="flex space-x-1">
+            <button
+              *ngFor="let page of getPageNumbers()"
+              (click)="goToPage(page)"
+              class="px-3 py-1 rounded border text-sm min-w-[32px]"
+              [ngClass]="{
+                'bg-[#c9ae81] text-white border-[#c9ae81]':
+                  currentPage === page,
+                'border-gray-300 hover:bg-gray-100': currentPage !== page
+              }"
+            >
+              {{ page }}
+            </button>
+          </div>
+          <button
+            class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+            title="Next Page"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button
+            class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(totalPages)"
+            title="Last Page"
+          >
+            <i class="fas fa-angle-double-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

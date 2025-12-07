@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -35,24 +35,36 @@ export class DepartmentFormComponent implements OnInit {
   isEdit = false;
   isSubmitting = false;
   organizations: any[] = [];
+  mainOrganization: any = null;
 
   constructor(
     private fb: FormBuilder,
     private departmentService: DepartmentService,
     private organizationService: OrganizationService,
     private toastr: ToastrService,
-    private dialogRef: DialogRef<{ department?: any }>
+    private dialogRef: DialogRef<{ department?: any }>,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
-      name: ['', Validators.required],
+      nameEn: ['', Validators.required],
+      nameAr: ['', Validators.required],
+      code: [''],
+      type: ['', Validators.required],
+      level: ['', Validators.required],
       organizationId: ['', Validators.required],
+      parentDepartmentId: [null],
     });
 
     if (this.dialogRef.data?.department) {
       this.isEdit = true;
       this.form.patchValue({
-        name: this.dialogRef.data.department.name,
+        nameEn: this.dialogRef.data.department.nameEn || this.dialogRef.data.department.name || '',
+        nameAr: this.dialogRef.data.department.nameAr || '',
+        code: this.dialogRef.data.department.code || '',
+        type: this.dialogRef.data.department.type || '',
+        level: this.dialogRef.data.department.level || '',
         organizationId: this.dialogRef.data.department.organizationId,
+        parentDepartmentId: this.dialogRef.data.department.parentDepartmentId || null,
       });
     }
   }
@@ -62,15 +74,39 @@ export class DepartmentFormComponent implements OnInit {
   }
 
   loadOrganizations(): void {
-    this.organizationService.getOrganizations(1, 100).subscribe({
-      next: (response) => {
-        this.organizations = response.result;
-      },
-      error: (error) => {
-        this.toastr.error('Failed to load organizations');
-        console.error('Error loading organizations:', error);
-      },
-    });
+    if (this.isEdit) {
+      // For editing, load all main organizations for dropdown
+      this.organizationService.getOrganizations(1, 100).subscribe({
+        next: (response) => {
+          this.organizations = response.result.filter(org => org.isMain);
+        },
+        error: (error) => {
+          this.toastr.error('Failed to load organizations');
+          console.error('Error loading organizations:', error);
+        },
+      });
+    } else {
+      // For creating, get main organization directly
+      this.organizationService.getMainOrganization().subscribe({
+        next: (response) => {
+          if (response.statusCode === 200 && response.result) {
+            this.mainOrganization = response.result;
+            this.organizations = [this.mainOrganization]; // Set for display
+            // Auto-select the main organization
+            if (this.mainOrganization.id) {
+              this.form.patchValue({
+                organizationId: this.mainOrganization.id
+              });
+            }
+            this.cdr.detectChanges(); // Trigger change detection
+          }
+        },
+        error: (error) => {
+          this.toastr.error('Failed to load main organization');
+          console.error('Error loading main organization:', error);
+        },
+      });
+    }
   }
 
   onSubmit(): void {

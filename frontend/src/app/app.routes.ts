@@ -8,6 +8,7 @@ import { RequestDetailsComponent } from './pages/request/request-details/request
 import { OrganizationComponent } from './pages/management/organization/organization.component';
 import { DepartmentComponent } from './pages/management/department/department.component';
 import { PositionComponent } from './pages/management/position/position.component';
+import { JobTitleComponent } from './pages/management/job-title/job-title.component';
 import { UserComponent } from './pages/management/user/user.component';
 import { PermissionsComponent } from './pages/management/permissions/permissions.component';
 import { RolesComponent } from './pages/management/roles/roles.component';
@@ -32,8 +33,11 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard],
-    data: { redirectIfLoggedIn: false }, // Allow logged-in users to access dashboard
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'DASHBOARD_VIEW',
+    },
   },
 
   {
@@ -42,7 +46,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0000',
+      permission: 'ORGANIZATIONS_VIEW',
     },
   },
   {
@@ -51,7 +55,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0001',
+      permission: 'DEPARTMENTS_VIEW',
     },
   },
   {
@@ -60,7 +64,16 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0010',
+      permission: 'JOB_TITLES_VIEW',
+    },
+  },
+  {
+    path: 'management/job-titles',
+    component: JobTitleComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'JOB_TITLES_VIEW',
     },
   },
   {
@@ -69,7 +82,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0011',
+      permission: 'USERS_VIEW',
     },
   },
   {
@@ -78,7 +91,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0100',
+      permission: 'PERMISSIONS_VIEW',
     },
   },
   {
@@ -87,7 +100,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS1001',
+      permission: 'ROLE_PERMISSIONS_VIEW',
     },
   },
   {
@@ -96,7 +109,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0101',
+      permission: 'ROLES_VIEW',
     },
   },
   {
@@ -105,7 +118,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
-      permission: 'UMS0111',
+      permission: 'USER_ROLES_VIEW',
     },
   },
   {

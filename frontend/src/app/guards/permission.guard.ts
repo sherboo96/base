@@ -17,10 +17,10 @@ export class PermissionGuard implements CanActivate {
 
   canActivate(route: ActivatedRouteSnapshot): boolean {
     const requiredPermission = route.data['permission'];
-    const permissions = this.storageService.getItem<string>('userPermissions');
+    const permissions = this.storageService.getItem<any[]>('userPermissions');
 
     if (permissions) {
-      this.userPermissions = JSON.parse(permissions);
+      this.userPermissions = permissions;
     }
 
     const hasPermission = this.userPermissions.some(

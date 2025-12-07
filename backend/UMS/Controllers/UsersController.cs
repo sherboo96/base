@@ -63,9 +63,9 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(string id)
     {
-        var item = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "DepartmentUsers", "DepartmentUsers.Department", "DepartmentUsers.Department.Organization" });
+        var item = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "Organization", "Department" });
         return item == null
             ? NotFound(new BaseResponse<User> { StatusCode = 404, Message = "User not found." })
             : Ok(new BaseResponse<User> { StatusCode = 200, Message = "User retrieved successfully.", Result = item });
@@ -88,12 +88,12 @@ public class UsersController : ControllerBase
 
         var entity = await _unitOfWork.Users.AddAsync(dto);
         await _unitOfWork.CompleteAsync();
-        var createdUser = await _unitOfWork.Users.FindAsync(x => x.Id == ((User)entity).Id, new[] { "JobTitle", "DepartmentUsers", "DepartmentUsers.Department", "DepartmentUsers.Department.Organization" });
+        var createdUser = await _unitOfWork.Users.FindAsync(x => x.Id == ((User)entity).Id, new[] { "JobTitle", "Organization", "Department" });
         return CreatedAtAction(nameof(GetById), new { id = ((User)entity).Id }, new BaseResponse<User> { StatusCode = 201, Message = "User created successfully.", Result = createdUser });
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UserDto dto)
+    public async Task<IActionResult> Update(string id, [FromBody] UserDto dto)
     {
         var existing = await _unitOfWork.Users.FindAsync(x => x.Id == id && !x.IsDeleted);
         if (existing == null)
@@ -121,17 +121,19 @@ public class UsersController : ControllerBase
         existing.ADUsername = dto.ADUsername;
         existing.CivilNo = dto.CivilNo;
         existing.JobTitleId = dto.JobTitleId;
+        existing.OrganizationId = dto.OrganizationId;
+        existing.DepartmentId = dto.DepartmentId;
         existing.UpdatedAt = DateTime.Now;
 
         var updated = await _unitOfWork.Users.UpdateAsync(existing);
         await _unitOfWork.CompleteAsync();
         
-        var updatedUser = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "DepartmentUsers", "DepartmentUsers.Department", "DepartmentUsers.Department.Organization" });
+        var updatedUser = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "Organization", "Department" });
         return Ok(new BaseResponse<User> { StatusCode = 200, Message = "User updated successfully.", Result = updatedUser });
     }
 
     [HttpPatch("{id}/Unlock")]
-    public async Task<IActionResult> Unlock(int id)
+    public async Task<IActionResult> Unlock(string id)
     {
         var existing = await _unitOfWork.Users.FindAsync(x => x.Id == id);
         if (existing == null) return NotFound(new BaseResponse<User> { StatusCode = 404, Message = "User not found." });
@@ -143,7 +145,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id}/Toggle")]
-    public async Task<IActionResult> Disabled(int id)
+    public async Task<IActionResult> Disabled(string id)
     {
         var existing = await _unitOfWork.Users.FindAsync(x => x.Id == id);
         if (existing == null) return NotFound(new BaseResponse<User> { StatusCode = 404, Message = "User not found." });
@@ -155,10 +157,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(string id)
     {
         var existing = await _unitOfWork.Users.FindAsync(x => x.Id == id);
+        if (existing == null) return NotFound(new BaseResponse<User> { StatusCode = 404, Message = "User not found." });
         existing.IsDeleted = true;
+        await _unitOfWork.Users.UpdateAsync(existing);
         await _unitOfWork.CompleteAsync();
         return Ok(new BaseResponse<bool> { StatusCode = 200, Message = "User deleted successfully.", Result = true });
     }
@@ -197,7 +201,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{userId}/permissions")]
-    public async Task<IActionResult> GetUserPermissions(int userId)
+    public async Task<IActionResult> GetUserPermissions(string userId)
     {
         var userRoles = await _unitOfWork.UserRoles.GetAllAsync(
             ur => ur.UserId == userId,

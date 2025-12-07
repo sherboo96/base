@@ -164,18 +164,26 @@ export class LoginComponent implements OnInit {
           localStorage.removeItem('rememberMe');
         }
 
-        // Store user permissions from roles
+        // Store user roles
         if (response.result.roles && response.result.roles.length > 0) {
-          // Extract permissions from roles (if available in response)
-          this.storageService.setItem(
-            'userRoles',
-            JSON.stringify(response.result.roles)
-          );
+          this.storageService.setItem('userRoles', response.result.roles);
         }
 
-        this.toastr.success('Login successful!');
-        this.router.navigate(['/dashboard']);
-        this.loadingService.hide();
+        // Fetch and store user permissions (AuthService handles storage automatically)
+        this.authService.getUserPermissions().subscribe({
+          next: () => {
+            this.toastr.success('Login successful!');
+            this.router.navigate(['/dashboard']);
+            this.loadingService.hide();
+          },
+          error: (permissionsError) => {
+            console.error('Error fetching permissions:', permissionsError);
+            // Still proceed with login even if permissions fetch fails
+            this.toastr.success('Login successful!');
+            this.router.navigate(['/dashboard']);
+            this.loadingService.hide();
+          },
+        });
       },
       error: (error) => {
         // Increment login attempts

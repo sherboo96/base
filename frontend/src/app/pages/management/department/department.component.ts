@@ -146,7 +146,7 @@ export class DepartmentComponent implements OnInit, OnDestroy {
       width: '500px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
@@ -164,7 +164,7 @@ export class DepartmentComponent implements OnInit, OnDestroy {
       width: '800px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });

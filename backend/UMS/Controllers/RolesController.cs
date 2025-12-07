@@ -20,8 +20,8 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var skip = (page - 1) * pageSize;
-        var total = await _unitOfWork.Roles.CountAsync(x => true);
-        var data = await _unitOfWork.Roles.GetAllAsync(pageSize, skip, null, null, null);
+        var total = await _unitOfWork.Roles.CountAsync(x => !x.IsDeleted);
+        var data = await _unitOfWork.Roles.GetAllAsync(pageSize, skip, null);
         return Ok(new BaseResponse<IEnumerable<Role>> { StatusCode = 200, Message = "Roles retrieved successfully.", Result = data, Total = total, Pagination = new Pagination { CurrentPage = page, PageSize = pageSize, Total = total } });
     }
 

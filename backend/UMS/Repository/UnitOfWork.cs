@@ -21,6 +21,7 @@ public class UnitOfWork : IUnitOfWork
         Permissions = new BaseRepository<Permission, PermissionDto>(_context, _mapper);
         Users = new BaseRepository<User, UserDto>(_context, _mapper);
         JobTitles = new BaseRepository<JobTitle, JobTitleDto>(_context, _mapper);
+        SystemConfigurations = new BaseRepository<SystemConfiguration, SystemConfigurationDto>(_context, _mapper);
 
         UserRoles = new BaseRepository<UserRole, UserRoleDto>(_context, _mapper);
         RolePermissions = new BaseRepository<RolePermission, RolePermissionDto>(_context, _mapper);
@@ -32,6 +33,7 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<Permission, PermissionDto> Permissions { get; private set; }
     public IBaseRepository<User, UserDto> Users { get; private set; }
     public IBaseRepository<JobTitle, JobTitleDto> JobTitles { get; private set; }
+    public IBaseRepository<SystemConfiguration, SystemConfigurationDto> SystemConfigurations { get; private set; }
 
     public IBaseRepository<UserRole, UserRoleDto> UserRoles { get; private set; }
     public IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; private set; }

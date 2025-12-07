@@ -20,6 +20,7 @@ import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { DialogService, DialogConfig } from '@ngneat/dialog';
 import { OrganizationFormComponent } from './organization-form/organization-form.component';
+import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 
 @Component({
   selector: 'app-organization',
@@ -158,7 +159,7 @@ export class OrganizationComponent implements OnInit, OnDestroy {
       width: '500px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
@@ -176,7 +177,7 @@ export class OrganizationComponent implements OnInit, OnDestroy {
       width: '800px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
@@ -184,6 +185,39 @@ export class OrganizationComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed$.subscribe((result) => {
       if (result) {
         this.fetchOrganizations();
+      }
+    });
+  }
+
+  deleteOrganization(organization: Organization): void {
+    const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
+      data: {
+        title: 'Delete Organization',
+        message: `Are you sure you want to delete "${organization.name}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      },
+      width: '400px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        this.loadingService.show();
+        this.organizationService.deleteOrganization(organization.id).subscribe({
+          next: () => {
+            this.toastr.success('Organization deleted successfully');
+            this.loadingService.hide();
+            this.fetchOrganizations(); // Refresh the table
+          },
+          error: (error) => {
+            this.toastr.error(error.error?.message || 'Failed to delete organization');
+            this.loadingService.hide();
+          },
+        });
       }
     });
   }

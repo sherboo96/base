@@ -6,7 +6,10 @@ import { environment } from '../../environments/environment';
 export interface Organization {
   id: number;
   name: string;
+  nameAr: string;
   code: string;
+  domain: string;
+  isMain: boolean;
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;
@@ -41,21 +44,25 @@ export class OrganizationService {
     );
   }
 
+  getMainOrganization(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/main`);
+  }
+
   getOrganization(id: number): Observable<Organization> {
     return this.http.get<Organization>(`${this.apiUrl}/${id}`);
   }
 
   createOrganization(
-    organization: Omit<Organization, 'id' | 'createdOn'>
-  ): Observable<Organization> {
-    return this.http.post<Organization>(this.apiUrl, organization);
+    organization: Partial<Organization>
+  ): Observable<any> {
+    return this.http.post<any>(this.apiUrl, organization);
   }
 
   updateOrganization(
     id: number,
     organization: Partial<Organization>
   ): Observable<Organization> {
-    return this.http.put<Organization>(`${this.apiUrl}/${id}`, organization);
+    return this.http.patch<Organization>(`${this.apiUrl}/${id}`, organization);
   }
 
   deleteOrganization(id: number): Observable<void> {

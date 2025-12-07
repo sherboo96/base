@@ -15,16 +15,16 @@ public class JwtTokenGenerator
         _config = config;
     }
 
-    public string GenerateToken(int userId, string username, int? departmentId = null, string organizationCode = "", int? roleId = null)
+    public string GenerateToken(string userId, string username, int? departmentId = null, string organizationCode = "", int? roleId = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(ClaimTypes.Name, username),
-            new Claim("UserId", userId.ToString()),
+            new Claim("UserId", userId),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

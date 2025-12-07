@@ -64,7 +64,7 @@ export class UserComponent implements OnInit {
       width: '500px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
@@ -76,7 +76,23 @@ export class UserComponent implements OnInit {
     });
   }
 
-  editUser(user: any): void {}
+  editUser(user: any): void {
+    const dialogRef = this.dialogService.open(UserFormComponent, {
+      data: { user },
+      width: '800px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        this.loadUsers();
+      }
+    });
+  }
 
   unlockUser(user: any): void {
     this.loadingService.show();

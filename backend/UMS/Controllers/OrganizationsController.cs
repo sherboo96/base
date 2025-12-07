@@ -28,10 +28,11 @@ public class OrganizationsController : ControllerBase
 
         var skip = (page - 1) * pageSize;
 
-        var total = await _unitOfWork.Organizations.CountAsync(x => true);
+        var total = await _unitOfWork.Organizations.CountAsync(x => x.IsActive && !x.IsDeleted);
         var data = await _unitOfWork.Organizations.GetAllAsync(
             take: pageSize,
-            skip: skip
+            skip: skip,
+            match: x => x.IsActive && !x.IsDeleted
         );
 
         var response = new BaseResponse<IEnumerable<Organization>>
@@ -49,6 +50,27 @@ public class OrganizationsController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    [HttpGet("main")]
+    public async Task<IActionResult> GetMain()
+    {
+        var organization = await _unitOfWork.Organizations.FindAsync(x => x.IsMain && !x.IsDeleted);
+        if (organization == null)
+        {
+            return NotFound(new BaseResponse<Organization>
+            {
+                StatusCode = 404,
+                Message = "Main organization not found."
+            });
+        }
+
+        return Ok(new BaseResponse<Organization>
+        {
+            StatusCode = 200,
+            Message = "Main organization retrieved successfully.",
+            Result = organization
+        });
     }
 
     [HttpGet("{id}")]
@@ -99,7 +121,14 @@ public class OrganizationsController : ControllerBase
             });
         }
 
-        var updated = await _unitOfWork.Organizations.UpdateAsync(dto);
+        existing.Name = dto.Name;
+        existing.NameAr = dto.NameAr;
+        existing.Code = dto.Code;
+        existing.Domain = dto.Domain;
+        existing.IsMain = dto.IsMain;
+        existing.UpdatedAt = DateTime.Now;
+
+        var updated = await _unitOfWork.Organizations.UpdateAsync(existing);
         await _unitOfWork.CompleteAsync();
 
         return Ok(new BaseResponse<Organization>
@@ -110,11 +139,11 @@ public class OrganizationsController : ControllerBase
         });
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _unitOfWork.Organizations.DeleteAsync(id);
-        if (!deleted)
+        var existing = await _unitOfWork.Organizations.FindAsync(x => x.Id == id);
+        if (existing == null)
         {
             return NotFound(new BaseResponse<bool>
             {
@@ -124,6 +153,10 @@ public class OrganizationsController : ControllerBase
             });
         }
 
+        existing.IsDeleted = true;
+        existing.UpdatedAt = DateTime.Now;
+
+        await _unitOfWork.Organizations.UpdateAsync(existing);
         await _unitOfWork.CompleteAsync();
         return Ok(new BaseResponse<bool>
         {

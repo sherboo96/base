@@ -9,5 +9,7 @@ public class UserDto
     public string? CivilNo { get; set; }
     public int? JobTitleId { get; set; }
     public JobTitleDto? JobTitle { get; set; }
+    public int OrganizationId { get; set; }
+    public int? DepartmentId { get; set; }
     public DateTime? LastLogin { get; set; }
 }

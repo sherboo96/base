@@ -46,7 +46,7 @@ export class UserFormComponent implements OnInit {
       fullName: [{ value: '', disabled: true }, Validators.required],
       email: ['', [Validators.required, Validators.email]],
       adUsername: ['', Validators.required],
-      positionId: ['', Validators.required],
+      jobTitleId: ['', Validators.required],
       organizationId: ['', Validators.required],
       departmentId: ['', Validators.required],
     });
@@ -86,10 +86,18 @@ export class UserFormComponent implements OnInit {
   loadPositions(): void {
     this.positionService.getPositions(1, 100).subscribe({
       next: (response) => {
-        this.positions = response.result;
+        // Map positions (JobTitles) to the format expected by the form
+        this.positions = response.result.map((pos: any) => ({
+          id: pos.id,
+          title: pos.nameEn || pos.title || pos.name,
+          nameEn: pos.nameEn,
+          nameAr: pos.nameAr,
+          departmentId: pos.departmentId,
+          department: pos.department
+        }));
       },
       error: (error: HttpErrorResponse) => {
-        this.toastr.error(error.error.message || 'Failed to load positions');
+        this.toastr.error(error.error.message || 'Failed to load job titles');
       },
     });
   }
@@ -109,19 +117,29 @@ export class UserFormComponent implements OnInit {
   onDepartmentChange(): void {
     const departmentId = this.form.get('departmentId')?.value;
     if (departmentId) {
-      // Filter positions based on selected department
+      // Filter job titles based on selected department
       this.positionService.getPositions(1, 100).subscribe({
         next: (response) => {
-          this.positions = response.result.filter(
-            (pos: any) => pos.departmentId == departmentId
-          );
+          this.positions = response.result
+            .filter((pos: any) => pos.departmentId == departmentId)
+            .map((pos: any) => ({
+              id: pos.id,
+              title: pos.nameEn || pos.title || pos.name,
+              nameEn: pos.nameEn,
+              nameAr: pos.nameAr,
+              departmentId: pos.departmentId,
+              department: pos.department
+            }));
+          // Reset job title selection when department changes
+          this.form.patchValue({ jobTitleId: '' });
         },
         error: (error: HttpErrorResponse) => {
-          this.toastr.error(error.error.message || 'Failed to load positions');
+          this.toastr.error(error.error.message || 'Failed to load job titles');
         },
       });
     } else {
       this.loadPositions();
+      this.form.patchValue({ jobTitleId: '' });
     }
   }
 
@@ -132,8 +150,13 @@ export class UserFormComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-    const userData = this.form.value;
-    userData.fullName = this.form.get('fullName')?.value;
+    const userData = {
+      ...this.form.value,
+      fullName: this.form.get('fullName')?.value,
+      jobTitleId: this.form.get('jobTitleId')?.value, // Use jobTitleId instead of positionId
+    };
+    // Remove positionId if it exists
+    delete userData.positionId;
 
     if (this.isEdit) {
       this.userService.updateUser(userData).subscribe({

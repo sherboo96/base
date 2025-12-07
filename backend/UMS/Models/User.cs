@@ -1,12 +1,11 @@
 ﻿using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 
 namespace UMS.Models;
 
-public class User: BaseModel
+public class User : IdentityUser
 {
-    public int Id { get; set; }
     public string FullName { get; set; }
-    public string Email { get; set; }
     public string ADUsername { get; set; } // e.g., domain\username
     public string? CivilNo { get; set; }
     public int? JobTitleId { get; set; }
@@ -14,6 +13,22 @@ public class User: BaseModel
     public DateTime? LastLogin { get; set; }
     public int FailedLoginAttempts { get; set; } = 0;
     public bool IsLocked { get; set; } = false;
+    public LoginMethod LoginMethod { get; set; } = LoginMethod.ActiveDirectory; // Default to AD
+    
+    // Organization and Department relationships
+    public int OrganizationId { get; set; } // Required - every user must have an organization
+    public Organization Organization { get; set; }
+    public int? DepartmentId { get; set; } // Nullable - required only if organization is main
+    public Department? Department { get; set; }
+    
+    // BaseModel properties (since IdentityUser doesn't inherit from BaseModel)
+    public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
+    public DateTime CreatedOn { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+    
     [JsonIgnore]
     public ICollection<UserRole> UserRoles { get; set; }
 }

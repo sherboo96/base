@@ -96,7 +96,7 @@ export class RolePermissionsComponent implements OnInit {
       width: '500px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
@@ -114,7 +114,7 @@ export class RolePermissionsComponent implements OnInit {
       width: '500px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
@@ -140,7 +140,7 @@ export class RolePermissionsComponent implements OnInit {
         width: '400px',
         enableClose: true,
         closeButton: true,
-        resizable: true,
+        resizable: false,
         draggable: true,
       }
     );
@@ -173,7 +173,7 @@ export class RolePermissionsComponent implements OnInit {
       width: '500px',
       enableClose: true,
       closeButton: true,
-      resizable: true,
+      resizable: false,
       draggable: true,
       size: 'lg',
     });
