@@ -171,7 +171,7 @@
         >
           <option value="">Select a department</option>
           <option *ngFor="let dept of departments" [value]="dept.id">
-            {{ dept.nameEn }} ({{ dept.organization?.name || '' }})
+            {{ dept.nameEn }} ({{ dept.organization.name || '' }})
           </option>
         </select>
         <div

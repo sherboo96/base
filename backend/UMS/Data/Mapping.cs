@@ -1,4 +1,4 @@
-﻿
+
 using UMS.Dtos;
 
 namespace UMS.Data;
@@ -29,6 +29,18 @@ public class Mapping: Profile
 
         // JobTitle
         CreateMap<JobTitle, JobTitleDto>().ReverseMap();
+
+        // Position
+        CreateMap<Position, PositionDto>().ReverseMap();
+
+        // Institution
+        CreateMap<Institution, InstitutionDto>().ReverseMap();
+
+        // Instructor
+        CreateMap<Instructor, InstructorDto>().ReverseMap();
+
+        // Location
+        CreateMap<Location, LocationDto>().ReverseMap();
 
         // Structure
         CreateMap<Structure, StructureDto>()

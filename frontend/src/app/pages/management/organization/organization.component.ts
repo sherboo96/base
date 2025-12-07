@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import {
   Organization,
   OrganizationService,
@@ -21,6 +22,7 @@ import { Router } from '@angular/router';
 import { DialogService, DialogConfig } from '@ngneat/dialog';
 import { OrganizationFormComponent } from './organization-form/organization-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
+import { TranslationService } from '../../../services/translation.service';
 
 @Component({
   selector: 'app-organization',
@@ -28,6 +30,7 @@ import { DeleteConfirmationDialogComponent } from '../../../components/delete-co
   imports: [
     CommonModule,
     FormsModule,
+    TranslateModule,
     LoadingComponent,
     OrganizationFormComponent,
   ],
@@ -42,6 +45,8 @@ export class OrganizationComponent implements OnInit, OnDestroy {
   totalPages = 1;
   totalItems = 0;
   searchTerm = '';
+  filterIsMain: string = 'all'; // 'all', 'main', 'not-main'
+  filterStatus: string = 'all'; // 'all', 'active', 'inactive'
   Math = Math;
   private dialogComponentRef: any;
   private subscriptions: Subscription[] = [];
@@ -53,7 +58,8 @@ export class OrganizationComponent implements OnInit, OnDestroy {
     private router: Router,
     private componentFactoryResolver: ComponentFactoryResolver,
     private viewContainerRef: ViewContainerRef,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -72,7 +78,13 @@ export class OrganizationComponent implements OnInit, OnDestroy {
     this.loadingService.show();
 
     const sub = this.organizationService
-      .getOrganizations(this.currentPage, this.pageSize)
+      .getOrganizations(
+        this.currentPage,
+        this.pageSize,
+        this.searchTerm || undefined,
+        this.filterIsMain !== 'all' ? this.filterIsMain : undefined,
+        this.filterStatus !== 'all' ? this.filterStatus : undefined
+      )
       .pipe(
         finalize(() => {
           this.isLoading = false;
@@ -87,7 +99,7 @@ export class OrganizationComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.toastr.error(
-            error.error.message || 'Failed to fetch organizations'
+            error.error.message || this.translationService.instant('organization.fetchError')
           );
         },
       });
@@ -131,6 +143,23 @@ export class OrganizationComponent implements OnInit, OnDestroy {
   onSearch(): void {
     this.currentPage = 1; // Reset to first page when searching
     this.fetchOrganizations();
+  }
+
+  applyFilters(): void {
+    this.currentPage = 1; // Reset to first page when applying filters
+    this.fetchOrganizations();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.filterIsMain = 'all';
+    this.filterStatus = 'all';
+    this.currentPage = 1;
+    this.fetchOrganizations();
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(this.searchTerm || this.filterIsMain !== 'all' || this.filterStatus !== 'all');
   }
 
   formatDate(dateString: string): string {
@@ -192,12 +221,15 @@ export class OrganizationComponent implements OnInit, OnDestroy {
   deleteOrganization(organization: Organization): void {
     const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
       data: {
-        title: 'Delete Organization',
-        message: `Are you sure you want to delete "${organization.name}"? This action cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
+        title: this.translationService.instant('organization.deleteTitle'),
+        message: this.translationService.instant('organization.deleteMessage', { name: organization.name }),
+        confirmText: this.translationService.instant('organization.delete'),
+        cancelText: this.translationService.instant('common.cancel'),
+        type: 'danger',
+        warningMessage: this.translationService.instant('organization.deleteWarning'),
+        showWarning: true,
       },
-      width: '400px',
+      width: '500px',
       enableClose: true,
       closeButton: true,
       resizable: false,
@@ -209,12 +241,101 @@ export class OrganizationComponent implements OnInit, OnDestroy {
         this.loadingService.show();
         this.organizationService.deleteOrganization(organization.id).subscribe({
           next: () => {
-            this.toastr.success('Organization deleted successfully');
+            this.toastr.success(this.translationService.instant('organization.deleteSuccess'));
             this.loadingService.hide();
             this.fetchOrganizations(); // Refresh the table
           },
           error: (error) => {
-            this.toastr.error(error.error?.message || 'Failed to delete organization');
+            this.toastr.error(error.error?.message || this.translationService.instant('organization.deleteError'));
+            this.loadingService.hide();
+          },
+        });
+      }
+    });
+  }
+
+  toggleStatus(organization: Organization): void {
+    const newStatus = !organization.isActive;
+    const type = newStatus ? 'success' : 'warning';
+    
+    const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
+      data: {
+        title: this.translationService.instant(newStatus ? 'organization.activateTitle' : 'organization.deactivateTitle'),
+        message: this.translationService.instant(
+          newStatus ? 'organization.activateMessage' : 'organization.deactivateMessage',
+          { name: organization.name }
+        ),
+        confirmText: this.translationService.instant(newStatus ? 'organization.active' : 'organization.inactive'),
+        cancelText: this.translationService.instant('common.cancel'),
+        type: type,
+        warningMessage: this.translationService.instant(
+          newStatus ? 'organization.activateWarning' : 'organization.deactivateWarning'
+        ),
+        showWarning: true,
+      },
+      width: '500px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        this.loadingService.show();
+        this.organizationService.toggleOrganizationStatus(organization.id).subscribe({
+          next: () => {
+            this.toastr.success(
+              this.translationService.instant(newStatus ? 'organization.activateSuccess' : 'organization.deactivateSuccess')
+            );
+            this.loadingService.hide();
+            this.fetchOrganizations();
+          },
+          error: (error) => {
+            this.toastr.error(
+              error.error?.message || this.translationService.instant(newStatus ? 'organization.activateError' : 'organization.deactivateError')
+            );
+            this.loadingService.hide();
+          },
+        });
+      }
+    });
+  }
+
+  setAsMain(organization: Organization): void {
+    if (organization.isMain) {
+      this.toastr.info(this.translationService.instant('organization.alreadyMain'));
+      return;
+    }
+
+    const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
+      data: {
+        title: this.translationService.instant('organization.setMainTitle'),
+        message: this.translationService.instant('organization.setMainMessage', { name: organization.name }),
+        confirmText: this.translationService.instant('organization.setMain'),
+        cancelText: this.translationService.instant('common.cancel'),
+        type: 'main',
+        warningMessage: this.translationService.instant('organization.setMainWarning'),
+        showWarning: true,
+      },
+      width: '500px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        this.loadingService.show();
+        this.organizationService.setAsMainOrganization(organization.id).subscribe({
+          next: () => {
+            this.toastr.success(this.translationService.instant('organization.setMainSuccess'));
+            this.loadingService.hide();
+            this.fetchOrganizations();
+          },
+          error: (error) => {
+            this.toastr.error(error.error?.message || this.translationService.instant('organization.setMainError'));
             this.loadingService.hide();
           },
         });

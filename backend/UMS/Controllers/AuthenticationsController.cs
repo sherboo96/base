@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -277,29 +277,55 @@ public class AuthenticationsController : ControllerBase
             });
         }
 
-        // Get role IDs
-        var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
+        // Check if user has SuperAdmin role
+        var isSuperAdmin = userRoles.Any(ur => ur.Role.Name == "SuperAdmin");
 
-        // Get permissions for those roles
-        var rolePermissions = await _unitOfWork.RolePermissions.GetAllAsync(
-            rp => roleIds.Contains(rp.RoleId),
-            includes: new[] { "Permission" });
+        List<UserPermissionsDto> permissions;
+        HashSet<string> permissionCodes;
 
-        // Extract unique permissions
-        var permissions = rolePermissions
-            .Where(rp => rp.Permission != null && rp.Permission.IsActive && !rp.Permission.IsDeleted)
-            .Select(rp => new UserPermissionsDto
-            {
-                code = rp.Permission.Code,
-                name = rp.Permission.Name
-            })
-            .GroupBy(p => p.code)
-            .Select(g => g.First())
-            .OrderBy(p => p.code)
-            .ToList();
+        if (isSuperAdmin)
+        {
+            // SuperAdmin gets all active permissions
+            var allPermissions = await _unitOfWork.Permissions.GetAllAsync(
+                p => p.IsActive && !p.IsDeleted);
 
-        // Get permission codes for quick lookup
-        var permissionCodes = permissions.Select(p => p.code).ToHashSet();
+            permissions = allPermissions
+                .Select(p => new UserPermissionsDto
+                {
+                    code = p.Code,
+                    name = p.Name
+                })
+                .OrderBy(p => p.code)
+                .ToList();
+
+            permissionCodes = permissions.Select(p => p.code).ToHashSet();
+        }
+        else
+        {
+            // Get role IDs
+            var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
+
+            // Get permissions for those roles
+            var rolePermissions = await _unitOfWork.RolePermissions.GetAllAsync(
+                rp => roleIds.Contains(rp.RoleId),
+                includes: new[] { "Permission" });
+
+            // Extract unique permissions
+            permissions = rolePermissions
+                .Where(rp => rp.Permission != null && rp.Permission.IsActive && !rp.Permission.IsDeleted)
+                .Select(rp => new UserPermissionsDto
+                {
+                    code = rp.Permission.Code,
+                    name = rp.Permission.Name
+                })
+                .GroupBy(p => p.code)
+                .Select(g => g.First())
+                .OrderBy(p => p.code)
+                .ToList();
+
+            // Get permission codes for quick lookup
+            permissionCodes = permissions.Select(p => p.code).ToHashSet();
+        }
 
         // Define side menu items based on app.routes.ts with descriptive permission codes
         var sideMenuItems = new List<SideMenuPermissionDto>
@@ -312,7 +338,7 @@ public class AuthenticationsController : ControllerBase
                 label = "Organization",
                 icon = "business",
                 section = "Management",
-                hasAccess = permissionCodes.Contains("ORGANIZATIONS_VIEW")
+                hasAccess = isSuperAdmin || permissionCodes.Contains("ORGANIZATIONS_VIEW")
             },
             new SideMenuPermissionDto
             {
@@ -321,7 +347,7 @@ public class AuthenticationsController : ControllerBase
                 label = "Department",
                 icon = "account_balance",
                 section = "Management",
-                hasAccess = permissionCodes.Contains("DEPARTMENTS_VIEW")
+                hasAccess = isSuperAdmin || permissionCodes.Contains("DEPARTMENTS_VIEW")
             },
             new SideMenuPermissionDto
             {
@@ -330,16 +356,25 @@ public class AuthenticationsController : ControllerBase
                 label = "Positions",
                 icon = "work",
                 section = "Management",
-                hasAccess = permissionCodes.Contains("JOB_TITLES_VIEW")
+                hasAccess = isSuperAdmin || permissionCodes.Contains("JOB_TITLES_VIEW")
             },
             new SideMenuPermissionDto
             {
                 code = "JOB_TITLES_VIEW",
-                route = "/management/positions",
+                route = "/management/job-titles",
                 label = "Job Titles",
                 icon = "badge",
                 section = "Management",
-                hasAccess = permissionCodes.Contains("JOB_TITLES_VIEW")
+                hasAccess = isSuperAdmin || permissionCodes.Contains("JOB_TITLES_VIEW")
+            },
+            new SideMenuPermissionDto
+            {
+                code = "LOCATIONS_VIEW",
+                route = "/management/location",
+                label = "Location",
+                icon = "location_on",
+                section = "Management",
+                hasAccess = isSuperAdmin || permissionCodes.Contains("LOCATIONS_VIEW")
             },
             // User Management Section
             new SideMenuPermissionDto
@@ -349,7 +384,7 @@ public class AuthenticationsController : ControllerBase
                 label = "Users",
                 icon = "people",
                 section = "User Management",
-                hasAccess = permissionCodes.Contains("USERS_VIEW")
+                hasAccess = isSuperAdmin || permissionCodes.Contains("USERS_VIEW")
             },
             // Role Management Section
             new SideMenuPermissionDto
@@ -359,7 +394,7 @@ public class AuthenticationsController : ControllerBase
                 label = "Roles",
                 icon = "supervisor_account",
                 section = "Role Management",
-                hasAccess = permissionCodes.Contains("ROLES_VIEW")
+                hasAccess = isSuperAdmin || permissionCodes.Contains("ROLES_VIEW")
             }
         };
 

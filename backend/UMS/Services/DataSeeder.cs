@@ -1,4 +1,4 @@
-using UMS.Data;
+﻿using UMS.Data;
 using UMS.Interfaces;
 using UMS.Models;
 using Microsoft.AspNetCore.Identity;
@@ -110,7 +110,9 @@ public class DataSeeder
         var mainOrganization = new Organization
         {
             Name = "Ministry of Oil",
+            NameAr = "وزارة النفط",
             Code = "MOIL",
+            Domain = "moo.gov.kw",
             IsMain = true,
             IsActive = true,
             CreatedBy = "System",

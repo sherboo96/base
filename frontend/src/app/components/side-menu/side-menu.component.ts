@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { StorageService } from '../../services/storage.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-side-menu',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   templateUrl: './side-menu.component.html',
   styleUrl: './side-menu.component.css',
 })
@@ -41,6 +42,15 @@ export class SideMenuComponent {
   }
 
   hasPermission(permissionCode: string): boolean {
+    // Check if user has SuperAdmin role
+    const userRoles = this.storageService.getItem<any[]>('userRoles');
+    const isSuperAdmin = userRoles?.some((role: any) => role.name === 'SuperAdmin');
+    
+    // SuperAdmin has access to everything
+    if (isSuperAdmin) {
+      return true;
+    }
+    
     // First check side menu permissions (more efficient)
     const sideMenuItem = this.sideMenuPermissions.find((item) => item.code === permissionCode);
     if (sideMenuItem) {
@@ -83,6 +93,21 @@ export class SideMenuComponent {
         console.error('Failed to navigate to job titles page');
       }
     });
+  }
+
+  navigateToLocation() {
+    this.activeRoute = '/management/location';
+    this.router.navigate(['/management/location']);
+  }
+
+  navigateToInstructor() {
+    this.activeRoute = '/management/instructor';
+    this.router.navigate(['/management/instructor']);
+  }
+
+  navigateToInstitution() {
+    this.activeRoute = '/management/institution';
+    this.router.navigate(['/management/institution']);
   }
 
   navigateToUsers() {

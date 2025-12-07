@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos.Shared;
 using UMS.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using UMS.Models;
 
 namespace UMS.Controllers;
 
@@ -36,6 +37,26 @@ public class PermissionsController : ControllerBase
     {
         var entity = await _unitOfWork.Permissions.AddAsync(dto);
         await _unitOfWork.CompleteAsync();
+        
+        // Automatically assign new permission to SuperAdmin role
+        var superAdminRole = await _unitOfWork.Roles.FindAsync(r => r.Name == "SuperAdmin");
+        if (superAdminRole != null)
+        {
+            var existingRolePermission = await _unitOfWork.RolePermissions.FindAsync(
+                rp => rp.RoleId == superAdminRole.Id && rp.PermissionId == ((Permission)entity).Id);
+            
+            if (existingRolePermission == null)
+            {
+                var rolePermission = new RolePermission
+                {
+                    RoleId = superAdminRole.Id,
+                    PermissionId = ((Permission)entity).Id
+                };
+                await _unitOfWork.RolePermissions.AddAsync(rolePermission);
+                await _unitOfWork.CompleteAsync();
+            }
+        }
+        
         return CreatedAtAction(nameof(GetById), new { id = ((Permission)entity).Id }, new BaseResponse<Permission> { StatusCode = 201, Message = "Permission created successfully.", Result = (Permission)entity });
     }
 

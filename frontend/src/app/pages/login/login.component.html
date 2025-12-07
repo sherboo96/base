@@ -1,6 +1,14 @@
-<div class="flex items-center justify-center h-screen">
+<div class="flex items-center justify-center min-h-screen py-8">
+  <!-- Loading Component -->
+  <app-loading></app-loading>
+  
+  <!-- Language Switcher -->
+  <div class="absolute top-4 right-4 z-50">
+    <app-language-switcher></app-language-switcher>
+  </div>
+  
   <div
-    class="flex flex-col md:flex-row bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl h-[70vh]"
+    class="flex flex-col md:flex-row bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl min-h-[70vh]"
   >
     <!-- Left Section -->
     <div class="flex flex-col items-center justify-center p-6 md:w-1/2">
@@ -10,107 +18,145 @@
         class="h-36 mb-4"
       />
       <h2 class="text-2xl font-bold text-[#c9ae81] mb-2 flex items-center">
-        Welcome Back
-        <span class="ml-2">👋</span>
+        {{ 'login.title' | translate }}
+        <span class="ml-2 rtl:ml-0 rtl:mr-2">👋</span>
       </h2>
       <p class="text-gray-500 text-sm mb-4 text-center max-w-xs">
-        Enter your credentials to access the Ministry of Oil user management
-        system.
+        {{ 'login.subtitle' | translate }}
       </p>
-
-      <!-- Account Locked Alert -->
-      <div
-        *ngIf="isAccountLocked"
-        class="w-full mb-4 p-3 bg-red-50 border border-red-300 rounded-lg"
-      >
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <i class="fas fa-lock text-red-500"></i>
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">
-              Account Temporarily Locked
-            </h3>
-            <div class="mt-1 text-xs text-red-700">
-              <p>
-                Too many failed login attempts. Please try again later or
-                contact administrator.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <form
         [formGroup]="loginForm"
         (ngSubmit)="onLogin()"
-        class="w-full space-y-4"
+        class="w-full space-y-5"
       >
-        <div class="relative">
+        <!-- Username Input -->
+        <div class="form-group">
           <label
             for="username"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Username</label
+            class="form-label"
+            [ngClass]="{
+              'text-red-600': hasError('username'),
+              'text-green-600': usernameControl?.valid && usernameControl?.touched && !hasError('username')
+            }"
           >
-          <div class="relative">
-            <span
-              class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"
-            >
-              <i class="fas fa-user"></i>
-            </span>
+            {{ 'login.username' | translate }}
+          </label>
+          <div class="input-wrapper" [attr.dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+            <div class="input-icon-left">
+              <i 
+                class="fas fa-user"
+                [ngClass]="{
+                  'text-red-500': hasError('username'),
+                  'text-green-500': usernameControl?.valid && usernameControl?.touched && !hasError('username'),
+                  'text-gray-400': !hasError('username') && (!usernameControl?.touched || !usernameControl?.valid)
+                }"
+              ></i>
+            </div>
             <input
               type="text"
               id="username"
               formControlName="username"
+              class="form-input"
               [ngClass]="{
-                'border-red-500 bg-red-50': hasError('username'),
-                'border-green-500 bg-green-50':
-                  usernameControl?.valid && usernameControl?.touched
+                'input-error': hasError('username'),
+                'input-success': usernameControl?.valid && usernameControl?.touched && !hasError('username')
               }"
-              class="w-full pl-10 pr-4 py-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c9ae81]/30 focus:border-[#c9ae81] transition-colors duration-200"
-              placeholder="Enter your username"
-              [disabled]="isAccountLocked"
+              [placeholder]="'login.usernamePlaceholder' | translate"
+              (blur)="usernameControl?.markAsTouched()"
             />
-            <div
-              *ngIf="hasError('username')"
-              class="text-red-500 text-xs mt-1 error-message"
-            >
-              {{ getErrorMessage("username") }}
+            <!-- Validation Icon Right -->
+            <div class="input-icon-right">
+              <i
+                *ngIf="hasError('username')"
+                class="fas fa-times-circle text-red-500 validation-icon"
+              ></i>
+              <i
+                *ngIf="usernameControl?.valid && usernameControl?.touched && !hasError('username')"
+                class="fas fa-check-circle text-green-500 validation-icon"
+              ></i>
             </div>
+          </div>
+          <!-- Error Message -->
+          <div
+            *ngIf="hasError('username')"
+            class="error-message"
+          >
+            <i class="fas fa-exclamation-circle mr-1 rtl:mr-0 rtl:ml-1"></i>
+            {{ getErrorMessage("username") }}
+          </div>
+          <!-- Success Message -->
+          <div
+            *ngIf="usernameControl?.valid && usernameControl?.touched && !hasError('username')"
+            class="success-message"
+          >
+            <i class="fas fa-check-circle mr-1 rtl:mr-0 rtl:ml-1"></i>
+            {{ 'login.looksGood' | translate }}
           </div>
         </div>
 
-        <div class="relative">
+        <!-- Password Input -->
+        <div class="form-group">
           <label
             for="password"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Password</label
+            class="form-label"
+            [ngClass]="{
+              'text-red-600': hasError('password'),
+              'text-green-600': passwordControl?.valid && passwordControl?.touched && !hasError('password')
+            }"
           >
-          <div class="relative">
-            <span
-              class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"
-            >
-              <i class="fas fa-lock"></i>
-            </span>
+            {{ 'login.password' | translate }}
+          </label>
+          <div class="input-wrapper" [attr.dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+            <div class="input-icon-left">
+              <i 
+                class="fas fa-lock"
+                [ngClass]="{
+                  'text-red-500': hasError('password'),
+                  'text-green-500': passwordControl?.valid && passwordControl?.touched && !hasError('password'),
+                  'text-gray-400': !hasError('password') && (!passwordControl?.touched || !passwordControl?.valid)
+                }"
+              ></i>
+            </div>
             <input
               type="password"
               id="password"
               formControlName="password"
+              class="form-input"
               [ngClass]="{
-                'border-red-500 bg-red-50': hasError('password'),
-                'border-green-500 bg-green-50':
-                  passwordControl?.valid && passwordControl?.touched
+                'input-error': hasError('password'),
+                'input-success': passwordControl?.valid && passwordControl?.touched && !hasError('password')
               }"
-              class="w-full pl-10 pr-4 py-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c9ae81]/30 focus:border-[#c9ae81] transition-colors duration-200"
-              placeholder="Enter your password"
-              [disabled]="isAccountLocked"
+              [placeholder]="'login.passwordPlaceholder' | translate"
+              (blur)="passwordControl?.markAsTouched()"
             />
-            <div
-              *ngIf="hasError('password')"
-              class="text-red-500 text-xs mt-1 error-message"
-            >
-              {{ getErrorMessage("password") }}
+            <!-- Validation Icon Right -->
+            <div class="input-icon-right">
+              <i
+                *ngIf="hasError('password')"
+                class="fas fa-times-circle text-red-500 validation-icon"
+              ></i>
+              <i
+                *ngIf="passwordControl?.valid && passwordControl?.touched && !hasError('password')"
+                class="fas fa-check-circle text-green-500 validation-icon"
+              ></i>
             </div>
+          </div>
+          <!-- Error Message -->
+          <div
+            *ngIf="hasError('password')"
+            class="error-message"
+          >
+            <i class="fas fa-exclamation-circle mr-1 rtl:mr-0 rtl:ml-1"></i>
+            {{ getErrorMessage("password") }}
+          </div>
+          <!-- Success Message -->
+          <div
+            *ngIf="passwordControl?.valid && passwordControl?.touched && !hasError('password')"
+            class="success-message"
+          >
+            <i class="fas fa-check-circle mr-1 rtl:mr-0 rtl:ml-1"></i>
+            {{ 'login.looksGood' | translate }}
           </div>
         </div>
 
@@ -120,29 +166,28 @@
             id="remember-me"
             formControlName="rememberMe"
             class="w-4 h-4 border-gray-300 rounded focus:ring-[#c9ae81] checked:bg-[#c9ae81] checked:border-[#c9ae81]"
-            [disabled]="isAccountLocked"
           />
-          <label for="remember-me" class="ml-2 text-sm text-gray-600"
-            >Remember me</label
+          <label for="remember-me" class="ml-2 rtl:ml-0 rtl:mr-2 text-sm text-gray-600"
+            >{{ 'login.rememberMe' | translate }}</label
           >
         </div>
 
         <button
           type="submit"
-          [disabled]="(loginForm.invalid && formSubmitted) || isAccountLocked"
+          [disabled]="loginForm.invalid && formSubmitted"
           [ngClass]="{
             'opacity-70 cursor-not-allowed':
-              (loginForm.invalid && formSubmitted) || isAccountLocked
+              loginForm.invalid && formSubmitted
           }"
           class="w-full py-2.5 px-4 bg-gradient-to-r from-[#c9ae81] to-[#d4bc92] text-white rounded-lg shadow-md hover:from-[#b79c70] hover:to-[#c4ab7e] hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#c9ae81]/30 transform hover:-translate-y-0.5 flex justify-center items-center"
         >
-          <span>Sign In</span>
+          <span>{{ 'login.signIn' | translate }}</span>
         </button>
 
         <div class="text-xs text-gray-500 mt-2">
           <p class="text-center">
-            <i class="fas fa-shield-alt mr-1 text-[#c9ae81]"></i>
-            Secure login protected with industry-standard encryption
+            <i class="fas fa-shield-alt mr-1 rtl:mr-0 rtl:ml-1 text-[#c9ae81]"></i>
+            {{ 'login.securityMessage' | translate }}
           </p>
         </div>
       </form>

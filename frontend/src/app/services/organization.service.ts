@@ -37,11 +37,22 @@ export class OrganizationService {
 
   getOrganizations(
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    search?: string,
+    filterIsMain?: string,
+    filterStatus?: string
   ): Observable<OrganizationResponse> {
-    return this.http.get<OrganizationResponse>(
-      `${this.apiUrl}?page=${page}&pageSize=${pageSize}`
-    );
+    let params = `page=${page}&pageSize=${pageSize}`;
+    if (search) {
+      params += `&search=${encodeURIComponent(search)}`;
+    }
+    if (filterIsMain && filterIsMain !== 'all') {
+      params += `&filterIsMain=${encodeURIComponent(filterIsMain)}`;
+    }
+    if (filterStatus && filterStatus !== 'all') {
+      params += `&filterStatus=${encodeURIComponent(filterStatus)}`;
+    }
+    return this.http.get<OrganizationResponse>(`${this.apiUrl}?${params}`);
   }
 
   getMainOrganization(): Observable<any> {
@@ -77,5 +88,15 @@ export class OrganizationService {
   // Get organization hierarchy
   getOrganizationHierarchy(): Observable<Organization[]> {
     return this.http.get<Organization[]>(`${this.apiUrl}/hierarchy`);
+  }
+
+  // Toggle organization status
+  toggleOrganizationStatus(id: number): Observable<Organization> {
+    return this.http.patch<Organization>(`${this.apiUrl}/${id}/toggle-status`, {});
+  }
+
+  // Set organization as main
+  setAsMainOrganization(id: number): Observable<Organization> {
+    return this.http.patch<Organization>(`${this.apiUrl}/${id}/set-main`, {});
   }
 }

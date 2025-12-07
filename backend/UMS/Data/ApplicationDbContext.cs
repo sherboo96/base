@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using UMS.Models;
@@ -16,7 +16,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Role> Roles { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<JobTitle> JobTitles { get; set; }
+    public DbSet<Position> Positions { get; set; }
+    public DbSet<Institution> Institutions { get; set; }
+    public DbSet<Instructor> Instructors { get; set; }
     public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
+    public DbSet<Location> Locations { get; set; }
 
     public DbSet<UserRole> UserRoles { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
@@ -62,6 +66,22 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .WithMany()
             .HasForeignKey(u => u.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Location-Organization relationship
+        modelBuilder.Entity<Location>()
+            .HasOne(l => l.Organization)
+            .WithMany()
+            .HasForeignKey(l => l.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // Instructor-Institution relationship
+        modelBuilder.Entity<Instructor>()
+            .HasOne(i => i.Institution)
+            .WithMany()
+            .HasForeignKey(i => i.InstitutionId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
 
         // Check constraint: DepartmentId is required if Organization.IsMain is true
         // Note: This is a database-level constraint that will be enforced via migration

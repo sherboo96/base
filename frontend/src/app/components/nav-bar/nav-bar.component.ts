@@ -3,11 +3,14 @@ import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { StorageService } from '../../services/storage.service';
+import { LanguageSwitcherComponent } from '../language-switcher/language-switcher.component';
+import { TranslateModule } from '@ngx-translate/core';
+import { TranslationService } from '../../services/translation.service';
 
 @Component({
   selector: 'app-nav-bar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LanguageSwitcherComponent, TranslateModule],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.css',
 })
@@ -17,23 +20,25 @@ export class NavBarComponent {
   role = '';
   avatarImage: string | null = null;
 
-  // Map of route paths to display names
-  private pageTitles: { [key: string]: string } = {
-    '/dashboard': 'Dashboard',
-    '/invoices': 'Invoices',
-    '/profile': 'My Profile',
+  // Map of route paths to translation keys
+  private pageTitleKeys: { [key: string]: string } = {
+    '/dashboard': 'navbar.dashboard',
+    '/invoices': 'common.invoices',
+    '/profile': 'navbar.myProfile',
     // Management
-    '/management/users': 'Users',
-    '/management/organization': 'Organizations',
-    '/management/department': 'Departments',
-    '/management/positions': 'Positions',
-    '/management/systems': 'Systems',
+    '/management/users': 'navbar.users',
+    '/management/organization': 'navbar.organizations',
+    '/management/department': 'navbar.departments',
+    '/management/positions': 'navbar.positions',
+    '/management/job-titles': 'navbar.jobTitles',
+    '/management/systems': 'navbar.systems',
   };
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private translationService: TranslationService
   ) {
     // Initialize user info from encrypted storage
     const currentUser = this.storageService.getItem<any>('currentUser');
@@ -50,20 +55,20 @@ export class NavBarComponent {
     const currentPath = this.router.url.split('?')[0]; // Remove query parameters
 
     // Check for exact match
-    if (this.pageTitles[currentPath]) {
-      return this.pageTitles[currentPath];
+    if (this.pageTitleKeys[currentPath]) {
+      return this.translationService.instant(this.pageTitleKeys[currentPath]);
     }
 
     // If no exact match, try to find a parent route
     // For example, if we have /kpc/prices/details, try to match with /kpc/prices
-    for (const path in this.pageTitles) {
+    for (const path in this.pageTitleKeys) {
       if (currentPath.startsWith(path + '/')) {
-        return this.pageTitles[path];
+        return this.translationService.instant(this.pageTitleKeys[path]);
       }
     }
 
     // Default fallback
-    return 'Ministry of Oil';
+    return this.translationService.instant('navbar.ministryOfOil');
   }
 
   toggleDropdown() {

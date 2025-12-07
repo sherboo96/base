@@ -17,6 +17,16 @@ export class PermissionGuard implements CanActivate {
 
   canActivate(route: ActivatedRouteSnapshot): boolean {
     const requiredPermission = route.data['permission'];
+    
+    // Check if user has SuperAdmin role
+    const userRoles = this.storageService.getItem<any[]>('userRoles');
+    const isSuperAdmin = userRoles?.some((role: any) => role.name === 'SuperAdmin');
+    
+    // SuperAdmin bypasses all permission checks
+    if (isSuperAdmin) {
+      return true;
+    }
+
     const permissions = this.storageService.getItem<any[]>('userPermissions');
 
     if (permissions) {

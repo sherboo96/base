@@ -40,6 +40,40 @@ li a::before {
   transition: width 0.3s ease;
 }
 
+html[dir="rtl"] li a::before,
+html.rtl li a::before {
+  left: auto;
+  right: 0;
+}
+
+/* RTL border fixes - Universal approach: remove left borders, add right borders for active items */
+html[dir="rtl"] .side-menu-container li a,
+html.rtl .side-menu-container li a {
+  border-left: 0 !important;
+}
+
+/* Any menu item with border-l-4 class gets border-r-4 in RTL */
+html[dir="rtl"] .side-menu-container li a.border-l-4,
+html.rtl .side-menu-container li a.border-l-4 {
+  border-left: 0 !important;
+  border-right-width: 4px !important;
+  border-right-style: solid !important;
+}
+
+/* Active items with background color get colored right border */
+html[dir="rtl"] .side-menu-container li a[class*="F9F6F2"],
+html.rtl .side-menu-container li a[class*="F9F6F2"] {
+  border-right: 4px solid #c9ae81 !important;
+  border-left: 0 !important;
+}
+
+/* Also target by border color class */
+html[dir="rtl"] .side-menu-container li a.border-\[#c9ae81\],
+html.rtl .side-menu-container li a.border-\[#c9ae81\] {
+  border-right-color: #c9ae81 !important;
+  border-left: 0 !important;
+}
+
 li a:hover::before {
   width: 100%;
 }
@@ -93,6 +127,14 @@ li a.bg-\[\#F9F6F2\] {
   height: 1px;
   width: 2rem;
   background-color: #c9ae81;
+}
+
+html[dir="rtl"] .mb-4.pl-3 h2::after,
+html.rtl .mb-4.pl-3 h2::after,
+html[dir="rtl"] .mb-4.rtl\:pl-0.rtl\:pr-3 h2::after,
+html.rtl .mb-4.rtl\:pl-0.rtl\:pr-3 h2::after {
+  left: auto;
+  right: -0.75rem;
 }
 
 /* Footer animation */

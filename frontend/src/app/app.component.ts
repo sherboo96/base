@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { SideMenuComponent } from './components/side-menu/side-menu.component';
 import { NavBarComponent } from './components/nav-bar/nav-bar.component';
 import { CommonModule } from '@angular/common';
-import { DialogComponent } from './components/dialog/dialog.component';
+import { LoadingComponent } from './components/loading/loading.component';
+import { TranslationService } from './services/translation.service';
 
 @Component({
   selector: 'app-root',
@@ -13,21 +14,20 @@ import { DialogComponent } from './components/dialog/dialog.component';
     SideMenuComponent,
     NavBarComponent,
     CommonModule,
-    DialogComponent,
+    LoadingComponent,
   ],
-  template: `
-    <div class="flex h-screen bg-gray-100">
-      <app-side-menu *ngIf="!isLoginRoute()"></app-side-menu>
-      <main class="flex-1 overflow-y-auto">
-        <app-nav-bar *ngIf="!isLoginRoute()"></app-nav-bar>
-        <router-outlet></router-outlet>
-      </main>
-      <app-dialog></app-dialog>
-    </div>
-  `,
+  templateUrl: './app.component.html',
 })
-export class AppComponent {
-  constructor(public router: Router) {}
+export class AppComponent implements OnInit {
+  constructor(
+    public router: Router,
+    private translationService: TranslationService
+  ) {}
+
+  ngOnInit(): void {
+    // Initialize translation service to set language and direction
+    this.translationService.getCurrentLanguage();
+  }
 
   // Helper method to check if the current route matches login
   isLoginRoute(): boolean {

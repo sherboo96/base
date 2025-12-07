@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import {
   Position,
   PositionService,
@@ -12,12 +13,13 @@ import { LoadingComponent } from '../../../components/loading/loading.component'
 import { finalize } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
-import { DialogService } from '../../../services/dialog.service';
+import { DialogService } from '@ngneat/dialog';
 import { PositionFormComponent } from './position-form/position-form.component';
+import { TranslationService } from '../../../services/translation.service';
 @Component({
   selector: 'app-position',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, LoadingComponent],
   templateUrl: './position.component.html',
 })
 export class PositionComponent implements OnInit, OnDestroy {
@@ -36,7 +38,8 @@ export class PositionComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     public loadingService: LoadingService,
     private router: Router,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -66,7 +69,7 @@ export class PositionComponent implements OnInit, OnDestroy {
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
         },
         error: (error) => {
-          const errorMessage = error?.error?.message || error?.message || 'Failed to fetch positions';
+          const errorMessage = error?.error?.message || error?.message || this.translationService.instant('position.fetchError');
           this.toastr.error(errorMessage);
           console.error('Error fetching positions:', error);
         },
@@ -126,7 +129,9 @@ export class PositionComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(isActive: boolean): string {
-    return isActive ? 'Active' : 'Inactive';
+    return isActive 
+      ? this.translationService.instant('common.active') 
+      : this.translationService.instant('common.inactive');
   }
 
   viewPositionDetails(position: Position): void {
@@ -134,14 +139,20 @@ export class PositionComponent implements OnInit, OnDestroy {
   }
 
   addNewPosition(): void {
-    this.dialogService.openDialog(PositionFormComponent);
+    const dialogRef = this.dialogService.open(PositionFormComponent, {
+      data: {},
+      width: '600px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
 
-    const sub = this.dialogService.dialogState$.subscribe((state) => {
-      if (!state.isOpen) {
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
         this.fetchPositions();
       }
     });
-
-    this.subscriptions.push(sub);
   }
 }

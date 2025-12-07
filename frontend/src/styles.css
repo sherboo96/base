@@ -2,15 +2,204 @@
 @tailwind components;
 @tailwind utilities;
 
-.toast-success {
-  background-color: #28a745 !important;
-  color: #fff;
+@layer base {
+  /* RTL Support - Base styles */
+  html[dir="rtl"] {
+    direction: rtl;
+  }
+
+  html[dir="ltr"] {
+    direction: ltr;
+  }
+
+  /* RTL text alignment - Default to right alignment for RTL */
+  html[dir="rtl"] body,
+  html.rtl body {
+    text-align: right;
+  }
+
+  /* Default text alignment for RTL - align right for common text elements */
+  html[dir="rtl"] p,
+  html[dir="rtl"] span,
+  html[dir="rtl"] div,
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] h3,
+  html[dir="rtl"] h4,
+  html[dir="rtl"] h5,
+  html[dir="rtl"] h6,
+  html[dir="rtl"] label,
+  html[dir="rtl"] td,
+  html[dir="rtl"] th,
+  html[dir="rtl"] li,
+  html[dir="rtl"] a,
+  html.rtl p,
+  html.rtl span,
+  html.rtl div,
+  html.rtl h1,
+  html.rtl h2,
+  html.rtl h3,
+  html.rtl h4,
+  html.rtl h5,
+  html.rtl h6,
+  html.rtl label,
+  html.rtl td,
+  html.rtl th,
+  html.rtl li,
+  html.rtl a {
+    text-align: right;
+  }
+
+  /* Enhanced Global Scrollbar Styling - Cannot use Tailwind for pseudo-elements */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #c9ae81 #f9fafb;
+  }
+
+  *::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  *::-webkit-scrollbar-track {
+    @apply bg-gray-50 rounded-lg;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #c9ae81 0%, #d4bc92 100%);
+    @apply rounded-lg border-2 border-transparent bg-clip-padding transition-all duration-300;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #b89a6f 0%, #c9ae81 100%);
+    @apply bg-clip-padding shadow-sm;
+    box-shadow: 0 2px 4px rgba(201, 174, 129, 0.3);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, #a6895d 0%, #b89a6f 100%);
+    @apply bg-clip-padding;
+  }
+
+  *::-webkit-scrollbar-corner {
+    @apply bg-gray-50;
+  }
 }
-.toast-error {
-  background-color: #dc3545 !important;
-  color: #fff;
+
+@layer utilities {
+  /* RTL utility classes */
+  .rtl {
+    direction: rtl;
+  }
+
+  .ltr {
+    direction: ltr;
+  }
+
+  /* Override ALL text-left classes in RTL to align right */
+  html[dir="rtl"] .text-left,
+  html.rtl .text-left,
+  html[dir="rtl"] [class*="text-left"],
+  html.rtl [class*="text-left"] {
+    text-align: right;
+  }
+
+  /* Ensure text-center works correctly */
+  html[dir="rtl"] .text-center,
+  html.rtl .text-center {
+    text-align: center;
+  }
+
+  /* Ensure text-right works correctly in RTL */
+  html[dir="rtl"] .text-right,
+  html.rtl .text-right {
+    text-align: right;
+  }
+
+  /* RTL spacing adjustments */
+  html[dir="rtl"] .ml-2,
+  html.rtl .ml-2 {
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+
+  html[dir="rtl"] .mr-2,
+  html.rtl .mr-2 {
+    margin-right: 0;
+    margin-left: 0.5rem;
+  }
+
+  html[dir="rtl"] .ml-3,
+  html.rtl .ml-3 {
+    margin-left: 0;
+    margin-right: 0.75rem;
+  }
+
+  html[dir="rtl"] .mr-3,
+  html.rtl .mr-3 {
+    margin-right: 0;
+    margin-left: 0.75rem;
+  }
+
+  html[dir="rtl"] .ml-1,
+  html.rtl .ml-1 {
+    margin-left: 0;
+    margin-right: 0.25rem;
+  }
+
+  html[dir="rtl"] .mr-1,
+  html.rtl .mr-1 {
+    margin-right: 0;
+    margin-left: 0.25rem;
+  }
+
+  html[dir="rtl"] .pl-10,
+  html.rtl .pl-10 {
+    padding-left: 0;
+    padding-right: 2.5rem;
+  }
+
+  html[dir="rtl"] .pr-10,
+  html.rtl .pr-10 {
+    padding-right: 0;
+    padding-left: 2.5rem;
+  }
+
+  html[dir="rtl"] .pl-12,
+  html.rtl .pl-12 {
+    padding-left: 0;
+    padding-right: 3rem;
+  }
+
+  html[dir="rtl"] .pr-12,
+  html.rtl .pr-12 {
+    padding-right: 0;
+    padding-left: 3rem;
+  }
+
+  html[dir="rtl"] .left-0,
+  html.rtl .left-0 {
+    left: auto;
+    right: 0;
+  }
+
+  html[dir="rtl"] .right-0,
+  html.rtl .right-0 {
+    right: auto;
+    left: 0;
+  }
 }
-.toast-warning {
-  background-color: #ffc107 !important;
-  color: #212529;
+
+@layer components {
+  /* Toast notification styles - ngx-toastr library */
+  .toast-success {
+    @apply bg-green-600 text-white;
+  }
+
+  .toast-error {
+    @apply bg-red-600 text-white;
+  }
+
+  .toast-warning {
+    @apply bg-yellow-500 text-gray-900;
+  }
 }

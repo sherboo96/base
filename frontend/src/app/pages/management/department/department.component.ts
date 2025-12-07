@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import {
   Department,
   DepartmentService,
@@ -14,6 +15,7 @@ import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { DialogService } from '@ngneat/dialog';
 import { DepartmentFormComponent } from './department-form/department-form.component';
+import { TranslationService } from '../../../services/translation.service';
 
 @Component({
   selector: 'app-department',
@@ -21,6 +23,7 @@ import { DepartmentFormComponent } from './department-form/department-form.compo
   imports: [
     CommonModule,
     FormsModule,
+    TranslateModule,
     LoadingComponent,
     DepartmentFormComponent,
   ],
@@ -43,7 +46,8 @@ export class DepartmentComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     public loadingService: LoadingService,
     private router: Router,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -74,7 +78,7 @@ export class DepartmentComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.toastr.error(
-            error.error.message || 'Failed to fetch departments'
+            error.error.message || this.translationService.instant('department.fetchError')
           );
         },
       });
@@ -133,7 +137,9 @@ export class DepartmentComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(isActive: boolean): string {
-    return isActive ? 'Active' : 'Inactive';
+    return isActive 
+      ? this.translationService.instant('common.active') 
+      : this.translationService.instant('common.inactive');
   }
 
   viewDepartmentDetails(department: Department): void {

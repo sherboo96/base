@@ -1,7 +1,7 @@
-<nav class="w-full bg-white shadow-sm border-b border-gray-100 py-3 px-6">
-  <div class="max-w-full mx-auto flex justify-between items-center">
+<nav class="fixed top-0 left-[250px] right-0 rtl:left-0 rtl:right-[250px] w-[calc(100%-250px)] h-[72px] bg-white shadow-sm border-b border-gray-100 py-3 px-6 z-50 flex items-center">
+  <div class="w-full max-w-full mx-auto flex justify-between items-center rtl:flex-row-reverse">
     <!-- Left Section - Page Title and Breadcrumbs -->
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-4 rtl:space-x-reverse rtl:flex-row-reverse">
       <!-- Hamburger Menu Button (for mobile) -->
       <button
         class="lg:hidden text-gray-500 hover:text-[#c9ae81] transition-colors"
@@ -10,20 +10,20 @@
       </button>
 
       <!-- Page Title -->
-      <div>
-        <h1 class="text-lg font-semibold text-gray-800">
+      <div class="text-left rtl:text-right">
+        <h1 class="text-lg font-semibold text-gray-800 text-left rtl:text-right">
           {{ getCurrentPageTitle() }}
         </h1>
-        <div class="flex items-center text-xs text-gray-500">
-          <span>Management</span>
-          <i class="fas fa-chevron-right mx-2 text-[0.6rem]"></i>
+        <div class="flex items-center text-xs text-gray-500 rtl:flex-row-reverse">
+          <span>{{ 'navbar.management' | translate }}</span>
+          <i class="fas fa-chevron-right mx-2 rtl:rotate-180 text-[0.6rem]"></i>
           <span class="text-[#c9ae81]">{{ getCurrentPageTitle() }}</span>
         </div>
       </div>
     </div>
 
     <!-- Right Section - User Profile and Actions -->
-    <div class="flex items-center space-x-6">
+    <div class="flex items-center space-x-6 rtl:space-x-reverse rtl:flex-row-reverse">
       <!-- Notifications -->
       <!-- <div class="relative">
         <button
@@ -46,9 +46,14 @@
       </div> -->
 
       <!-- User Profile -->
-      <div class="flex items-center space-x-3 relative">
+      <div class="flex items-center space-x-3 rtl:space-x-reverse rtl:flex-row-reverse relative">
+        <!-- Language Switcher -->
+        <div class="hidden md:block">
+          <app-language-switcher></app-language-switcher>
+        </div>
+        
         <!-- User Info -->
-        <div class="text-right hidden md:block">
+        <div class="text-right rtl:text-right hidden md:block">
           <span class="block text-base font-semibold text-gray-800">{{
             name
           }}</span>
@@ -59,7 +64,7 @@
         <div class="relative">
           <button
             (click)="toggleDropdown()"
-            class="relative cursor-pointer flex items-center space-x-1 focus:outline-none group"
+            class="relative cursor-pointer flex items-center space-x-1 rtl:space-x-reverse focus:outline-none group"
           >
             <div
               *ngIf="!avatarImage"
@@ -79,28 +84,28 @@
           <!-- Dropdown Menu -->
           <div
             *ngIf="dropdownOpen"
-            class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 border border-gray-100 py-1 dropdown-animation"
+            class="absolute right-0 rtl:right-auto rtl:left-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 border border-gray-100 py-1 dropdown-animation"
           >
-            <div class="p-3 border-b border-gray-100">
+            <div class="p-3 border-b border-gray-100 text-left rtl:text-right">
               <p class="text-sm font-semibold text-gray-800">{{ name }}</p>
               <p class="text-xs text-gray-500">{{ role }}</p>
             </div>
 
             <a
               (click)="routeToProfile()"
-              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#c9ae81] cursor-pointer"
+              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#c9ae81] cursor-pointer rtl:flex-row-reverse"
             >
-              <i class="fas fa-user-circle w-5 mr-2 text-gray-400"></i>
-              <span>My Profile</span>
+              <i class="fas fa-user-circle w-5 mr-2 rtl:mr-0 rtl:ml-2 text-gray-400"></i>
+              <span>{{ 'navbar.myProfile' | translate }}</span>
             </a>
 
             <div class="border-t border-gray-100 my-1"></div>
             <button
               (click)="logout()"
-              class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              class="w-full text-left rtl:text-right flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 rtl:flex-row-reverse"
             >
-              <i class="fas fa-sign-out-alt w-5 mr-2"></i>
-              <span>Logout</span>
+              <i class="fas fa-sign-out-alt w-5 mr-2 rtl:mr-0 rtl:ml-2"></i>
+              <span>{{ 'navbar.logout' | translate }}</span>
             </button>
           </div>
         </div>

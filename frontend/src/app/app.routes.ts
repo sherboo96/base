@@ -16,6 +16,9 @@ import { RolePermissionsComponent } from './pages/management/role-permissions/ro
 import { PermissionGuard } from './guards/permission.guard';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { UserRolesComponent } from './pages/management/user-roles/user-roles.component';
+import { LocationComponent } from './pages/management/location/location.component';
+import { InstructorComponent } from './pages/management/instructor/instructor.component';
+import { InstitutionComponent } from './pages/management/institution/institution.component';
 
 export const routes: Routes = [
   {
@@ -74,6 +77,33 @@ export const routes: Routes = [
     data: {
       redirectIfLoggedIn: false,
       permission: 'JOB_TITLES_VIEW',
+    },
+  },
+  {
+    path: 'management/location',
+    component: LocationComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'LOCATIONS_VIEW',
+    },
+  },
+  {
+    path: 'management/instructor',
+    component: InstructorComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'INSTRUCTORS_VIEW',
+    },
+  },
+  {
+    path: 'management/institution',
+    component: InstitutionComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'INSTITUTIONS_VIEW',
     },
   },
   {

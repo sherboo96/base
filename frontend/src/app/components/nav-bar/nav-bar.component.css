@@ -60,3 +60,35 @@ button:active {
 .border-2:hover {
   box-shadow: 0 0 0 2px rgba(201, 174, 129, 0.3);
 }
+
+/* Navbar positioning - now handled by Tailwind classes in HTML */
+
+/* RTL text alignment */
+html[dir="rtl"] nav.fixed h1,
+html.rtl nav.fixed h1 {
+  text-align: right !important;
+}
+
+html[dir="rtl"] nav.fixed .text-left,
+html.rtl nav.fixed .text-left {
+  text-align: right !important;
+}
+
+/* RTL flex direction for main container */
+html[dir="rtl"] nav.fixed > div,
+html.rtl nav.fixed > div {
+  flex-direction: row-reverse !important;
+}
+
+/* RTL user info alignment */
+html[dir="rtl"] nav.fixed .text-right,
+html.rtl nav.fixed .text-right {
+  text-align: right !important;
+}
+
+/* RTL - Ensure all text elements align right */
+html[dir="rtl"] nav.fixed span,
+html.rtl nav.fixed span {
+  text-align: right;
+  display: inline-block;
+}

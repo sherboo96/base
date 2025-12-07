@@ -7,70 +7,93 @@ import {
   Validators,
 } from '@angular/forms';
 import { PositionService } from '../../../../services/position.service';
-import { DepartmentService } from '../../../../services/department.service';
-import { DialogService } from '../../../../services/dialog.service';
+import { DialogRef } from '@ngneat/dialog';
 import { ToastrService } from 'ngx-toastr';
-import { Department } from '../../../../services/department.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { TranslationService } from '../../../../services/translation.service';
 
 @Component({
   selector: 'app-position-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   templateUrl: './position-form.component.html',
 })
 export class PositionFormComponent implements OnInit {
   form: FormGroup;
-  departments: Department[] = [];
   isSubmitting = false;
   isEdit = false;
 
   constructor(
     private fb: FormBuilder,
     private positionService: PositionService,
-    private departmentService: DepartmentService,
-    private dialogService: DialogService,
-    private toastr: ToastrService
+    private dialogRef: DialogRef<{ position?: any }>,
+    private toastr: ToastrService,
+    private translationService: TranslationService
   ) {
     this.form = this.fb.group({
-      title: ['', Validators.required],
-      departmentId: ['', Validators.required],
+      nameEn: ['', Validators.required],
+      nameAr: [''],
+      code: [''],
     });
+
+    if (this.dialogRef.data?.position) {
+      this.isEdit = true;
+      const position = this.dialogRef.data.position;
+      this.form.patchValue({
+        nameEn: position.nameEn,
+        nameAr: position.nameAr || '',
+        code: position.code || '',
+      });
+    }
   }
 
   ngOnInit(): void {
-    this.loadDepartments();
-  }
-
-  loadDepartments(): void {
-    this.departmentService.getDepartments(1, 100).subscribe({
-      next: (response) => {
-        this.departments = response.result;
-      },
-      error: (error) => {
-        this.toastr.error(error.error.message || 'Failed to load departments');
-      },
-    });
   }
 
   onSubmit(): void {
     if (this.form.invalid) {
+      this.toastr.error(this.translationService.instant('position.formInvalid'));
       return;
     }
 
     this.isSubmitting = true;
-    this.positionService.createPosition(this.form.value).subscribe({
-      next: () => {
-        this.toastr.success('Position added successfully');
-        this.dialogService.closeDialog();
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        this.toastr.error(error.error.message || 'Failed to add position');
-      },
-    });
+    const formData = {
+      nameEn: this.form.value.nameEn,
+      nameAr: this.form.value.nameAr || this.form.value.nameEn,
+      code: this.form.value.code || null,
+    };
+    
+    if (this.isEdit) {
+      const positionId = this.dialogRef.data.position.id;
+      this.positionService.updatePosition(positionId, formData).subscribe({
+        next: () => {
+          this.toastr.success(this.translationService.instant('position.updateSuccess'));
+          this.dialogRef.close(true);
+        },
+        error: (error) => {
+          this.toastr.error(
+            error.error?.message || this.translationService.instant('position.updateError')
+          );
+          this.isSubmitting = false;
+        },
+      });
+    } else {
+      this.positionService.createPosition(formData).subscribe({
+        next: () => {
+          this.toastr.success(this.translationService.instant('position.createSuccess'));
+          this.dialogRef.close(true);
+        },
+        error: (error) => {
+          this.toastr.error(
+            error.error?.message || this.translationService.instant('position.createError')
+          );
+          this.isSubmitting = false;
+        },
+      });
+    }
   }
 
   onCancel(): void {
-    this.dialogService.closeDialog();
+    this.dialogRef.close(false);
   }
 }

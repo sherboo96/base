@@ -1,5 +1,5 @@
 <div
-  class="h-screen flex flex-col bg-white shadow-lg border-r border-gray-100 relative"
+  class="side-menu-container h-screen flex flex-col bg-white shadow-lg border-r rtl:border-r-0 rtl:border-l border-gray-100 relative z-50"
   style="width: 250px;"
 >
   <!-- Top Logo Section -->
@@ -17,19 +17,19 @@
           class="w-24 h-24 object-contain transition-all duration-300 hover:scale-105"
         />
       </div>
-      <h1 class="mt-3 text-lg font-semibold text-gray-800">Ministry of Oil</h1>
-      <p class="text-xs text-gray-500">Users Management System</p>
+      <h1 class="mt-3 text-lg font-semibold text-gray-800 text-center rtl:text-right">{{ 'sidemenu.ministryOfOil' | translate }}</h1>
+      <p class="text-xs text-gray-500 text-center rtl:text-right">{{ 'sidemenu.usersManagementSystem' | translate }}</p>
     </a>
   </div>
 
   <!-- Menu Items -->
   <div class="flex-grow overflow-y-auto custom-scrollbar py-2 px-3">
     <!-- Main Navigation Section -->
-    <div class="mb-4 pl-3">
+    <div class="mb-4 pl-3 rtl:pl-0 rtl:pr-3">
       <h2
-        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold"
+        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
       >
-        Main Navigation
+        {{ 'sidemenu.mainNavigation' | translate }}
       </h2>
     </div>
 
@@ -37,7 +37,7 @@
       <!-- Dashboard -->
       <li>
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/dashboard'),
@@ -55,24 +55,24 @@
             <i class="material-icons text-lg">dashboard</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/dashboard'),
               'text-gray-700': !isActiveRoute('/dashboard')
             }"
           >
-            Dashboard
+            {{ 'sidemenu.dashboard' | translate }}
           </span>
         </a>
       </li>
     </ul>
 
     <!-- Management Section -->
-    <div class="my-4 pl-3">
+    <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3">
       <h2
-        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold"
+        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
       >
-        Management
+        {{ 'sidemenu.management' | translate }}
       </h2>
     </div>
 
@@ -80,7 +80,7 @@
       <!-- Organization -->
       <li *ngIf="hasPermission('ORGANIZATIONS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/organization'),
@@ -101,13 +101,13 @@
             <i class="material-icons text-lg">business</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/management/organization'),
               'text-gray-700': !isActiveRoute('/management/organization')
             }"
           >
-            Organization
+            {{ 'sidemenu.organization' | translate }}
           </span>
         </a>
       </li>
@@ -115,7 +115,7 @@
       <!-- Department -->
       <li *ngIf="hasPermission('DEPARTMENTS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/department'),
@@ -136,13 +136,13 @@
             <i class="material-icons text-lg">account_balance</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/management/department'),
               'text-gray-700': !isActiveRoute('/management/department')
             }"
           >
-            Department
+            {{ 'sidemenu.department' | translate }}
           </span>
         </a>
       </li>
@@ -150,7 +150,7 @@
       <!-- Positions -->
       <li *ngIf="hasPermission('JOB_TITLES_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/positions'),
@@ -171,13 +171,13 @@
             <i class="material-icons text-lg">work</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/management/positions'),
               'text-gray-700': !isActiveRoute('/management/positions')
             }"
           >
-            Positions
+            {{ 'sidemenu.positions' | translate }}
           </span>
         </a>
       </li>
@@ -185,7 +185,7 @@
       <!-- Job Titles -->
       <li *ngIf="hasPermission('JOB_TITLES_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/job-titles'),
@@ -206,29 +206,134 @@
             <i class="material-icons text-lg">badge</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/management/job-titles'),
               'text-gray-700': !isActiveRoute('/management/job-titles')
             }"
           >
-            Job Titles
+            {{ 'sidemenu.jobTitles' | translate }}
+          </span>
+        </a>
+      </li>
+
+      <!-- Location -->
+      <li *ngIf="hasPermission('LOCATIONS_VIEW')">
+        <a
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          [ngClass]="{
+            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+              isActiveRoute('/management/location'),
+            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+              '/management/location'
+            )
+          }"
+          (click)="navigateToLocation()"
+        >
+          <div
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            [ngClass]="{
+              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+                '/management/location'
+              )
+            }"
+          >
+            <i class="material-icons text-lg">location_on</i>
+          </div>
+          <span
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            [ngClass]="{
+              'text-[#c9ae81]': isActiveRoute('/management/location'),
+              'text-gray-700': !isActiveRoute('/management/location')
+            }"
+          >
+            {{ 'sidemenu.location' | translate }}
+          </span>
+        </a>
+      </li>
+
+      <!-- Instructor -->
+      <li *ngIf="hasPermission('INSTRUCTORS_VIEW')">
+        <a
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          [ngClass]="{
+            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+              isActiveRoute('/management/instructor'),
+            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+              '/management/instructor'
+            )
+          }"
+          (click)="navigateToInstructor()"
+        >
+          <div
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            [ngClass]="{
+              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+                '/management/instructor'
+              )
+            }"
+          >
+            <i class="material-icons text-lg">school</i>
+          </div>
+          <span
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            [ngClass]="{
+              'text-[#c9ae81]': isActiveRoute('/management/instructor'),
+              'text-gray-700': !isActiveRoute('/management/instructor')
+            }"
+          >
+            {{ 'sidemenu.instructor' | translate }}
+          </span>
+        </a>
+      </li>
+
+      <!-- Institution -->
+      <li *ngIf="hasPermission('INSTITUTIONS_VIEW')">
+        <a
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          [ngClass]="{
+            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+              isActiveRoute('/management/institution'),
+            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+              '/management/institution'
+            )
+          }"
+          (click)="navigateToInstitution()"
+        >
+          <div
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            [ngClass]="{
+              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+                '/management/institution'
+              )
+            }"
+          >
+            <i class="material-icons text-lg">account_balance</i>
+          </div>
+          <span
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            [ngClass]="{
+              'text-[#c9ae81]': isActiveRoute('/management/institution'),
+              'text-gray-700': !isActiveRoute('/management/institution')
+            }"
+          >
+            {{ 'sidemenu.institution' | translate }}
           </span>
         </a>
       </li>
 
       <!-- User Management Section -->
-      <div class="my-4 pl-3">
+      <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3">
         <h2
-          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold"
+          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
         >
-          User Management
+          {{ 'sidemenu.userManagement' | translate }}
         </h2>
       </div>
       <!-- Users -->
       <li *ngIf="hasPermission('USERS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/users'),
@@ -246,30 +351,30 @@
             <i class="material-icons text-lg">people</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/management/users'),
               'text-gray-700': !isActiveRoute('/management/users')
             }"
           >
-            Users
+            {{ 'sidemenu.users' | translate }}
           </span>
         </a>
       </li>
 
       <!-- Role Management Section -->
-      <div class="my-4 pl-3">
+      <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3">
         <h2
-          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold"
+          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
         >
-          Role Management
+          {{ 'sidemenu.roleManagement' | translate }}
         </h2>
       </div>
 
       <!-- Roles -->
       <li *ngIf="hasPermission('ROLES_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group"
+          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
             'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
               isActiveRoute('/management/roles'),
@@ -287,13 +392,13 @@
             <i class="material-icons text-lg">supervisor_account</i>
           </div>
           <span
-            class="ml-3 text-sm"
+            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
             [ngClass]="{
               'text-[#c9ae81]': isActiveRoute('/management/roles'),
               'text-gray-700': !isActiveRoute('/management/roles')
             }"
           >
-            Roles
+            {{ 'sidemenu.roles' | translate }}
           </span>
         </a>
       </li>
@@ -302,9 +407,9 @@
   </div>
 
   <!-- Footer with year -->
-  <div class="py-3 px-4 border-t border-gray-100 text-center">
+  <div class="py-3 px-4 border-t border-gray-100 text-center rtl:text-right">
     <p class="text-xs text-gray-500">
-      © {{ currentYear }} Ministry of Oil, Kuwait
+      {{ 'sidemenu.copyright' | translate: {year: currentYear} }}
     </p>
   </div>
 </div>

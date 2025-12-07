@@ -1,21 +1,153 @@
-/* Input validation styles */
-input.ng-invalid.ng-touched {
+/* Form Group Styles */
+.form-group {
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s ease-in-out;
+}
+
+/* Input Wrapper */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Input Icon Styles */
+.input-icon-left,
+.input-icon-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.input-icon-left {
+  left: 0;
+  width: 3rem;
+}
+
+.input-icon-right {
+  right: 0;
+  width: 3rem;
+}
+
+.input-icon-left i,
+.input-icon-right i {
+  transition: color 0.2s ease-in-out;
+}
+
+/* RTL Support for Icons */
+html[dir="rtl"] .input-icon-left,
+html.rtl .input-icon-left,
+.rtl .input-icon-left,
+.input-wrapper[dir="rtl"] .input-icon-left {
+  left: auto !important;
+  right: 0 !important;
+}
+
+html[dir="rtl"] .input-icon-right,
+html.rtl .input-icon-right,
+.rtl .input-icon-right,
+.input-wrapper[dir="rtl"] .input-icon-right {
+  right: auto !important;
+  left: 0 !important;
+}
+
+/* Form Input Base Styles */
+.form-input {
+  width: 100%;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 3rem;
+  padding-right: 3rem;
+  color: #111827;
+  background-color: #ffffff;
+  border: 2px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+.form-input:focus {
+  border-color: #c9ae81;
+  box-shadow: 0 0 0 3px rgba(201, 174, 129, 0.1);
+}
+
+.form-input:focus:not(.input-error):not(.input-success) {
+  box-shadow: 0 0 0 3px rgba(201, 174, 129, 0.2);
+}
+
+/* Input States */
+.input-error {
   border-color: #ef4444;
-  background-color: #fef2f2;
+  background-color: #ffffff;
 }
 
-input.ng-valid.ng-touched {
+.input-error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-success {
   border-color: #10b981;
-  background-color: #f0fdf4;
+  background-color: #ffffff;
 }
 
-.error-message {
+.input-success:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.input-disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Validation Icons */
+.validation-icon {
+  font-size: 0.875rem;
   animation: fadeIn 0.3s ease-in-out;
-  max-height: 100px;
-  transition: max-height 0.3s ease-out;
-  overflow: hidden;
 }
 
+/* Error Message */
+.error-message {
+  display: flex;
+  align-items: center;
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  color: #059669;
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -25,6 +157,19 @@ input.ng-valid.ng-touched {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Input validation styles (fallback) */
+input.ng-invalid.ng-touched {
+  border-color: #ef4444;
+}
+
+input.ng-valid.ng-touched {
+  border-color: #10b981;
 }
 
 /* Custom checkbox styling */

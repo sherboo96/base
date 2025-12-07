@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import {
   JobTitle,
   JobTitleService,
@@ -15,11 +16,12 @@ import { Router } from '@angular/router';
 import { DialogService } from '@ngneat/dialog';
 import { JobTitleFormComponent } from './job-title-form/job-title-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
+import { TranslationService } from '../../../services/translation.service';
 
 @Component({
   selector: 'app-job-title',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, LoadingComponent],
   templateUrl: './job-title.component.html',
 })
 export class JobTitleComponent implements OnInit, OnDestroy {
@@ -38,7 +40,8 @@ export class JobTitleComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     public loadingService: LoadingService,
     private router: Router,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -69,7 +72,7 @@ export class JobTitleComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           const errorMessage =
-            error?.error?.message || error?.message || 'Failed to fetch job titles';
+            error?.error?.message || error?.message || this.translationService.instant('jobTitle.fetchError');
           this.toastr.error(errorMessage);
           console.error('Error fetching job titles:', error);
         },
@@ -131,7 +134,9 @@ export class JobTitleComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(isActive: boolean): string {
-    return isActive ? 'Active' : 'Inactive';
+    return isActive 
+      ? this.translationService.instant('common.active') 
+      : this.translationService.instant('common.inactive');
   }
 
   addNewJobTitle(): void {
@@ -173,10 +178,11 @@ export class JobTitleComponent implements OnInit, OnDestroy {
   deleteJobTitle(jobTitle: JobTitle): void {
     const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
       data: {
-        title: 'Delete Job Title',
-        message: `Are you sure you want to delete "${jobTitle.nameEn}"? This action cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
+        type: 'danger',
+        title: this.translationService.instant('jobTitle.deleteTitle'),
+        message: this.translationService.instant('jobTitle.deleteMessage', { name: jobTitle.nameEn }),
+        confirmText: this.translationService.instant('common.delete'),
+        cancelText: this.translationService.instant('common.cancel'),
       },
       width: '400px',
       enableClose: true,
@@ -190,13 +196,13 @@ export class JobTitleComponent implements OnInit, OnDestroy {
         this.loadingService.show();
         this.jobTitleService.deleteJobTitle(jobTitle.id).subscribe({
           next: () => {
-            this.toastr.success('Job title deleted successfully');
+            this.toastr.success(this.translationService.instant('jobTitle.deleteSuccess'));
             this.loadingService.hide();
             this.fetchJobTitles();
           },
           error: (error) => {
             this.toastr.error(
-              error.error?.message || 'Failed to delete job title'
+              error.error?.message || this.translationService.instant('jobTitle.deleteError')
             );
             this.loadingService.hide();
           },

@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using UMS.Models;
 using UMS.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -174,6 +175,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
+
+// Configure static files to serve wwwroot
+var wwwrootPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+if (!Directory.Exists(wwwrootPath))
+{
+    Directory.CreateDirectory(wwwrootPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(wwwrootPath),
+    RequestPath = ""
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

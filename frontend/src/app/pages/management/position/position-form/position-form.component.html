@@ -20,55 +20,35 @@
       </div>
       <div>
         <h2 class="text-2xl font-bold text-gray-800">
-          {{ isEdit ? "Edit Position" : "Add New Position" }}
+          {{ isEdit ? ('position.editPosition' | translate) : ('position.addPosition' | translate) }}
         </h2>
         <p class="text-sm text-gray-500 mt-1">
           {{
             isEdit
-              ? "Update position details"
-              : "Fill in the details to create a new position"
+              ? ('position.editPositionDescription' | translate)
+              : ('position.addPositionDescription' | translate)
           }}
         </p>
       </div>
     </div>
   </div>
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-8">
-    <!-- Position Title -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+    <!-- Name (English) -->
     <div class="space-y-2">
-      <label for="title" class="block text-sm font-medium text-gray-700">
-        Position Title
+      <label for="nameEn" class="block text-sm font-medium text-gray-700">
+        {{ 'position.nameEnglish' | translate }}
         <span class="text-red-500">*</span>
       </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-        </div>
-        <input
-          type="text"
-          id="title"
-          formControlName="title"
-          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
-          placeholder="Enter position title"
-        />
-      </div>
+      <input
+        type="text"
+        id="nameEn"
+        formControlName="nameEn"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        [placeholder]="'position.nameEnglishPlaceholder' | translate"
+      />
       <div
-        *ngIf="form.get('title')?.invalid && form.get('title')?.touched"
+        *ngIf="form.get('nameEn')?.invalid && form.get('nameEn')?.touched"
         class="flex items-center text-sm text-red-600"
       >
         <svg
@@ -85,87 +65,39 @@
             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        Position title is required
+        {{ 'position.nameEnglishRequired' | translate }}
       </div>
     </div>
 
-    <!-- Department Selection -->
+    <!-- Name (Arabic) -->
     <div class="space-y-2">
-      <label for="departmentId" class="block text-sm font-medium text-gray-700">
-        Department
-        <span class="text-red-500">*</span>
+      <label for="nameAr" class="block text-sm font-medium text-gray-700">
+        {{ 'position.nameArabic' | translate }}
       </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-            />
-          </svg>
-        </div>
-        <select
-          id="departmentId"
-          formControlName="departmentId"
-          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200 appearance-none"
-        >
-          <option value="">Select a department</option>
-          <option *ngFor="let dept of departments" [value]="dept.id">
-            {{ dept.nameEn }} ({{ dept.organization?.name || '' }})
-          </option>
-        </select>
-        <div
-          class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
-      </div>
-      <div
-        *ngIf="
-          form.get('departmentId')?.invalid && form.get('departmentId')?.touched
-        "
-        class="flex items-center text-sm text-red-600"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 mr-1"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Department is required
-      </div>
+      <input
+        type="text"
+        id="nameAr"
+        formControlName="nameAr"
+        dir="rtl"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        [placeholder]="'position.nameArabicPlaceholder' | translate"
+      />
     </div>
+
+    <!-- Code -->
+    <div class="space-y-2">
+      <label for="code" class="block text-sm font-medium text-gray-700">
+        {{ 'position.code' | translate }}
+      </label>
+      <input
+        type="text"
+        id="code"
+        formControlName="code"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        [placeholder]="'position.codePlaceholder' | translate"
+      />
+    </div>
+
 
     <!-- Form Actions -->
     <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
@@ -174,7 +106,7 @@
         (click)="onCancel()"
         class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
       >
-        Cancel
+        {{ 'common.cancel' | translate }}
       </button>
       <button
         type="submit"
@@ -196,7 +128,7 @@
               d="M5 13l4 4L19 7"
             />
           </svg>
-          {{ isEdit ? "Update Position" : "Create Position" }}
+          {{ isEdit ? ('position.update' | translate) : ('position.create' | translate) }}
         </span>
         <span *ngIf="isSubmitting" class="flex items-center">
           <svg
@@ -219,7 +151,7 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          {{ isEdit ? "Updating..." : "Creating..." }}
+          {{ isEdit ? ('position.updating' | translate) : ('position.creating' | translate) }}
         </span>
       </button>
     </div>

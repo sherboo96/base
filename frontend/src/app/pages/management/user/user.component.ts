@@ -1,17 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { UserService } from '../../../services/user.service';
 import { DialogService, DialogConfig } from '@ngneat/dialog';
 import { LoadingService } from '../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
 import { UserFormComponent } from './user-form/user-form.component';
 import { LoadingComponent } from '../../../components/loading/loading.component';
+import { TranslationService } from '../../../services/translation.service';
 
 @Component({
   selector: 'app-user',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, LoadingComponent],
   templateUrl: './user.component.html',
 })
 export class UserComponent implements OnInit {
@@ -26,7 +28,8 @@ export class UserComponent implements OnInit {
     private userService: UserService,
     private dialogService: DialogService,
     public loadingService: LoadingService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -42,7 +45,7 @@ export class UserComponent implements OnInit {
         this.loadingService.hide();
       },
       error: (error) => {
-        this.toastr.error(error.error.message || 'Failed to load users');
+        this.toastr.error(error.error.message || this.translationService.instant('user.fetchError'));
         this.loadingService.hide();
       },
     });
@@ -98,12 +101,12 @@ export class UserComponent implements OnInit {
     this.loadingService.show();
     this.userService.unlockUser(user.id).subscribe({
       next: (response) => {
-        this.toastr.success(response.message, 'Success');
+        this.toastr.success(response.message || this.translationService.instant('user.unlockSuccess'));
         this.loadUsers();
       },
       error: (error) => {
         console.error('Error unlocking user:', error);
-        this.toastr.error('Failed to unlock user', 'Error');
+        this.toastr.error(error.error?.message || this.translationService.instant('user.unlockError'));
         this.loadingService.hide();
       },
     });
@@ -113,12 +116,12 @@ export class UserComponent implements OnInit {
     this.loadingService.show();
     this.userService.toggleUserStatus(user.id).subscribe({
       next: (response) => {
-        this.toastr.success(response.message, 'Success');
+        this.toastr.success(response.message || this.translationService.instant('user.toggleStatusSuccess'));
         this.loadUsers();
       },
       error: (error) => {
         console.error('Error toggling user status:', error);
-        this.toastr.error('Failed to toggle user status', 'Error');
+        this.toastr.error(error.error?.message || this.translationService.instant('user.toggleStatusError'));
         this.loadingService.hide();
       },
     });

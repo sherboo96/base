@@ -1,0 +1,314 @@
+<div class="p-6 mx-auto max-w-full">
+  <!-- Add app-loading component for global loading -->
+  <app-loading></app-loading>
+
+  <!-- Dashboard-style Loading Spinner (local component loading) -->
+  <div
+    *ngIf="isLoading && !instructors.length"
+    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
+    id="custom-loader"
+  >
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="mt-4 text-accent font-medium">{{ 'instructor.loadingInstructors' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Page Header -->
+  <div class="mb-6 flex justify-between items-center">
+    <div>
+      <h1 class="text-3xl font-bold text-darkGray mb-1 flex items-center gap-3">
+        <i class="fas fa-user-tie text-accent"></i>
+        <span>{{ 'instructor.title' | translate }}</span>
+      </h1>
+      <p class="text-sm text-gray-600">
+        {{ 'instructor.subtitle' | translate }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+    <div class="bg-gradient-to-r from-accent to-accentDark px-4 py-2">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-filter text-white text-sm"></i>
+        <h2 class="text-sm font-semibold text-white">{{ 'instructor.filter' | translate }}</h2>
+      </div>
+    </div>
+    <div class="p-5 bg-gray-50">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+        <!-- Search Input -->
+        <div class="lg:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <i class="fas fa-search mr-1.5 text-accent"></i>{{ 'instructor.search' | translate }}
+          </label>
+          <div class="relative">
+            <div
+              class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+            >
+              <i class="fas fa-search text-gray-400"></i>
+            </div>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onSearch()"
+              [placeholder]="'instructor.searchPlaceholder' | translate"
+              class="w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white shadow-sm"
+            />
+          </div>
+        </div>
+
+        <!-- Institution Filter -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <i class="fas fa-university mr-2 text-accent"></i>{{ 'instructor.institution' | translate }}
+          </label>
+          <div class="relative">
+            <select
+              [(ngModel)]="selectedInstitution"
+              (change)="onFilterChange()"
+              class="appearance-none w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer bg-white shadow-sm transition-all duration-200"
+            >
+              <option [value]="null">{{ 'instructor.allInstitutions' | translate }}</option>
+              <option *ngFor="let inst of institutions" [value]="inst.id">
+                {{ inst.name }}
+              </option>
+            </select>
+            <div
+              class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+            >
+              <i class="fas fa-chevron-down text-gray-400"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button
+          (click)="clearFilters()"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+        >
+          <i class="fas fa-times mr-2"></i>{{ 'common.clearFilters' | translate }}
+        </button>
+        <button
+          (click)="onSearch()"
+          class="px-6 py-2 bg-gradient-to-r from-accent to-accentDark text-white rounded-lg hover:from-accentDark hover:to-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
+        >
+          <i class="fas fa-search"></i>
+          <span>{{ 'common.search' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructors Table Card -->
+  <div
+    class="instructor-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
+  >
+    <div
+      class="bg-gradient-to-r from-accent to-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
+    >
+      <!-- Table Header -->
+      <div class="flex items-center gap-3">
+        <i class="fas fa-user-tie text-white text-xl"></i>
+        <h3 class="text-lg font-semibold text-white">{{ 'instructor.title' | translate }}</h3>
+        <span
+          *ngIf="totalItems > 0"
+          class="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full"
+        >
+          {{ totalItems }} {{ totalItems === 1 ? ('instructor.instructor' | translate) : ('instructor.instructors' | translate) }}
+        </span>
+      </div>
+      <!-- Add Instructor Button -->
+      <button
+        (click)="addNewInstructor()"
+        class="bg-white hover:bg-gray-50 text-accent px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
+      >
+        <i class="fas fa-plus-circle"></i>
+        <span>{{ 'instructor.addInstructor' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="instructors.length === 0 && !isLoading"
+      class="flex flex-col items-center justify-center py-16 px-4 text-center"
+    >
+      <div class="mb-4">
+        <i class="fas fa-user-tie text-gray-300 text-6xl"></i>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">
+        {{ 'instructor.noInstructorsFound' | translate }}
+      </h3>
+      <p class="text-gray-500 mb-6 max-w-md">
+        {{ 'instructor.noInstructorsMatching' | translate }}
+      </p>
+      <button
+        (click)="addNewInstructor()"
+        class="px-6 py-3 bg-gradient-to-r from-accent to-accentDark text-white rounded-lg hover:from-accentDark hover:to-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2"
+      >
+        <i class="fas fa-plus-circle"></i>
+        <span>{{ 'instructor.addInstructor' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="instructors.length > 0" class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'instructor.profileImage' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'instructor.nameEn' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'instructor.nameAr' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'instructor.email' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'instructor.phone' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'instructor.institution' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'common.status' | translate }}
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              {{ 'common.actions' | translate }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let instructor of instructors" class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div *ngIf="instructor.profileImage; else noImage" class="relative">
+                  <img
+                    [src]="attachmentService.getFileUrl(instructor.profileImage)"
+                    [alt]="instructor.nameEn"
+                    class="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
+                    (error)="handleImageError($event)"
+                  />
+                  <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center hidden">
+                    <i class="fas fa-user text-gray-400"></i>
+                  </div>
+                </div>
+                <ng-template #noImage>
+                  <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-user text-gray-400"></i>
+                  </div>
+                </ng-template>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">{{ instructor.nameEn }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900" dir="rtl">{{ instructor.nameAr }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">{{ instructor.email }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">{{ instructor.phone || '-' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900">{{ instructor.institution?.name || '-' }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                [class]="getStatusClass(instructor.isActive)"
+                class="px-2 py-1 text-xs font-semibold rounded-full"
+              >
+                {{ getStatusText(instructor.isActive) }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex items-center gap-2">
+                <button
+                  (click)="editInstructor(instructor)"
+                  class="text-accent hover:text-accentDark transition-colors"
+                  [title]="'common.edit' | translate"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button
+                  (click)="deleteInstructor(instructor)"
+                  class="text-red-600 hover:text-red-800 transition-colors"
+                  [title]="'common.delete' | translate"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="instructors.length > 0"
+      class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4"
+    >
+      <div class="flex items-center gap-2 text-sm text-gray-700">
+        <span>{{ 'common.showing' | translate: { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems } }}</span>
+        <select
+          [(ngModel)]="pageSize"
+          (change)="onPageSizeChange()"
+          class="ml-2 border border-gray-300 rounded px-2 py-1 text-sm"
+        >
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+        <span>{{ 'common.perPage' | translate }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          (click)="goToPage(1)"
+          [disabled]="currentPage === 1"
+          class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fas fa-angle-double-left"></i>
+        </button>
+        <button
+          (click)="goToPage(currentPage - 1)"
+          [disabled]="currentPage === 1"
+          class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fas fa-angle-left"></i>
+        </button>
+        <span
+          *ngFor="let page of getPageNumbers()"
+          (click)="goToPage(page)"
+          [class.bg-accent]="page === currentPage"
+          [class.text-white]="page === currentPage"
+          [class.text-gray-700]="page !== currentPage"
+          class="px-3 py-1 text-sm border border-gray-300 rounded cursor-pointer hover:bg-gray-100"
+        >
+          {{ page }}
+        </span>
+        <button
+          (click)="goToPage(currentPage + 1)"
+          [disabled]="currentPage === totalPages"
+          class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fas fa-angle-right"></i>
+        </button>
+        <button
+          (click)="goToPage(totalPages)"
+          [disabled]="currentPage === totalPages"
+          class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fas fa-angle-double-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

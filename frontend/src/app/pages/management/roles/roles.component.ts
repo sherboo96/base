@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { UserService } from '../../../services/user.service';
 import { DialogService } from '@ngneat/dialog';
@@ -10,11 +11,12 @@ import { LoadingComponent } from '../../../components/loading/loading.component'
 import { BehaviorSubject } from 'rxjs';
 import { RoleFormComponent } from './role-form/role-form.component';
 import { RolePermissionsComponent } from '../role-permissions/role-permissions.component';
+import { TranslationService } from '../../../services/translation.service';
 
 @Component({
   selector: 'app-roles',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, LoadingComponent],
   templateUrl: './roles.component.html',
 })
 export class RolesComponent implements OnInit {
@@ -31,7 +33,8 @@ export class RolesComponent implements OnInit {
     private dialogService: DialogService,
     public loadingService: LoadingService,
     private toastr: ToastrService,
-    private router: Router
+    private router: Router,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -47,7 +50,7 @@ export class RolesComponent implements OnInit {
         this.isLoading$.next(false);
       },
       error: (error) => {
-        this.toastr.error('Failed to load roles');
+        this.toastr.error(error.error?.message || this.translationService.instant('role.fetchError'));
         this.isLoading$.next(false);
       },
     });

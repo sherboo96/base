@@ -9,25 +9,6 @@ export interface Position {
   nameAr: string;
   title?: string; // For backward compatibility
   code?: string;
-  description?: string;
-  departmentId?: number;
-  department: {
-    id: number;
-    nameEn: string;
-    nameAr: string;
-    organizationId: number;
-    organization: {
-      id: number;
-      name: string;
-      code: string;
-      isActive: boolean;
-      isDeleted: boolean;
-      createdOn: string;
-    };
-    isActive: boolean;
-    isDeleted: boolean;
-    createdOn: string;
-  };
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;
@@ -54,18 +35,34 @@ export class PositionService {
   constructor(private http: HttpClient) {}
 
   getPositions(page: number, pageSize: number): Observable<PositionResponse> {
-    return this.http.get<PositionResponse>(`${this.baseUrl}/JobTitles`, {
-      params: {
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      },
-    });
+    const params: any = {
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    };
+    return this.http.get<PositionResponse>(`${this.baseUrl}/Positions`, { params });
+  }
+
+  getPosition(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Positions/${id}`);
   }
 
   createPosition(position: {
-    title: string;
-    departmentId: number;
+    nameEn: string;
+    nameAr: string;
+    code?: string;
   }): Observable<any> {
-    return this.http.post(`${this.baseUrl}/JobTitles`, position);
+    return this.http.post<any>(`${this.baseUrl}/Positions`, position);
+  }
+
+  updatePosition(id: number, position: {
+    nameEn: string;
+    nameAr: string;
+    code?: string;
+  }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/Positions/${id}`, position);
+  }
+
+  deletePosition(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/Positions/${id}`);
   }
 }
