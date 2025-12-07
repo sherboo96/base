@@ -1,0 +1,113 @@
+/* Loader animation */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(201, 174, 129, 0.2);
+  border-top: 5px solid #c9ae81;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card hover effects */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Button hover effects */
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Progress bars animation */
+.progress-bar {
+  transition: width 1s ease-in-out;
+}
+
+/* Section transitions */
+.section {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply staggered animations to children */
+.stagger-items > * {
+  opacity: 0;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.stagger-items > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.stagger-items > *:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.stagger-items > *:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.stagger-items > *:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.stagger-items > *:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Dashboard card styles */
+.dashboard-card {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 10px 25px rgba(201, 174, 129, 0.15);
+}

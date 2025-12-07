@@ -1,0 +1,110 @@
+<nav class="w-full bg-white shadow-sm border-b border-gray-100 py-3 px-6">
+  <div class="max-w-full mx-auto flex justify-between items-center">
+    <!-- Left Section - Page Title and Breadcrumbs -->
+    <div class="flex items-center space-x-4">
+      <!-- Hamburger Menu Button (for mobile) -->
+      <button
+        class="lg:hidden text-gray-500 hover:text-[#c9ae81] transition-colors"
+      >
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+
+      <!-- Page Title -->
+      <div>
+        <h1 class="text-lg font-semibold text-gray-800">
+          {{ getCurrentPageTitle() }}
+        </h1>
+        <div class="flex items-center text-xs text-gray-500">
+          <span>Management</span>
+          <i class="fas fa-chevron-right mx-2 text-[0.6rem]"></i>
+          <span class="text-[#c9ae81]">{{ getCurrentPageTitle() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Section - User Profile and Actions -->
+    <div class="flex items-center space-x-6">
+      <!-- Notifications -->
+      <!-- <div class="relative">
+        <button
+          class="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 hover:bg-[#f9f6f2] text-gray-500 hover:text-[#c9ae81] transition-colors relative"
+        >
+          <i class="fas fa-bell"></i>
+          <span
+            class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"
+          ></span>
+        </button>
+      </div> -->
+
+      <!-- Messages -->
+      <!-- <div class="relative">
+        <button
+          class="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 hover:bg-[#f9f6f2] text-gray-500 hover:text-[#c9ae81] transition-colors"
+        >
+          <i class="fas fa-envelope"></i>
+        </button>
+      </div> -->
+
+      <!-- User Profile -->
+      <div class="flex items-center space-x-3 relative">
+        <!-- User Info -->
+        <div class="text-right hidden md:block">
+          <span class="block text-base font-semibold text-gray-800">{{
+            name
+          }}</span>
+          <span class="block text-sm text-gray-500">{{ role }}</span>
+        </div>
+
+        <!-- User Avatar with dropdown -->
+        <div class="relative">
+          <button
+            (click)="toggleDropdown()"
+            class="relative cursor-pointer flex items-center space-x-1 focus:outline-none group"
+          >
+            <div
+              *ngIf="!avatarImage"
+              class="w-10 h-10 rounded-full border-2 border-gray-200 group-hover:border-[#c9ae81] transition-colors flex items-center justify-center bg-[#c9ae81]/10 text-[#c9ae81] font-semibold"
+            >
+              {{ getInitials() }}
+            </div>
+            <img
+              *ngIf="avatarImage"
+              [src]="avatarImage"
+              alt="User Avatar"
+              class="w-10 h-10 rounded-full border-2 border-gray-200 group-hover:border-[#c9ae81] transition-colors"
+            />
+            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div
+            *ngIf="dropdownOpen"
+            class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 border border-gray-100 py-1 dropdown-animation"
+          >
+            <div class="p-3 border-b border-gray-100">
+              <p class="text-sm font-semibold text-gray-800">{{ name }}</p>
+              <p class="text-xs text-gray-500">{{ role }}</p>
+            </div>
+
+            <a
+              (click)="routeToProfile()"
+              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#c9ae81] cursor-pointer"
+            >
+              <i class="fas fa-user-circle w-5 mr-2 text-gray-400"></i>
+              <span>My Profile</span>
+            </a>
+
+            <div class="border-t border-gray-100 my-1"></div>
+            <button
+              (click)="logout()"
+              class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              <i class="fas fa-sign-out-alt w-5 mr-2"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,340 @@
+<div class="p-6 mx-auto max-w-full">
+  <!-- Loading Component -->
+  <app-loading></app-loading>
+
+  <!-- Back Button -->
+  <button
+    (click)="router.navigate(['/request'])"
+    class="mb-6 flex items-center text-[#c9ae81] hover:text-[#b89a6d] transition-colors duration-200"
+  >
+    <i class="fas fa-arrow-left mr-2"></i>
+    <span>Back to Requests</span>
+  </button>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex justify-center items-center h-64">
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#c9ae81]"
+    ></div>
+  </div>
+
+  <!-- Request Details -->
+  <div *ngIf="request && !isLoading" class="space-y-6">
+    <!-- Header Section -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex justify-between items-start">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">Request Details</h1>
+          <p class="text-gray-500 mt-1">
+            Transaction ID: {{ request.transID }}
+          </p>
+        </div>
+        <div class="flex items-center gap-4">
+          <button
+            (click)="openReplyModal()"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#c9ae81] hover:bg-[#b89a6d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81]"
+          >
+            <i class="fas fa-reply mr-2"></i>
+            Reply
+          </button>
+          <span
+            class="px-3 py-1 rounded-full text-sm font-semibold"
+            [ngClass]="getStatusClass(request.statusId)"
+          >
+            {{ getStatusText(request.statusId) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Information Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+          Basic Information
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Transaction Date
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ formatDate(request.transDate) }}
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Company Name
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ request.companyName }}
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Commercial Registration
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ request.licN_CommNumber }}
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Address
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ request.address }}
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Requester Name
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ request.requesterName }}
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Civil ID
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ request.requesterCivilID }}
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500"
+                >
+                  Contact Information
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="space-y-1">
+                    <p>{{ request.phoneNumber }}</p>
+                    <p>{{ request.email }}</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activities Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Activities</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Name
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Description
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Last Updated
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                *ngFor="let activity of request.activities"
+                class="hover:bg-gray-50"
+              >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ activity.name }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ activity.description }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="px-2 py-1 rounded-full text-xs font-semibold"
+                    [ngClass]="getStatusClass(activity.statusId)"
+                  >
+                    {{ activity.status.nameAr }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ formatDate(activity.updatedAt || activity.createdOn) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="relative">
+                    <button
+                      (click)="toggleDropdown(activity.id, $event)"
+                      class="dropdown-trigger inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81]"
+                    >
+                      <i class="fas fa-ellipsis-v mr-2"></i>
+                      Actions
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Requested Operations Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+          Requested Operations
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Operation Name (Arabic)
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Operation Name (English)
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  MOCI Code
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                *ngFor="let operation of request.requestOperations"
+                class="hover:bg-gray-50"
+              >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ operation.operation.nameAr }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ operation.operation.nameEn }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ operation.operation.mociCode }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Timeline</h2>
+      <div class="space-y-4">
+        <div class="flex items-start">
+          <div
+            class="flex-shrink-0 w-2 h-2 mt-2 bg-[#c9ae81] rounded-full"
+          ></div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-800">Request Created</p>
+            <p class="text-sm text-gray-500">
+              {{ formatDate(request.createdOn) }}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-start">
+          <div
+            class="flex-shrink-0 w-2 h-2 mt-2 bg-[#c9ae81] rounded-full"
+          ></div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-800">Last Updated</p>
+            <p class="text-sm text-gray-500">
+              {{ formatDate(request.updatedAt || request.createdOn) }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dropdown Overlay -->
+<div
+  *ngIf="showDropdown[getCurrentActivityId()]"
+  class="fixed inset-0 z-50"
+  (click)="closeAllDropdowns()"
+>
+  <div
+    class="dropdown-content absolute"
+    [style.left.px]="getDropdownPosition().x"
+    [style.top.px]="getDropdownPosition().y"
+  >
+    <div
+      class="w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+    >
+      <div class="py-1" role="menu" aria-orientation="vertical">
+        <div
+          class="px-4 py-2 text-sm font-medium text-gray-700 border-b border-gray-100"
+        >
+          Change Status
+        </div>
+        <div class="max-h-60 overflow-y-auto">
+          <button
+            *ngFor="let status of activityStatuses"
+            (click)="
+              updateActivityStatus(getCurrentActivityId(), status.id);
+              $event.stopPropagation()
+            "
+            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            [class.bg-gray-100]="getCurrentActivityStatusId() === status.id"
+          >
+            <div class="flex items-center">
+              <span class="mr-2">{{ status.nameAr }}</span>
+              <span class="text-xs text-gray-500">({{ status.nameEn }})</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Reply Modal -->
+<app-reply-modal
+  *ngIf="showReplyModal"
+  [activities]="request?.activities || []"
+  [notes]="replyNotes"
+  (close)="closeReplyModal()"
+  (submit)="submitReply()"
+  (replyNotes)="replyNotes = $event"
+></app-reply-modal>

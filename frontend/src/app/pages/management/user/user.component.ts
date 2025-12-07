@@ -1,0 +1,131 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { UserService } from '../../../services/user.service';
+import { DialogService, DialogConfig } from '@ngneat/dialog';
+import { LoadingService } from '../../../services/loading.service';
+import { ToastrService } from 'ngx-toastr';
+import { UserFormComponent } from './user-form/user-form.component';
+import { LoadingComponent } from '../../../components/loading/loading.component';
+
+@Component({
+  selector: 'app-user',
+  standalone: true,
+  imports: [CommonModule, FormsModule, LoadingComponent],
+  templateUrl: './user.component.html',
+})
+export class UserComponent implements OnInit {
+  users: any[] = [];
+  searchTerm = '';
+  currentPage = 1;
+  pageSize = 10;
+  totalItems = 0;
+  Math = Math;
+
+  constructor(
+    private userService: UserService,
+    private dialogService: DialogService,
+    public loadingService: LoadingService,
+    private toastr: ToastrService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadUsers();
+  }
+
+  loadUsers(): void {
+    this.loadingService.show();
+    this.userService.getUsers(this.currentPage, this.pageSize).subscribe({
+      next: (response) => {
+        this.users = response.result;
+        this.totalItems = response.total;
+        this.loadingService.hide();
+      },
+      error: (error) => {
+        this.toastr.error(error.error.message || 'Failed to load users');
+        this.loadingService.hide();
+      },
+    });
+  }
+
+  onSearch(): void {
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadUsers();
+  }
+
+  addNewUser(): void {
+    const dialogRef = this.dialogService.open(UserFormComponent, {
+      data: {},
+      width: '500px',
+      enableClose: true,
+      closeButton: true,
+      resizable: true,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        this.loadUsers();
+      }
+    });
+  }
+
+  editUser(user: any): void {}
+
+  unlockUser(user: any): void {
+    this.loadingService.show();
+    this.userService.unlockUser(user.id).subscribe({
+      next: (response) => {
+        this.toastr.success(response.message, 'Success');
+        this.loadUsers();
+      },
+      error: (error) => {
+        console.error('Error unlocking user:', error);
+        this.toastr.error('Failed to unlock user', 'Error');
+        this.loadingService.hide();
+      },
+    });
+  }
+
+  toggleUserStatus(user: any): void {
+    this.loadingService.show();
+    this.userService.toggleUserStatus(user.id).subscribe({
+      next: (response) => {
+        this.toastr.success(response.message, 'Success');
+        this.loadUsers();
+      },
+      error: (error) => {
+        console.error('Error toggling user status:', error);
+        this.toastr.error('Failed to toggle user status', 'Error');
+        this.loadingService.hide();
+      },
+    });
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.pageSize);
+  }
+
+  get paginationRange(): number[] {
+    const range = [];
+    const maxVisiblePages = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
+
+    if (end - start + 1 < maxVisiblePages) {
+      start = Math.max(1, end - maxVisiblePages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+
+    return range;
+  }
+}

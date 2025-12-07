@@ -1,0 +1,9 @@
+﻿global using UMS.Models.Shared;
+global using UMS.Models;
+global using Microsoft.EntityFrameworkCore;
+global using AutoMapper;
+global using System.Linq.Expressions;
+global using UMS.Const;
+global using UMS.Data;
+global using UMS.Interfaces;
+global using UMS.Repository;

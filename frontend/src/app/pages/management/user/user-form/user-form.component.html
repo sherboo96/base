@@ -1,0 +1,527 @@
+<div class="p-8">
+  <!-- Header Section -->
+  <div class="mb-8">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-[#c9ae81]/10 rounded-lg">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 text-[#c9ae81]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">
+          {{ isEdit ? "Edit User" : "Add New User" }}
+        </h2>
+        <p class="text-sm text-gray-500 mt-1">
+          {{
+            isEdit
+              ? "Update user details"
+              : "Fill in the details to create a new user"
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-8">
+    <!-- AD Username -->
+    <div class="space-y-2">
+      <label for="adUsername" class="block text-sm font-medium text-gray-700">
+        AD Username
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative flex items-center gap-2">
+        <div class="relative flex-1">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <input
+            type="text"
+            id="adUsername"
+            formControlName="adUsername"
+            class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+            placeholder="Enter AD username"
+          />
+        </div>
+        <button
+          type="button"
+          (click)="checkADUser()"
+          class="px-3 py-2.5 border border-[#c9ae81] rounded-lg text-sm font-medium text-[#c9ae81] bg-white hover:bg-[#c9ae81] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81] transition-colors duration-200 flex items-center gap-2"
+          [disabled]="!form.get('adUsername')?.value"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Check AD
+        </button>
+      </div>
+      <div
+        *ngIf="
+          form.get('adUsername')?.invalid && form.get('adUsername')?.touched
+        "
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        AD username is required
+      </div>
+    </div>
+
+    <!-- Full Name -->
+    <div class="space-y-2">
+      <label for="fullName" class="block text-sm font-medium text-gray-700">
+        Full Name
+        <span class="text-red-500">*</span>
+        <span class="ml-2 text-xs text-[#c9ae81]"> (Auto-filled from AD) </span>
+      </label>
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="fullName"
+          formControlName="fullName"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm bg-gray-50 cursor-not-allowed"
+          placeholder="Enter full name"
+          readonly
+        />
+      </div>
+      <div
+        *ngIf="form.get('fullName')?.invalid && form.get('fullName')?.touched"
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Full name is required
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="space-y-2">
+      <label for="email" class="block text-sm font-medium text-gray-700">
+        Email
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+          placeholder="Enter email address"
+        />
+      </div>
+      <div
+        *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        {{ form.get('email')?.errors?.['email'] ? 'Please enter a valid email' : 'Email is required' }}
+      </div>
+    </div>
+
+    <!-- Organization Selection -->
+    <div class="space-y-2">
+      <label
+        for="organizationId"
+        class="block text-sm font-medium text-gray-700"
+      >
+        Organization
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
+          </svg>
+        </div>
+        <select
+          id="organizationId"
+          formControlName="organizationId"
+          (change)="onOrganizationChange()"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200 appearance-none"
+        >
+          <option value="">Select an organization</option>
+          <option *ngFor="let org of organizations" [value]="org.id">
+            {{ org.name }}
+          </option>
+        </select>
+        <div
+          class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        *ngIf="
+          form.get('organizationId')?.invalid &&
+          form.get('organizationId')?.touched
+        "
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Organization is required
+      </div>
+    </div>
+
+    <!-- Department Selection -->
+    <div class="space-y-2">
+      <label for="departmentId" class="block text-sm font-medium text-gray-700">
+        Department
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
+          </svg>
+        </div>
+        <select
+          id="departmentId"
+          formControlName="departmentId"
+          (change)="onDepartmentChange()"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200 appearance-none"
+        >
+          <option value="">Select a department</option>
+          <option *ngFor="let dept of departments" [value]="dept.id">
+            {{ dept.name }}
+          </option>
+        </select>
+        <div
+          class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        *ngIf="
+          form.get('departmentId')?.invalid && form.get('departmentId')?.touched
+        "
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Department is required
+      </div>
+    </div>
+
+    <!-- Position Selection -->
+    <div class="space-y-2">
+      <label for="positionId" class="block text-sm font-medium text-gray-700">
+        Position
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <select
+          id="positionId"
+          formControlName="positionId"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200 appearance-none"
+        >
+          <option value="">Select a position</option>
+          <option *ngFor="let position of positions" [value]="position.id">
+            {{ position.title }} ({{ position.department?.name }})
+          </option>
+        </select>
+        <div
+          class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        *ngIf="
+          form.get('positionId')?.invalid && form.get('positionId')?.touched
+        "
+        class="flex items-center text-sm text-red-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Position is required
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="form.invalid || isSubmitting"
+        class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-[#c9ae81] hover:bg-[#b89a6e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+      >
+        <span *ngIf="!isSubmitting" class="flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 mr-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          {{ isEdit ? "Update User" : "Create User" }}
+        </span>
+        <span *ngIf="isSubmitting" class="flex items-center">
+          <svg
+            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          {{ isEdit ? "Updating..." : "Creating..." }}
+        </span>
+      </button>
+    </div>
+  </form>
+</div>
