@@ -1,33 +1,74 @@
 <div
-  class="side-menu-container h-screen flex flex-col bg-white shadow-lg border-r rtl:border-r-0 rtl:border-l border-gray-100 relative z-50"
-  style="width: 250px;"
+  class="side-menu-container h-screen flex flex-col bg-white shadow-lg border-r rtl:border-r-0 rtl:border-l border-gray-100 relative z-50 transition-all duration-300"
+  [ngClass]="{
+    'w-[250px]': !isCollapsed,
+    'w-[80px]': isCollapsed
+  }"
 >
   <!-- Top Logo Section -->
-  <div class="flex flex-col items-center pt-6 pb-4 border-b border-gray-100">
+  <div class="flex flex-col items-center pt-6 pb-4 border-b border-gray-100 relative">
+    <!-- Toggle Button -->
+    <button
+      (click)="toggleCollapse()"
+      class="absolute top-2 right-2 rtl:right-auto rtl:left-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent/10 text-gray-500 hover:text-accent transition-all duration-200 font-poppins"
+      [title]="isCollapsed ? ('sidemenu.expand' | translate) : ('sidemenu.collapse' | translate)"
+    >
+      <i class="fas transition-transform duration-300" [ngClass]="{'fa-chevron-left': !isCollapsed, 'fa-chevron-right': isCollapsed, 'rtl:rotate-180': true}"></i>
+    </button>
+    
     <a
       (click)="navigateToDashboard()"
       class="flex flex-col items-center cursor-pointer hover:opacity-90 transition-opacity duration-200"
     >
       <div
-        class="w-32 h-32 rounded-full border-4 border-[#c9ae81]/10 overflow-hidden flex items-center justify-center"
+        class="rounded-full border-4 border-accent/10 overflow-hidden flex items-center justify-center transition-all duration-300"
+        [ngClass]="{
+          'w-32 h-32': !isCollapsed,
+          'w-16 h-16': isCollapsed
+        }"
       >
         <img
           src="assets/images/logo.png"
           alt="Ministry of Oil Logo"
-          class="w-24 h-24 object-contain transition-all duration-300 hover:scale-105"
+          class="object-contain transition-all duration-300 hover:scale-105 drop-shadow-[0_4px_6px_rgba(11,83,103,0.2)] hover:drop-shadow-[0_10px_15px_rgba(11,83,103,0.4)]"
+          [ngClass]="{
+            'w-24 h-24': !isCollapsed,
+            'w-12 h-12': isCollapsed
+          }"
         />
       </div>
-      <h1 class="mt-3 text-lg font-semibold text-gray-800 text-center rtl:text-right">{{ 'sidemenu.ministryOfOil' | translate }}</h1>
-      <p class="text-xs text-gray-500 text-center rtl:text-right">{{ 'sidemenu.usersManagementSystem' | translate }}</p>
+      <h1 
+        class="mt-3 text-lg font-semibold text-gray-800 text-center rtl:text-right font-poppins transition-all duration-300 overflow-hidden"
+        [ngClass]="{
+          'opacity-100 max-h-20': !isCollapsed,
+          'opacity-0 max-h-0 mt-0': isCollapsed
+        }"
+      >
+        {{ 'sidemenu.ministryOfOil' | translate }}
+      </h1>
+      <p 
+        class="text-xs text-gray-500 text-center rtl:text-right font-poppins transition-all duration-300 overflow-hidden"
+        [ngClass]="{
+          'opacity-100 max-h-20': !isCollapsed,
+          'opacity-0 max-h-0 mt-0': isCollapsed
+        }"
+      >
+        {{ 'sidemenu.usersManagementSystem' | translate }}
+      </p>
     </a>
   </div>
 
   <!-- Menu Items -->
   <div class="flex-grow overflow-y-auto custom-scrollbar py-2 px-3">
     <!-- Main Navigation Section -->
-    <div class="mb-4 pl-3 rtl:pl-0 rtl:pr-3">
+    <div class="mb-4 pl-3 rtl:pl-0 rtl:pr-3 transition-all duration-300"
+      [ngClass]="{
+        'opacity-100': !isCollapsed,
+        'opacity-0 h-0 overflow-hidden': isCollapsed
+      }"
+    >
       <h2
-        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
+        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right font-poppins relative after:content-[''] after:absolute after:left-[-0.75rem] rtl:after:left-auto rtl:after:right-[-0.75rem] after:bottom-[-0.25rem] after:h-[1px] after:w-8 after:bg-accent"
       >
         {{ 'sidemenu.mainNavigation' | translate }}
       </h2>
@@ -37,27 +78,32 @@
       <!-- Dashboard -->
       <li>
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse relative overflow-hidden animate-[fadeIn_0.3s_ease_forwards]"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/dashboard'),
-            'hover:bg-gray-50 border-l-4 border-transparent':
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':
               !isActiveRoute('/dashboard')
           }"
           (click)="navigateToDashboard()"
+          [title]="isCollapsed ? ('sidemenu.dashboard' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute('/dashboard')
+              'bg-accent/10 text-accent': isActiveRoute('/dashboard')
             }"
           >
             <i class="material-icons text-lg">dashboard</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/dashboard'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/dashboard'),
               'text-gray-700': !isActiveRoute('/dashboard')
             }"
           >
@@ -68,9 +114,14 @@
     </ul>
 
     <!-- Management Section -->
-    <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3">
+    <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3 transition-all duration-300"
+      [ngClass]="{
+        'opacity-100': !isCollapsed,
+        'opacity-0 h-0 overflow-hidden': isCollapsed
+      }"
+    >
       <h2
-        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
+        class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right font-poppins relative after:content-[''] after:absolute after:left-[-0.75rem] rtl:after:left-auto rtl:after:right-[-0.75rem] after:bottom-[-0.25rem] after:h-[1px] after:w-8 after:bg-accent"
       >
         {{ 'sidemenu.management' | translate }}
       </h2>
@@ -80,20 +131,23 @@
       <!-- Organization -->
       <li *ngIf="hasPermission('ORGANIZATIONS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse relative overflow-hidden animate-[fadeIn_0.3s_ease_forwards]"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/organization'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/organization'
             )
           }"
           (click)="navigateToOrganization()"
+          [title]="isCollapsed ? ('sidemenu.organization' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/organization'
               )
             }"
@@ -101,9 +155,11 @@
             <i class="material-icons text-lg">business</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/organization'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/organization'),
               'text-gray-700': !isActiveRoute('/management/organization')
             }"
           >
@@ -115,20 +171,23 @@
       <!-- Department -->
       <li *ngIf="hasPermission('DEPARTMENTS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/department'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/department'
             )
           }"
           (click)="navigateToDepartment()"
+          [title]="isCollapsed ? ('sidemenu.department' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/department'
               )
             }"
@@ -136,9 +195,11 @@
             <i class="material-icons text-lg">account_balance</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/department'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/department'),
               'text-gray-700': !isActiveRoute('/management/department')
             }"
           >
@@ -147,23 +208,66 @@
         </a>
       </li>
 
+      <!-- Segments -->
+      <li *ngIf="hasPermission('SEGMENTS_VIEW')">
+        <a
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          [ngClass]="{
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
+              isActiveRoute('/management/segment'),
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
+              '/management/segment'
+            )
+          }"
+          (click)="navigateToSegments()"
+          [title]="isCollapsed ? ('sidemenu.segments' | translate) : ''"
+        >
+          <div
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
+            [ngClass]="{
+              'bg-accent/10 text-accent': isActiveRoute(
+                '/management/segment'
+              )
+            }"
+          >
+            <i class="material-icons text-lg">pie_chart</i>
+          </div>
+          <span
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
+            [ngClass]="{
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/segment'),
+              'text-gray-700': !isActiveRoute('/management/segment')
+            }"
+          >
+            {{ 'sidemenu.segments' | translate }}
+          </span>
+        </a>
+      </li>
+
       <!-- Positions -->
       <li *ngIf="hasPermission('JOB_TITLES_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/positions'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/positions'
             )
           }"
           (click)="navigateToPositions()"
+          [title]="isCollapsed ? ('sidemenu.positions' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/positions'
               )
             }"
@@ -171,9 +275,11 @@
             <i class="material-icons text-lg">work</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/positions'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/positions'),
               'text-gray-700': !isActiveRoute('/management/positions')
             }"
           >
@@ -185,20 +291,23 @@
       <!-- Job Titles -->
       <li *ngIf="hasPermission('JOB_TITLES_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/job-titles'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/job-titles'
             )
           }"
           (click)="navigateToJobTitles()"
+          [title]="isCollapsed ? ('sidemenu.jobTitles' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/job-titles'
               )
             }"
@@ -206,9 +315,11 @@
             <i class="material-icons text-lg">badge</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/job-titles'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/job-titles'),
               'text-gray-700': !isActiveRoute('/management/job-titles')
             }"
           >
@@ -220,20 +331,23 @@
       <!-- Location -->
       <li *ngIf="hasPermission('LOCATIONS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/location'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/location'
             )
           }"
           (click)="navigateToLocation()"
+          [title]="isCollapsed ? ('sidemenu.location' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/location'
               )
             }"
@@ -241,9 +355,11 @@
             <i class="material-icons text-lg">location_on</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/location'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/location'),
               'text-gray-700': !isActiveRoute('/management/location')
             }"
           >
@@ -255,20 +371,23 @@
       <!-- Instructor -->
       <li *ngIf="hasPermission('INSTRUCTORS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/instructor'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/instructor'
             )
           }"
           (click)="navigateToInstructor()"
+          [title]="isCollapsed ? ('sidemenu.instructor' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/instructor'
               )
             }"
@@ -276,9 +395,11 @@
             <i class="material-icons text-lg">school</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/instructor'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/instructor'),
               'text-gray-700': !isActiveRoute('/management/instructor')
             }"
           >
@@ -290,20 +411,23 @@
       <!-- Institution -->
       <li *ngIf="hasPermission('INSTITUTIONS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/institution'),
-            'hover:bg-gray-50 border-l-4 border-transparent': !isActiveRoute(
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent': !isActiveRoute(
               '/management/institution'
             )
           }"
           (click)="navigateToInstitution()"
+          [title]="isCollapsed ? ('sidemenu.institution' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute(
+              'bg-accent/10 text-accent': isActiveRoute(
                 '/management/institution'
               )
             }"
@@ -311,9 +435,11 @@
             <i class="material-icons text-lg">account_balance</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/institution'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/institution'),
               'text-gray-700': !isActiveRoute('/management/institution')
             }"
           >
@@ -323,9 +449,14 @@
       </li>
 
       <!-- User Management Section -->
-      <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3">
+      <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3 transition-all duration-300"
+        [ngClass]="{
+          'opacity-100': !isCollapsed,
+          'opacity-0 h-0 overflow-hidden': isCollapsed
+        }"
+      >
         <h2
-          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
+          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right font-poppins relative after:content-[''] after:absolute after:left-[-0.75rem] rtl:after:left-auto rtl:after:right-[-0.75rem] after:bottom-[-0.25rem] after:h-[1px] after:w-8 after:bg-accent"
         >
           {{ 'sidemenu.userManagement' | translate }}
         </h2>
@@ -333,27 +464,32 @@
       <!-- Users -->
       <li *ngIf="hasPermission('USERS_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/users'),
-            'hover:bg-gray-50 border-l-4 border-transparent':
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':
               !isActiveRoute('/management/users')
           }"
           (click)="navigateToUsers()"
+          [title]="isCollapsed ? ('sidemenu.users' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute('/management/users')
+              'bg-accent/10 text-accent': isActiveRoute('/management/users')
             }"
           >
             <i class="material-icons text-lg">people</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/users'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/users'),
               'text-gray-700': !isActiveRoute('/management/users')
             }"
           >
@@ -363,9 +499,14 @@
       </li>
 
       <!-- Role Management Section -->
-      <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3">
+      <div class="my-4 pl-3 rtl:pl-0 rtl:pr-3 transition-all duration-300"
+        [ngClass]="{
+          'opacity-100': !isCollapsed,
+          'opacity-0 h-0 overflow-hidden': isCollapsed
+        }"
+      >
         <h2
-          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right"
+          class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right font-poppins relative after:content-[''] after:absolute after:left-[-0.75rem] rtl:after:left-auto rtl:after:right-[-0.75rem] after:bottom-[-0.25rem] after:h-[1px] after:w-8 after:bg-accent"
         >
           {{ 'sidemenu.roleManagement' | translate }}
         </h2>
@@ -374,27 +515,32 @@
       <!-- Roles -->
       <li *ngIf="hasPermission('ROLES_VIEW')">
         <a
-          class="px-4 py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+          class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
           [ngClass]="{
-            'bg-[#F9F6F2] text-[#c9ae81] shadow-sm border-l-4 border-[#c9ae81]':
+            'px-4': !isCollapsed,
+            'px-2 justify-center': isCollapsed,
+            'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':
               isActiveRoute('/management/roles'),
-            'hover:bg-gray-50 border-l-4 border-transparent':
+            'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':
               !isActiveRoute('/management/roles')
           }"
           (click)="navigateToRoles()"
+          [title]="isCollapsed ? ('sidemenu.roles' | translate) : ''"
         >
           <div
-            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-[#F9F6F2] group-hover:text-[#c9ae81]"
+            class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
             [ngClass]="{
-              'bg-[#F9F6F2] text-[#c9ae81]': isActiveRoute('/management/roles')
+              'bg-accent/10 text-accent': isActiveRoute('/management/roles')
             }"
           >
             <i class="material-icons text-lg">supervisor_account</i>
           </div>
           <span
-            class="ml-3 rtl:ml-0 rtl:mr-3 text-sm text-left rtl:text-right"
+            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
             [ngClass]="{
-              'text-[#c9ae81]': isActiveRoute('/management/roles'),
+              'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full': !isCollapsed,
+              'ml-0 mr-0 opacity-0 max-w-0': isCollapsed,
+              'text-accent': isActiveRoute('/management/roles'),
               'text-gray-700': !isActiveRoute('/management/roles')
             }"
           >
@@ -407,8 +553,18 @@
   </div>
 
   <!-- Footer with year -->
-  <div class="py-3 px-4 border-t border-gray-100 text-center rtl:text-right">
-    <p class="text-xs text-gray-500">
+  <div class="py-3 border-t border-gray-100 text-center rtl:text-right relative transition-all duration-300 hover:bg-accent/10"
+    [ngClass]="{
+      'px-4': !isCollapsed,
+      'px-2': isCollapsed
+    }"
+  >
+    <p class="text-xs text-gray-500 font-poppins transition-all duration-300 overflow-hidden"
+      [ngClass]="{
+        'opacity-100': !isCollapsed,
+        'opacity-0 h-0': isCollapsed
+      }"
+    >
       {{ 'sidemenu.copyright' | translate: {year: currentYear} }}
     </p>
   </div>

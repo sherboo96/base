@@ -27,6 +27,8 @@ public class LoginUserDto
     public string userName { get; set; }
     public string email { get; set; }
     public bool emailConfirmed { get; set; }
+    public bool isTemporaryPassword { get; set; }
+    public bool emailVerified { get; set; }
 }
 
 public class LoginRoleDto

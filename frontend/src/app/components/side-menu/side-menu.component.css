@@ -1,11 +1,4 @@
-/* Side menu width */
-:host {
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
-}
-
-/* Custom scrollbar for the menu */
+/* Custom scrollbar - Keep minimal CSS as Tailwind doesn't support custom scrollbars well */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
 }
@@ -15,44 +8,15 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #f0f0f0;
+  background: rgb(240, 240, 240);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #d4bc92;
+  background: rgb(11, 83, 103);
 }
 
-/* Menu item hover and active states */
-li a {
-  position: relative;
-  overflow: hidden;
-}
-
-li a::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 4px;
-  width: 0;
-  background-color: #c9ae81;
-  transition: width 0.3s ease;
-}
-
-html[dir="rtl"] li a::before,
-html.rtl li a::before {
-  left: auto;
-  right: 0;
-}
-
-/* RTL border fixes - Universal approach: remove left borders, add right borders for active items */
-html[dir="rtl"] .side-menu-container li a,
-html.rtl .side-menu-container li a {
-  border-left: 0 !important;
-}
-
-/* Any menu item with border-l-4 class gets border-r-4 in RTL */
+/* RTL border fixes - Keep for RTL support as Tailwind RTL utilities don't handle dynamic borders well */
 html[dir="rtl"] .side-menu-container li a.border-l-4,
 html.rtl .side-menu-container li a.border-l-4 {
   border-left: 0 !important;
@@ -60,89 +24,8 @@ html.rtl .side-menu-container li a.border-l-4 {
   border-right-style: solid !important;
 }
 
-/* Active items with background color get colored right border */
-html[dir="rtl"] .side-menu-container li a[class*="F9F6F2"],
-html.rtl .side-menu-container li a[class*="F9F6F2"] {
-  border-right: 4px solid #c9ae81 !important;
+html[dir="rtl"] .side-menu-container li a.border-accentOld,
+html.rtl .side-menu-container li a.border-accentOld {
+  border-right-color: rgb(201, 174, 129) !important;
   border-left: 0 !important;
-}
-
-/* Also target by border color class */
-html[dir="rtl"] .side-menu-container li a.border-\[#c9ae81\],
-html.rtl .side-menu-container li a.border-\[#c9ae81\] {
-  border-right-color: #c9ae81 !important;
-  border-left: 0 !important;
-}
-
-li a:hover::before {
-  width: 100%;
-}
-
-/* Icon container animation */
-.w-9.h-9 {
-  transition: all 0.3s ease;
-}
-
-li a:hover .w-9.h-9 {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* Active menu item animation */
-li a.bg-\[\#F9F6F2\] {
-  animation: fadeIn 0.3s ease forwards;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0.7;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Logo hover effect */
-.w-32.h-32 img {
-  filter: drop-shadow(0 4px 6px rgba(201, 174, 129, 0.2));
-  transition: all 0.3s ease;
-}
-
-.w-32.h-32:hover img {
-  filter: drop-shadow(0 10px 15px rgba(201, 174, 129, 0.4));
-  transform: scale(1.05);
-}
-
-/* Menu section transitions */
-.mb-4.pl-3 h2 {
-  position: relative;
-}
-
-.mb-4.pl-3 h2::after {
-  content: "";
-  position: absolute;
-  left: -0.75rem;
-  bottom: -0.25rem;
-  height: 1px;
-  width: 2rem;
-  background-color: #c9ae81;
-}
-
-html[dir="rtl"] .mb-4.pl-3 h2::after,
-html.rtl .mb-4.pl-3 h2::after,
-html[dir="rtl"] .mb-4.rtl\:pl-0.rtl\:pr-3 h2::after,
-html.rtl .mb-4.rtl\:pl-0.rtl\:pr-3 h2::after {
-  left: auto;
-  right: -0.75rem;
-}
-
-/* Footer animation */
-.mt-auto {
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.mt-auto:hover {
-  background-color: #f9f6f2;
 }

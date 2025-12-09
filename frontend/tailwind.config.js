@@ -4,16 +4,37 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        customGold: "#D4A373",
-        darkGray: "#2E3A3F",
-        primary: "#1E3A8A",
-        secondary: "#10B981",
-        accent: "#c9ae81", // Main accent color used throughout
-        accentDark: "#b89a6e", // Darker shade of accent
-        accentDarker: "#a6895d", // Even darker shade
+        // Primary colors
+        primary: "#0F4C75",
+        // Accent colors (main brand color)
+        accent: "#0B5367",
+        accentLight: "#0D6B7F",
+        accentDark: "#084354",
+        accentDarker: "#063240",
+        // Text color
+        textDark: "#2E3A3F",
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0.7' },
+          '100%': { opacity: '1' },
+        },
+        fadeInDown: {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideRight: {
+          '0%': { transform: 'translateX(-1px)' },
+          '100%': { transform: 'translateX(1px)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.3s ease forwards',
+        fadeInDown: 'fadeInDown 0.2s ease-out',
+        slideRight: 'slideRight 1s infinite alternate',
       },
     },
   },

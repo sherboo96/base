@@ -21,14 +21,14 @@ public class PermissionsController : ControllerBase
     {
         var skip = (page - 1) * pageSize;
         var total = await _unitOfWork.Permissions.CountAsync(_ => true);
-        var data = await _unitOfWork.Permissions.GetAllAsync(pageSize, skip, new[] { "System" });
+        var data = await _unitOfWork.Permissions.GetAllAsync(pageSize, skip, null); // Permission model doesn't have System navigation
         return Ok(new BaseResponse<IEnumerable<Permission>> { StatusCode = 200, Message = "Permissions retrieved successfully.", Result = data, Total = total, Pagination = new Pagination { CurrentPage = page, PageSize = pageSize, Total = total } });
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var item = await _unitOfWork.Permissions.FindAsync(x => x.Id == id, new[] { "System" });
+        var item = await _unitOfWork.Permissions.FindAsync(x => x.Id == id, null); // Permission model doesn't have System navigation
         return item == null ? NotFound(new BaseResponse<Permission> { StatusCode = 404, Message = "Permission not found." }) : Ok(new BaseResponse<Permission> { StatusCode = 200, Message = "Permission retrieved successfully.", Result = item });
     }
 

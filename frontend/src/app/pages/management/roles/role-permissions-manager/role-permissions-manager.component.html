@@ -1,0 +1,190 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center space-x-3 mb-2">
+      <div class="p-2 bg-accent/10 rounded-lg">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 text-accent"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+          />
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800 font-poppins">
+          {{ 'role.managePermissions' | translate }}
+        </h2>
+        <p class="text-sm text-gray-500 mt-1 font-poppins">
+          {{ 'role.permissionsFor' | translate }}: <strong>{{ role?.name }}</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="mb-4">
+    <div class="relative">
+      <div
+        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+      </div>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        [placeholder]="'role.searchPermissions' | translate"
+        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
+      />
+    </div>
+  </div>
+
+  <!-- Permissions List -->
+  <div class="permissions-scroll-container border border-gray-200 rounded-lg p-4 bg-gray-50">
+    <div *ngIf="isLoading" class="text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      <p class="mt-2 text-sm text-gray-600 font-poppins">{{ 'common.loading' | translate }}...</p>
+    </div>
+
+    <div *ngIf="!isLoading && permissionsByCategory.length === 0" class="text-center py-8">
+      <p class="text-sm text-gray-500 font-poppins">{{ 'role.noPermissionsFound' | translate }}</p>
+    </div>
+
+    <div *ngIf="!isLoading && permissionsByCategory.length > 0" class="space-y-4">
+      <div
+        *ngFor="let categoryGroup of permissionsByCategory"
+        class="bg-white rounded-lg border border-gray-200 overflow-hidden"
+      >
+        <!-- Category Header -->
+        <div class="bg-gradient-to-r from-accent/10 to-accent/5 px-4 py-3 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <input
+                #categoryCheckbox
+                type="checkbox"
+                [id]="'category-' + categoryGroup.category"
+                [checked]="isCategoryFullySelected(categoryGroup.category)"
+                (change)="toggleCategory(categoryGroup.category, !isCategoryFullySelected(categoryGroup.category))"
+                class="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded cursor-pointer"
+              />
+              <label
+                [for]="'category-' + categoryGroup.category"
+                class="cursor-pointer flex-1"
+              >
+                <h3 class="text-base font-semibold text-gray-800 font-poppins">
+                  {{ categoryGroup.category }}
+                </h3>
+              </label>
+            </div>
+            <span class="text-xs text-gray-600 font-poppins bg-white px-2 py-1 rounded-full border border-gray-300">
+              {{ getCategorySelectedCount(categoryGroup.category) }} / {{ categoryGroup.permissions.length }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Category Permissions -->
+        <div class="p-2 space-y-1">
+          <div
+            *ngFor="let permission of categoryGroup.permissions"
+            class="flex items-center p-2.5 rounded-md hover:bg-gray-50 transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              [id]="'permission-' + permission.id"
+              [checked]="isPermissionSelected(permission.id)"
+              (change)="togglePermission(permission.id)"
+              class="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded cursor-pointer"
+            />
+            <label
+              [for]="'permission-' + permission.id"
+              class="ml-3 flex-1 cursor-pointer"
+            >
+              <div class="text-sm font-medium text-gray-900 font-poppins">
+                {{ permission.name }}
+              </div>
+              <div class="text-xs text-gray-500 font-poppins">
+                {{ permission.code }}
+              </div>
+            </label>
+            <span
+              *ngIf="isPermissionSelected(permission.id)"
+              class="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full font-poppins"
+            >
+              {{ 'common.selected' | translate }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+    <p class="text-sm text-blue-900 font-poppins">
+      <strong>{{ selectedPermissions.size }}</strong> {{ 'role.permissionsSelected' | translate }} 
+      {{ 'role.outOf' | translate }} <strong>{{ allPermissions.length }}</strong> {{ 'role.totalPermissions' | translate }}
+    </p>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+    <button
+      type="button"
+      (click)="onCancel()"
+      class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200 font-poppins"
+    >
+      {{ 'common.cancel' | translate }}
+    </button>
+    <button
+      type="button"
+      (click)="onSave()"
+      [disabled]="isLoading"
+      class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-poppins"
+    >
+      <span *ngIf="!isLoading">{{ 'common.save' | translate }}</span>
+      <span *ngIf="isLoading" class="flex items-center">
+        <svg
+          class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        {{ 'common.saving' | translate }}...
+      </span>
+    </button>
+  </div>
+</div>

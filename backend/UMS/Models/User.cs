@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 
 namespace UMS.Models;
@@ -14,6 +14,9 @@ public class User : IdentityUser
     public int FailedLoginAttempts { get; set; } = 0;
     public bool IsLocked { get; set; } = false;
     public LoginMethod LoginMethod { get; set; } = LoginMethod.ActiveDirectory; // Default to AD
+    public string? TemporaryPassword { get; set; } // For Credentials login method
+    public bool IsTemporaryPassword { get; set; } = false; // Flag to force password change on first login
+    public bool EmailVerified { get; set; } = false; // For OTP verification method
     
     // Organization and Department relationships
     public int OrganizationId { get; set; } // Required - every user must have an organization

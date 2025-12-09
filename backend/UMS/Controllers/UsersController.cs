@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos.Shared;
@@ -7,6 +7,7 @@ using UMS.Services;
 using UMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Azure.Core;
+using Microsoft.AspNetCore.Identity;
 
 namespace UMS.Controllers;
 
@@ -18,12 +19,16 @@ public class UsersController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly LdapAuthenticator _ldapAuthenticator;
+    private readonly UserManager<User> _userManager;
+    private readonly OrganizationAccessService _orgAccessService;
 
 
-    public UsersController(IUnitOfWork unitOfWork, LdapAuthenticator ldapAuthenticator)
+    public UsersController(IUnitOfWork unitOfWork, LdapAuthenticator ldapAuthenticator, UserManager<User> userManager, OrganizationAccessService orgAccessService)
     {
         _ldapAuthenticator = ldapAuthenticator; 
         _unitOfWork = unitOfWork;
+        _userManager = userManager;
+        _orgAccessService = orgAccessService;
     }
 
     [HttpGet]
@@ -35,7 +40,16 @@ public class UsersController : ControllerBase
     {
         var skip = (page - 1) * pageSize;
 
-        Expression<Func<User, bool>> filter = user => !user.IsDeleted;
+        // Get organization filter based on user's role
+        var orgFilter = await _orgAccessService.GetOrganizationFilterAsync();
+        
+        // Use provided organization filter or apply user's organization restriction
+        var effectiveOrgFilter = orgnization ?? orgFilter;
+
+        Expression<Func<User, bool>> filter = user => 
+            !user.IsDeleted &&
+            (!effectiveOrgFilter.HasValue || user.OrganizationId == effectiveOrgFilter.Value) &&
+            (!department.HasValue || user.DepartmentId == department.Value);
 
         var total = await _unitOfWork.Users.CountAsync(filter);
         var data = await _unitOfWork.Users.GetAllAsync(
@@ -44,7 +58,7 @@ public class UsersController : ControllerBase
             filter,
             null,
             null,
-            new[] { "JobTitle" }
+            new[] { "JobTitle", "Organization", "Department" }
         );
 
         return Ok(new BaseResponse<IEnumerable<User>>
@@ -74,29 +88,170 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] UserDto dto)
     {
-        var user = await _unitOfWork.Users.FindAsync(u => u.Email == dto.ADUsername || u.ADUsername == dto.ADUsername);
+        // Check for duplicate users - only check ADUsername if it's provided
+        User? user = null;
+        if (!string.IsNullOrWhiteSpace(dto.ADUsername))
+        {
+            user = await _unitOfWork.Users.FindAsync(u => u.Email == dto.Email || u.ADUsername == dto.ADUsername || u.Email == dto.ADUsername);
+        }
+        else
+        {
+            user = await _unitOfWork.Users.FindAsync(u => u.Email == dto.Email);
+        }
 
         if (user is not null)
         {
             return StatusCode(400, new BaseResponse<bool>
             {
                 StatusCode = 400,
-                Message = "This user is already has an account.",
+                Message = "This user already has an account.",
                 Result = false
             });
         }
 
-        var entity = await _unitOfWork.Users.AddAsync(dto);
-        await _unitOfWork.CompleteAsync();
-        var createdUser = await _unitOfWork.Users.FindAsync(x => x.Id == ((User)entity).Id, new[] { "JobTitle", "Organization", "Department" });
-        return CreatedAtAction(nameof(GetById), new { id = ((User)entity).Id }, new BaseResponse<User> { StatusCode = 201, Message = "User created successfully.", Result = createdUser });
+        // Create new user based on login method
+        var newUser = new User
+        {
+            FullName = dto.FullName,
+            Email = dto.Email,
+            UserName = !string.IsNullOrWhiteSpace(dto.Username) ? dto.Username : dto.Email, // Use provided username or default to email
+            ADUsername = dto.ADUsername ?? string.Empty, // Allow null for Credentials method
+            CivilNo = dto.CivilNo,
+            JobTitleId = dto.JobTitleId,
+            OrganizationId = dto.OrganizationId,
+            DepartmentId = dto.DepartmentId,
+            LoginMethod = dto.LoginMethod,
+            EmailVerified = false,
+            IsActive = true,
+            CreatedOn = DateTime.Now
+        };
+
+        // Handle different login methods
+        if (dto.LoginMethod == LoginMethod.Credentials)
+        {
+            // Generate temporary password if not provided
+            string tempPassword = !string.IsNullOrEmpty(dto.TemporaryPassword) 
+                ? dto.TemporaryPassword 
+                : PasswordGenerator.GeneratePassword(12);
+            
+            newUser.TemporaryPassword = tempPassword;
+            newUser.IsTemporaryPassword = true;
+            
+            // Create user with password in Identity system
+            var result = await _userManager.CreateAsync(newUser, tempPassword);
+            
+            if (!result.Succeeded)
+            {
+                return StatusCode(400, new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                    Result = false
+                });
+            }
+        }
+        else if (dto.LoginMethod == LoginMethod.ActiveDirectory)
+        {
+            // ADUsername is required for Active Directory login method
+            if (string.IsNullOrWhiteSpace(dto.ADUsername))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "AD Username is required for Active Directory login method.",
+                    Result = false
+                });
+            }
+            
+            // Verify user exists in Active Directory
+            bool existsInAD = _ldapAuthenticator.IsUsernameInDomain(dto.ADUsername);
+            
+            if (!existsInAD)
+            {
+                return NotFound(new BaseResponse<bool>
+                {
+                    StatusCode = 404,
+                    Message = "User not found in Active Directory. Please verify the AD username.",
+                    Result = false
+                });
+            }
+            
+            // Create user without password (will use AD authentication)
+            var result = await _userManager.CreateAsync(newUser);
+            
+            if (!result.Succeeded)
+            {
+                return StatusCode(400, new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                    Result = false
+                });
+            }
+        }
+        else if (dto.LoginMethod == LoginMethod.KMNID)
+        {
+            // For OTP/KMNID, email verification will be required
+            newUser.EmailVerified = false;
+            
+            // Create user without password (will use OTP authentication)
+            var result = await _userManager.CreateAsync(newUser);
+            
+            if (!result.Succeeded)
+            {
+                return StatusCode(400, new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                    Result = false
+                });
+            }
+            
+            // TODO: Send verification email with OTP
+        }
+
+        // Assign roles if provided
+        if (dto.RoleIds != null && dto.RoleIds.Any())
+        {
+            foreach (var roleId in dto.RoleIds)
+            {
+                var role = await _unitOfWork.Roles.FindAsync(r => r.Id == roleId);
+                if (role != null)
+                {
+                    var userRole = new UserRole
+                    {
+                        UserId = newUser.Id,
+                        RoleId = roleId
+                    };
+                    await _unitOfWork.UserRoles.AddAsync(userRole);
+                }
+            }
+            await _unitOfWork.CompleteAsync();
+        }
+
+        var createdUser = await _unitOfWork.Users.FindAsync(x => x.Id == newUser.Id, new[] { "JobTitle", "Organization", "Department" });
+        
+        // Return response with temporary password for Credentials method
+        var response = new BaseResponse<object>
+        {
+            StatusCode = 201,
+            Message = "User created successfully.",
+            Result = new
+            {
+                User = createdUser,
+                TemporaryPassword = dto.LoginMethod == LoginMethod.Credentials ? newUser.TemporaryPassword : null
+            }
+        };
+        
+        return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, response);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UserDto dto)
     {
-        var existing = await _unitOfWork.Users.FindAsync(x => x.Id == id && !x.IsDeleted);
-        if (existing == null)
+        // Use UserManager to find user to avoid tracking conflicts
+        var existing = await _userManager.FindByIdAsync(id);
+        if (existing == null || existing.IsDeleted)
             return NotFound(new BaseResponse<User> { StatusCode = 404, Message = "User not found." });
 
         // Check if email/ADUsername is being changed and already exists for another user
@@ -117,17 +272,47 @@ public class UsersController : ControllerBase
             }
         }
 
+        // Update user properties
+        existing.FullName = dto.FullName;
         existing.Email = dto.Email;
-        existing.ADUsername = dto.ADUsername;
+        existing.UserName = !string.IsNullOrWhiteSpace(dto.Username) ? dto.Username : dto.Email; // Update username if provided
+        existing.ADUsername = dto.ADUsername ?? string.Empty; // Allow null for Credentials method
         existing.CivilNo = dto.CivilNo;
         existing.JobTitleId = dto.JobTitleId;
         existing.OrganizationId = dto.OrganizationId;
         existing.DepartmentId = dto.DepartmentId;
+        existing.LoginMethod = dto.LoginMethod;
+        existing.EmailVerified = dto.EmailVerified;
         existing.UpdatedAt = DateTime.Now;
-
-        var updated = await _unitOfWork.Users.UpdateAsync(existing);
-        await _unitOfWork.CompleteAsync();
         
+        // Handle password update for Credentials method
+        if (dto.LoginMethod == LoginMethod.Credentials && !string.IsNullOrEmpty(dto.TemporaryPassword))
+        {
+            existing.TemporaryPassword = dto.TemporaryPassword;
+            existing.IsTemporaryPassword = true;
+            
+            // Check if user has a password before trying to remove it
+            var hasPassword = await _userManager.HasPasswordAsync(existing);
+            if (hasPassword)
+            {
+                await _userManager.RemovePasswordAsync(existing);
+            }
+            await _userManager.AddPasswordAsync(existing, dto.TemporaryPassword);
+        }
+
+        // Update user using UserManager (handles Identity-specific updates)
+        var updateResult = await _userManager.UpdateAsync(existing);
+        if (!updateResult.Succeeded)
+        {
+            return StatusCode(400, new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = string.Join(", ", updateResult.Errors.Select(e => e.Description)),
+                Result = false
+            });
+        }
+        
+        // Fetch updated user with relationships for response
         var updatedUser = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "Organization", "Department" });
         return Ok(new BaseResponse<User> { StatusCode = 200, Message = "User updated successfully.", Result = updatedUser });
     }

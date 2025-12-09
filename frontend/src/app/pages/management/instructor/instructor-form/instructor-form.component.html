@@ -6,10 +6,10 @@
         <i class="fas fa-user-tie text-accent text-xl"></i>
       </div>
       <div>
-        <h2 class="text-2xl font-bold text-darkGray">
+        <h2 class="text-2xl font-bold text-textDark font-poppins">
           {{ isEdit ? ('instructor.editInstructor' | translate) : ('instructor.addInstructor' | translate) }}
         </h2>
-        <p class="text-sm text-gray-600 mt-1">
+        <p class="text-sm text-gray-600 mt-1 font-poppins">
           {{
             isEdit
               ? ('instructor.editInstructorDescription' | translate)
@@ -23,7 +23,7 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
     <!-- Profile Image Upload -->
     <div class="space-y-2">
-      <label class="block text-sm font-medium text-darkGray">
+      <label class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.profileImage' | translate }}
       </label>
       <div class="flex items-center gap-4">
@@ -55,7 +55,7 @@
         <div class="flex flex-col gap-2">
           <label
             for="profileImageInput"
-            class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accentDark transition-colors cursor-pointer text-sm font-medium text-center"
+            class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accentDark transition-colors cursor-pointer text-sm font-medium text-center font-poppins"
           >
             <i class="fas fa-upload mr-2"></i>{{ 'instructor.uploadImage' | translate }}
           </label>
@@ -73,7 +73,7 @@
 
     <!-- Name (English) -->
     <div class="space-y-2">
-      <label for="nameEn" class="block text-sm font-medium text-darkGray">
+      <label for="nameEn" class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.nameEnglish' | translate }}
         <span class="text-red-500">*</span>
       </label>
@@ -102,7 +102,7 @@
 
     <!-- Name (Arabic) -->
     <div class="space-y-2">
-      <label for="nameAr" class="block text-sm font-medium text-darkGray">
+      <label for="nameAr" class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.nameArabic' | translate }}
         <span class="text-red-500">*</span>
       </label>
@@ -125,7 +125,7 @@
 
     <!-- Email -->
     <div class="space-y-2">
-      <label for="email" class="block text-sm font-medium text-darkGray">
+      <label for="email" class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.email' | translate }}
         <span class="text-red-500">*</span>
       </label>
@@ -159,7 +159,7 @@
 
     <!-- Phone -->
     <div class="space-y-2">
-      <label for="phone" class="block text-sm font-medium text-darkGray">
+      <label for="phone" class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.phone' | translate }}
       </label>
       <div class="relative">
@@ -180,7 +180,7 @@
 
     <!-- Bio -->
     <div class="space-y-2">
-      <label for="bio" class="block text-sm font-medium text-darkGray">
+      <label for="bio" class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.bio' | translate }}
       </label>
       <textarea
@@ -194,7 +194,7 @@
 
     <!-- Institution -->
     <div class="space-y-2">
-      <label for="institutionId" class="block text-sm font-medium text-darkGray">
+      <label for="institutionId" class="block text-sm font-medium text-textDark font-poppins">
         {{ 'instructor.institution' | translate }}
         <span class="text-red-500">*</span>
       </label>
@@ -241,7 +241,7 @@
       <button
         type="submit"
         [disabled]="isSubmitting || form.invalid"
-        class="px-6 py-2.5 bg-gradient-to-r from-accent to-accentDark text-white rounded-lg hover:from-accentDark hover:to-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
       >
         <span *ngIf="!isSubmitting">
           {{ isEdit ? ('instructor.update' | translate) : ('instructor.create' | translate) }}

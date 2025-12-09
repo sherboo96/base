@@ -17,11 +17,11 @@
   <!-- Page Header -->
   <div class="mb-6 flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-darkGray mb-1 flex items-center gap-3">
+      <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3 font-poppins">
         <i class="fas fa-users text-accent"></i>
         <span>{{ 'user.title' | translate }}</span>
       </h1>
-      <p class="text-sm text-gray-600">
+      <p class="text-sm text-gray-600 font-poppins">
         {{ 'user.subtitle' | translate }}
       </p>
     </div>
@@ -29,7 +29,7 @@
 
   <!-- Search Section -->
   <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-gradient-to-r from-accent to-accentDark px-4 py-2">
+    <div class="bg-accentDark px-4 py-2">
       <div class="flex items-center gap-2">
         <i class="fas fa-search text-white text-sm"></i>
         <h3 class="text-sm font-semibold text-white">{{ 'common.search' | translate }}</h3>
@@ -38,7 +38,7 @@
     <div class="p-5">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="md:col-span-3">
-          <label class="block text-sm font-medium text-darkGray mb-2">
+          <label class="block text-sm font-medium text-textDark mb-2">
             <i class="fas fa-search mr-2 text-accent"></i>{{ 'user.searchPlaceholder' | translate }}
           </label>
           <div class="relative">
@@ -58,7 +58,7 @@
       <div class="flex justify-end gap-3 mt-4">
         <button
           (click)="onSearch()"
-          class="px-6 py-2.5 bg-gradient-to-r from-accent to-accentDark text-white rounded-lg hover:from-accentDark hover:to-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
+          class="px-6 py-2.5 bg-accentDark hover:bg-accentDarker text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2 font-poppins"
         >
           <i class="fas fa-search"></i>
           <span>{{ 'common.search' | translate }}</span>
@@ -72,7 +72,7 @@
     class="user-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
   >
     <div
-      class="bg-gradient-to-r from-accent to-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
+      class="bg-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
     >
       <!-- Table Header -->
       <div class="flex items-center gap-3">
@@ -115,8 +115,8 @@
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
         />
       </svg>
-      <h3 class="text-2xl font-bold text-darkGray mb-2">{{ 'user.noUsersFound' | translate }}</h3>
-      <p class="text-sm text-gray-600 text-center max-w-md mb-6">
+      <h3 class="text-2xl font-bold text-textDark mb-2 font-poppins">{{ 'user.noUsersFound' | translate }}</h3>
+      <p class="text-sm text-gray-600 text-center max-w-md mb-6 font-poppins">
         {{ 'user.noUsersMatching' | translate }}
       </p>
     </div>
@@ -137,84 +137,84 @@
       *ngIf="(loadingService.isLoading$ | async) && users.length > 0"
       class="absolute top-4 right-4 z-10"
     >
-      <div class="spinner" style="width: 20px; height: 20px"></div>
+      <div class="spinner w-5 h-5"></div>
     </div>
 
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gradient-to-r from-gray-100 to-gray-50">
+        <thead class="bg-gray-100">
           <tr>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-user mr-2 text-accent"></i>{{ 'user.fullName' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-envelope mr-2 text-accent"></i>{{ 'user.email' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-user-circle mr-2 text-accent"></i>{{ 'user.username' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-building mr-2 text-accent"></i>{{ 'user.organization' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-sitemap mr-2 text-accent"></i>{{ 'user.department' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-id-card mr-2 text-accent"></i>{{ 'user.jobTitle' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-id-badge mr-2 text-accent"></i>{{ 'user.civilNo' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-sign-in-alt mr-2 text-accent"></i>{{ 'user.loginMethod' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-toggle-on mr-2 text-accent"></i>{{ 'user.status' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider font-poppins"
             >
               <i class="fas fa-clock mr-2 text-accent"></i>{{ 'user.lastLogin' | translate }}
             </th>
             <th
               scope="col"
-              class="px-6 py-4 text-right text-xs font-bold text-darkGray uppercase tracking-wider"
+              class="px-6 py-4 text-right text-xs font-bold text-textDark uppercase tracking-wider"
             >
               <i class="fas fa-cog mr-2 text-accent"></i>{{ 'user.actions' | translate }}
             </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let user of users" class="hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 transition-all duration-150">
+          <tr *ngFor="let user of users" class="hover:bg-gray-50 transition-all duration-150">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
@@ -233,10 +233,10 @@
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-poppins">
               {{ user.email || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-poppins">
               {{ user.userName || user.adUsername || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -254,7 +254,7 @@
                 {{ user.jobTitle?.nameEn || '-' }}
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-poppins">
               {{ user.civilNo || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -289,13 +289,13 @@
                 {{
                   user.isActive
                     ? user.isLocked
-                      ? "Locked"
-                      : "Active"
-                    : "Inactive"
+                      ? ('user.locked' | translate)
+                      : ('user.active' | translate)
+                    : ('user.inactive' | translate)
                 }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-poppins">
               {{
                 (user.lastLogin | date : "dd MMM yyyy hh:mm a") ||
                   ('user.notLoggedInYet' | translate)
@@ -353,9 +353,9 @@
     <!-- Pagination -->
     <div
       *ngIf="users.length > 0"
-      class="flex flex-col sm:flex-row items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 p-5 border-t border-gray-200"
+      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t border-gray-200"
     >
-      <div class="text-sm text-darkGray mb-2 sm:mb-0 font-medium">
+      <div class="text-sm text-textDark mb-2 sm:mb-0 font-medium font-poppins">
         {{ 'user.showing' | translate: { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems } }}
       </div>
       <div class="flex items-center gap-3">
@@ -392,7 +392,7 @@
               (click)="onPageChange(page)"
               class="px-4 py-2 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200"
               [ngClass]="{
-                'bg-gradient-to-r from-accent to-accentDark text-white border-accent shadow-md':
+                'bg-accentDark text-white border-accent shadow-md':
                   currentPage === page,
                 'border-gray-300 hover:bg-white hover:border-accent': currentPage !== page
               }"

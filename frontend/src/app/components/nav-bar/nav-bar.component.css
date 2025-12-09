@@ -1,69 +1,7 @@
-/* Dropdown animation */
-.dropdown-animation {
-  animation: fadeInDown 0.2s ease-out;
-  transform-origin: top;
-}
+/* Minimal CSS - Most styles moved to Tailwind utilities */
+/* Only keeping RTL-specific overrides that Tailwind can't handle dynamically */
 
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Button hover effects */
-button:hover {
-  transform: translateY(-1px);
-  transition: transform 0.2s ease;
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-/* Notification dot pulse */
-.absolute.top-0.right-0 {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-  }
-}
-
-/* Breadcrumb animation */
-.fa-chevron-right {
-  animation: slideRight 1s infinite alternate;
-}
-
-@keyframes slideRight {
-  from {
-    transform: translateX(-1px);
-  }
-  to {
-    transform: translateX(1px);
-  }
-}
-
-/* Gradient border on user profile hover */
-.border-2:hover {
-  box-shadow: 0 0 0 2px rgba(201, 174, 129, 0.3);
-}
-
-/* Navbar positioning - now handled by Tailwind classes in HTML */
-
-/* RTL text alignment */
+/* RTL text alignment - Keep for dynamic RTL support */
 html[dir="rtl"] nav.fixed h1,
 html.rtl nav.fixed h1 {
   text-align: right !important;
@@ -74,21 +12,7 @@ html.rtl nav.fixed .text-left {
   text-align: right !important;
 }
 
-/* RTL flex direction for main container */
-html[dir="rtl"] nav.fixed > div,
-html.rtl nav.fixed > div {
-  flex-direction: row-reverse !important;
-}
-
-/* RTL user info alignment */
 html[dir="rtl"] nav.fixed .text-right,
 html.rtl nav.fixed .text-right {
   text-align: right !important;
-}
-
-/* RTL - Ensure all text elements align right */
-html[dir="rtl"] nav.fixed span,
-html.rtl nav.fixed span {
-  text-align: right;
-  display: inline-block;
 }

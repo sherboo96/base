@@ -99,4 +99,9 @@ export class OrganizationService {
   setAsMainOrganization(id: number): Observable<Organization> {
     return this.http.patch<Organization>(`${this.apiUrl}/${id}/set-main`, {});
   }
+
+  // Get available login methods for an organization
+  getLoginMethods(organizationId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${organizationId}/login-methods`);
+  }
 }

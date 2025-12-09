@@ -10,9 +10,9 @@ import { DialogService } from '../../services/dialog.service';
   template: `
     <div
       *ngIf="isVisible"
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 font-poppins"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full animate-[fadeInDown_0.2s_ease-out]">
         <ng-container *ngIf="currentComponent">
           <ng-container *ngComponentOutlet="currentComponent"></ng-container>
         </ng-container>

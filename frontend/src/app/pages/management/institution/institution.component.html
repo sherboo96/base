@@ -17,7 +17,7 @@
   <!-- Page Header -->
   <div class="mb-6 flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-darkGray mb-1 flex items-center gap-3">
+      <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3">
         <i class="fas fa-university text-accent"></i>
         <span>{{ 'institution.title' | translate }}</span>
       </h1>
@@ -29,7 +29,7 @@
 
   <!-- Search Section -->
   <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-gradient-to-r from-accent to-accentDark px-4 py-2">
+    <div class="bg-accentDark px-4 py-2">
       <div class="flex items-center gap-2">
         <i class="fas fa-search text-white text-sm"></i>
         <h3 class="text-sm font-semibold text-white">{{ 'common.search' | translate }}</h3>
@@ -38,7 +38,7 @@
     <div class="p-5">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="md:col-span-3">
-          <label class="block text-sm font-medium text-darkGray mb-2">
+          <label class="block text-sm font-medium text-textDark mb-2">
             <i class="fas fa-search mr-2 text-accent"></i>{{ 'institution.searchPlaceholder' | translate }}
           </label>
           <div class="relative">
@@ -58,7 +58,7 @@
       <div class="flex justify-end gap-3 mt-4">
         <button
           (click)="onSearch()"
-          class="px-6 py-2.5 bg-gradient-to-r from-accent to-accentDark text-white rounded-lg hover:from-accentDark hover:to-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
+          class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
         >
           <i class="fas fa-search"></i>
           <span>{{ 'common.search' | translate }}</span>
@@ -72,7 +72,7 @@
     class="institution-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
   >
     <div
-      class="bg-gradient-to-r from-accent to-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
+      class="bg-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
     >
       <!-- Table Header -->
       <div class="flex items-center gap-3">
@@ -111,7 +111,7 @@
       </p>
       <button
         (click)="addNewInstitution()"
-        class="px-6 py-3 bg-gradient-to-r from-accent to-accentDark text-white rounded-lg hover:from-accentDark hover:to-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2"
+        class="px-6 py-3 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2"
       >
         <i class="fas fa-plus-circle"></i>
         <span>{{ 'institution.addInstitution' | translate }}</span>

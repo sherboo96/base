@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -11,11 +11,12 @@ import { DepartmentService } from '../../../../services/department.service';
 import { ToastrService } from 'ngx-toastr';
 import { DialogRef } from '@ngneat/dialog';
 import { Department } from '../../../../services/department.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-job-title-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   templateUrl: './job-title-form.component.html',
 })
 export class JobTitleFormComponent implements OnInit {
@@ -29,7 +30,8 @@ export class JobTitleFormComponent implements OnInit {
     private jobTitleService: JobTitleService,
     private departmentService: DepartmentService,
     private toastr: ToastrService,
-    private dialogRef: DialogRef<{ jobTitle?: any }>
+    private dialogRef: DialogRef<{ jobTitle?: any }>,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       nameEn: ['', Validators.required],
@@ -59,6 +61,7 @@ export class JobTitleFormComponent implements OnInit {
     this.departmentService.getDepartments(1, 100).subscribe({
       next: (response) => {
         this.departments = response.result;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.toastr.error(error.error.message || 'Failed to load departments');

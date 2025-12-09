@@ -37,14 +37,17 @@ export class UserComponent implements OnInit {
   }
 
   loadUsers(): void {
+    console.log('Loading users - Page:', this.currentPage, 'PageSize:', this.pageSize);
     this.loadingService.show();
     this.userService.getUsers(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
+        console.log('Users loaded:', response.result.length, 'users');
         this.users = response.result;
         this.totalItems = response.total;
         this.loadingService.hide();
       },
       error: (error) => {
+        console.error('Error loading users:', error);
         this.toastr.error(error.error.message || this.translationService.instant('user.fetchError'));
         this.loadingService.hide();
       },
@@ -64,7 +67,8 @@ export class UserComponent implements OnInit {
   addNewUser(): void {
     const dialogRef = this.dialogService.open(UserFormComponent, {
       data: {},
-      width: '500px',
+      width: '700px',
+      maxHeight: '90vh',
       enableClose: true,
       closeButton: true,
       resizable: false,
@@ -73,8 +77,13 @@ export class UserComponent implements OnInit {
     });
 
     dialogRef.afterClosed$.subscribe((result) => {
+      console.log('Dialog closed with result:', result);
       if (result) {
-        this.loadUsers();
+        console.log('Reloading users after dialog close...');
+        // Add a small delay to ensure backend has processed the request
+        setTimeout(() => {
+          this.loadUsers();
+        }, 300);
       }
     });
   }
@@ -82,7 +91,8 @@ export class UserComponent implements OnInit {
   editUser(user: any): void {
     const dialogRef = this.dialogService.open(UserFormComponent, {
       data: { user },
-      width: '800px',
+      width: '700px',
+      maxHeight: '90vh',
       enableClose: true,
       closeButton: true,
       resizable: false,
@@ -91,8 +101,13 @@ export class UserComponent implements OnInit {
     });
 
     dialogRef.afterClosed$.subscribe((result) => {
+      console.log('Edit dialog closed with result:', result);
       if (result) {
-        this.loadUsers();
+        console.log('Reloading users after edit...');
+        // Add a small delay to ensure backend has processed the request
+        setTimeout(() => {
+          this.loadUsers();
+        }, 300);
       }
     });
   }

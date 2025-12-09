@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -28,7 +28,8 @@ export class PositionFormComponent implements OnInit {
     private positionService: PositionService,
     private dialogRef: DialogRef<{ position?: any }>,
     private toastr: ToastrService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       nameEn: ['', Validators.required],

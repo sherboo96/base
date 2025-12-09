@@ -43,7 +43,7 @@ export const appConfig: ApplicationConfig = {
     ), // Global Toastr configuration
     importProvidersFrom(
       TranslateModule.forRoot({
-        defaultLanguage: 'en',
+        fallbackLang: 'en',
         loader: {
           provide: TranslateLoader,
           useFactory: HttpLoaderFactory,

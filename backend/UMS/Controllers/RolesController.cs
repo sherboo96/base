@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos.Shared;
 using UMS.Dtos;
@@ -47,6 +47,7 @@ public class RolesController : ControllerBase
         if (existing == null) return NotFound(new BaseResponse<Role> { StatusCode = 404, Message = "Role not found." });
 
         existing.Name = dto.Name;
+        existing.ApplyToAllOrganizations = dto.ApplyToAllOrganizations;
 
         var updated = await _unitOfWork.Roles.UpdateAsync(existing);
         await _unitOfWork.CompleteAsync();

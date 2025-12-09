@@ -9,6 +9,7 @@ import { LoadingComponent } from '../../../components/loading/loading.component'
 import { BehaviorSubject } from 'rxjs';
 import { RolePermissionFormComponent } from './role-permission-form/role-permission-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-role-permissions',
@@ -18,6 +19,7 @@ import { DeleteConfirmationDialogComponent } from '../../../components/delete-co
     FormsModule,
     LoadingComponent,
     RolePermissionFormComponent,
+    TranslateModule,
   ],
   templateUrl: './role-permissions.component.html',
 })

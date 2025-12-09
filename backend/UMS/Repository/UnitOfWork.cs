@@ -26,6 +26,7 @@ public class UnitOfWork : IUnitOfWork
         Instructors = new BaseRepository<Instructor, InstructorDto>(_context, _mapper);
         SystemConfigurations = new BaseRepository<SystemConfiguration, SystemConfigurationDto>(_context, _mapper);
         Locations = new BaseRepository<Location, LocationDto>(_context, _mapper);
+        Segments = new SegmentRepository(_context, _mapper);
 
         UserRoles = new BaseRepository<UserRole, UserRoleDto>(_context, _mapper);
         RolePermissions = new BaseRepository<RolePermission, RolePermissionDto>(_context, _mapper);
@@ -42,6 +43,7 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<Instructor, InstructorDto> Instructors { get; private set; }
     public IBaseRepository<SystemConfiguration, SystemConfigurationDto> SystemConfigurations { get; private set; }
     public IBaseRepository<Location, LocationDto> Locations { get; private set; }
+    public ISegmentRepository Segments { get; private set; }
 
     public IBaseRepository<UserRole, UserRoleDto> UserRoles { get; private set; }
     public IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; private set; }

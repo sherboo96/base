@@ -1,4 +1,4 @@
-﻿namespace UMS.Repository;
+namespace UMS.Repository;
 
 public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper mapper)
     : IBaseRepository<T, TViewModel> where T : class where TViewModel : class?
@@ -16,7 +16,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return model;
     }
 
-    public async Task<T> FindAsync(Expression<Func<T, bool>> match, string[] includes = null)
+    public async Task<T> FindAsync(Expression<Func<T, bool>> match, string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().AsNoTracking();
         if (includes != null)
@@ -26,7 +26,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return await query.SingleOrDefaultAsync(match);
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().AsNoTracking();
         if (includes != null)
@@ -36,7 +36,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> match, string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> match, string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().Where(match).AsNoTracking();
         if (includes != null)
@@ -46,7 +46,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(int take, int skip, string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(int take, int skip, string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().Skip(skip).Take(take).AsNoTracking();
         if (includes != null)
@@ -56,7 +56,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(int take, int skip, Expression<Func<T, bool>> match, string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(int take, int skip, Expression<Func<T, bool>> match, string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().Where(match).Skip(skip).Take(take).AsNoTracking();
         if (includes != null)
@@ -66,7 +66,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(int? take, int? skip, Expression<Func<T, object>> orderBy = null, string orderByDirection = OrderBy.Ascending, string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(int? take, int? skip, Expression<Func<T, object>>? orderBy = null, string orderByDirection = OrderBy.Ascending, string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().AsNoTracking();
 
@@ -86,7 +86,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(int? take, int? skip, Expression<Func<T, bool>> match, Expression<Func<T, object>> orderBy = null, string orderByDirection = OrderBy.Ascending, string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(int? take, int? skip, Expression<Func<T, bool>> match, Expression<Func<T, object>>? orderBy = null, string orderByDirection = OrderBy.Ascending, string[]? includes = null)
     {
         IQueryable<T> query = context.Set<T>().Where(match).AsNoTracking();
 
@@ -179,7 +179,7 @@ public class BaseRepository<T, TViewModel>(ApplicationDbContext context, IMapper
         Expression<Func<T, TKey>> keySelector,
         Expression<Func<T, T>> elementSelector,
         Expression<Func<TKey, IEnumerable<T>, TResult>> resultSelector,
-        Expression<Func<T, bool>> filter = null)
+        Expression<Func<T, bool>>? filter = null)
     {
         IQueryable<T> query = context.Set<T>();
 

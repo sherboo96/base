@@ -1,0 +1,251 @@
+<div class="p-6 mx-auto max-w-full">
+  <!-- Hidden component reference for dialog usage -->
+  <app-segment-form *ngIf="false"></app-segment-form>
+  <app-loading></app-loading>
+
+  <!-- Loading Spinner -->
+  <div
+    *ngIf="isLoading && !segments.length"
+    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
+  >
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="mt-4 text-accent font-medium font-poppins">{{ 'segment.loadingSegments' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Page Header -->
+  <div class="mb-6 flex justify-between items-center">
+    <div>
+      <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3 font-poppins">
+        <i class="material-icons text-accent" style="font-size: 2rem;">pie_chart</i>
+        <span>{{ 'segment.title' | translate }}</span>
+      </h1>
+      <p class="text-sm text-gray-600 font-poppins">
+        {{ 'segment.subtitle' | translate }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+    <div class="bg-accent px-4 py-2">
+      <div class="flex items-center gap-2">
+        <i class="material-icons text-white text-sm">filter_list</i>
+        <h3 class="text-sm font-semibold text-white font-poppins">{{ 'common.filter' | translate }}</h3>
+      </div>
+    </div>
+    <div class="p-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Organization Filter -->
+        <div>
+          <label class="block text-sm font-medium text-textDark mb-2 font-poppins">
+            <i class="material-icons text-accent mr-2 text-sm" style="vertical-align: middle;">business</i>{{ 'segment.filterByOrganization' | translate }}
+          </label>
+          <select
+            [(ngModel)]="selectedOrganizationId"
+            (change)="onOrganizationFilterChange()"
+            class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-all duration-200 font-poppins"
+          >
+            <option [value]="null">{{ 'segment.allOrganizations' | translate }}</option>
+            <option *ngFor="let org of organizations" [value]="org.id">
+              {{ org.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segments Table Card -->
+  <div class="relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+    <div class="bg-accent py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between">
+      <!-- Table Header -->
+      <div class="flex items-center gap-3">
+        <i class="material-icons text-white text-xl">pie_chart</i>
+        <h3 class="text-lg font-semibold text-white font-poppins">{{ 'segment.title' | translate }}</h3>
+        <span
+          *ngIf="totalItems > 0"
+          class="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full font-poppins"
+        >
+          {{ totalItems }} {{ totalItems === 1 ? ('segment.segment' | translate) : ('segment.segment' | translate) }}
+        </span>
+      </div>
+      <!-- Add New Button -->
+      <button
+        (click)="addNewSegment()"
+        class="px-6 py-2.5 bg-white text-accent rounded-lg hover:bg-accent-light hover:text-white transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2 font-poppins"
+      >
+        <i class="material-icons text-sm">add</i>
+        <span>{{ 'segment.addSegment' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Table Content -->
+    <div class="flex-1 overflow-x-auto p-6">
+      <div *ngIf="!isLoading && segments.length === 0" class="py-20 text-center">
+        <div class="flex flex-col items-center justify-center">
+          <i class="material-icons text-gray-300 mb-4" style="font-size: 5rem;">pie_chart</i>
+          <p class="text-lg text-gray-500 mb-2 font-poppins">{{ 'segment.noSegmentsFound' | translate }}</p>
+          <p class="text-sm text-gray-400 font-poppins">{{ 'segment.noSegmentsMatching' | translate }}</p>
+        </div>
+      </div>
+
+      <table *ngIf="!isLoading && segments.length > 0" class="w-full">
+        <thead>
+          <tr class="border-b-2 border-gray-200">
+            <th class="text-left py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.nameEnglish' | translate }}
+            </th>
+            <th class="text-left py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.nameArabic' | translate }}
+            </th>
+            <th class="text-left py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.code' | translate }}
+            </th>
+            <th class="text-left py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.organization' | translate }}
+            </th>
+            <th class="text-center py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.userCount' | translate }}
+            </th>
+            <th class="text-center py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.status' | translate }}
+            </th>
+            <th class="text-right py-4 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider font-poppins">
+              {{ 'segment.actions' | translate }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let segment of segments; let i = index"
+            class="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150"
+          >
+            <td class="py-4 px-4">
+              <span class="text-sm font-medium text-gray-900 font-poppins">{{ segment.name }}</span>
+            </td>
+            <td class="py-4 px-4">
+              <span class="text-sm text-gray-600 font-poppins">{{ segment.nameAr }}</span>
+            </td>
+            <td class="py-4 px-4">
+              <span class="px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full font-poppins">
+                {{ segment.code }}
+              </span>
+            </td>
+            <td class="py-4 px-4">
+              <span class="text-sm text-gray-600 font-poppins">{{ segment.organization?.name }}</span>
+            </td>
+            <td class="py-4 px-4 text-center">
+              <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full font-poppins">
+                {{ segment.userCount }}
+              </span>
+            </td>
+            <td class="py-4 px-4 text-center">
+              <span
+                class="px-3 py-1 text-xs font-semibold rounded-full font-poppins"
+                [ngClass]="getStatusClass(segment.isActive)"
+              >
+                {{ getStatusText(segment.isActive) }}
+              </span>
+            </td>
+            <td class="py-4 px-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button
+                  (click)="assignUsersToSegment(segment)"
+                  class="inline-flex items-center px-3 py-1.5 border-2 border-primary rounded-lg text-primary bg-white hover:bg-primary hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins"
+                  [title]="'segment.assignUsers' | translate"
+                >
+                  <i class="material-icons text-sm mr-1.5">person_add</i>
+                  <span>{{ 'segment.assignUsers' | translate }}</span>
+                </button>
+                <button
+                  (click)="editSegment(segment)"
+                  class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins"
+                  [title]="'segment.edit' | translate"
+                >
+                  <i class="material-icons text-sm mr-1.5">edit</i>
+                  <span>{{ 'segment.edit' | translate }}</span>
+                </button>
+                <button
+                  (click)="deleteSegment(segment)"
+                  class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins"
+                  [title]="'segment.delete' | translate"
+                >
+                  <i class="material-icons text-sm mr-1.5">delete</i>
+                  <span>{{ 'segment.delete' | translate }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="!isLoading && segments.length > 0"
+      class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4"
+    >
+      <!-- Page Size Selector -->
+      <div class="flex items-center gap-3">
+        <label class="text-sm font-medium text-gray-700 font-poppins">{{ 'common.perPage' | translate }}:</label>
+        <select
+          [(ngModel)]="pageSize"
+          (change)="onPageSizeChange()"
+          class="px-3 py-1.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-all duration-200 font-poppins"
+        >
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+        <span class="text-sm text-gray-600 font-poppins">
+          {{ 'common.showing' | translate: {from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems} }}
+        </span>
+      </div>
+
+      <!-- Page Navigation -->
+      <nav class="flex items-center gap-2">
+        <!-- Previous Button -->
+        <button
+          (click)="goToPage(currentPage - 1)"
+          [disabled]="currentPage === 1"
+          [ngClass]="{
+            'opacity-50 cursor-not-allowed': currentPage === 1,
+            'hover:bg-accent hover:text-white': currentPage > 1
+          }"
+          class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-all duration-200 font-poppins"
+        >
+          <i class="material-icons text-sm" style="vertical-align: middle;">chevron_left</i>
+        </button>
+
+        <!-- Page Numbers -->
+        <button
+          *ngFor="let page of getPageNumbers()"
+          (click)="goToPage(page)"
+          [ngClass]="{
+            'bg-accent text-white border-accent': page === currentPage,
+            'bg-white text-gray-700 border-gray-300 hover:bg-gray-50': page !== currentPage
+          }"
+          class="min-w-[40px] px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all duration-200 font-poppins"
+        >
+          {{ page }}
+        </button>
+
+        <!-- Next Button -->
+        <button
+          (click)="goToPage(currentPage + 1)"
+          [disabled]="currentPage === totalPages"
+          [ngClass]="{
+            'opacity-50 cursor-not-allowed': currentPage === totalPages,
+            'hover:bg-accent hover:text-white': currentPage < totalPages
+          }"
+          class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-all duration-200 font-poppins"
+        >
+          <i class="material-icons text-sm" style="vertical-align: middle;">chevron_right</i>
+        </button>
+      </nav>
+    </div>
+  </div>
+</div>

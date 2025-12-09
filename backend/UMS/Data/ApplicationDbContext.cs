@@ -13,7 +13,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     // DbSets
     public DbSet<Organization> Organizations { get; set; }
     public DbSet<Department> Departments { get; set; }
-    public DbSet<Role> Roles { get; set; }
+    public new DbSet<Role> Roles { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<JobTitle> JobTitles { get; set; }
     public DbSet<Position> Positions { get; set; }
@@ -21,8 +21,10 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Instructor> Instructors { get; set; }
     public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
     public DbSet<Location> Locations { get; set; }
+    public DbSet<Segment> Segments { get; set; }
 
-    public DbSet<UserRole> UserRoles { get; set; }
+    public new DbSet<UserRole> UserRoles { get; set; }
+    public DbSet<UserSegment> UserSegments { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -82,6 +84,30 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasForeignKey(i => i.InstitutionId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
+
+        // Segment-Organization relationship
+        modelBuilder.Entity<Segment>()
+            .HasOne(s => s.Organization)
+            .WithMany()
+            .HasForeignKey(s => s.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // UserSegment composite key and relationships
+        modelBuilder.Entity<UserSegment>()
+            .HasKey(us => new { us.UserId, us.SegmentId });
+
+        modelBuilder.Entity<UserSegment>()
+            .HasOne(us => us.User)
+            .WithMany()
+            .HasForeignKey(us => us.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<UserSegment>()
+            .HasOne(us => us.Segment)
+            .WithMany(s => s.UserSegments)
+            .HasForeignKey(us => us.SegmentId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Check constraint: DepartmentId is required if Organization.IsMain is true
         // Note: This is a database-level constraint that will be enforced via migration
