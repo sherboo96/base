@@ -9,6 +9,7 @@ export interface User {
   email: string;
   adUsername: string;
   positionId: number;
+  loginMethod?: number;
   position: {
     id: number;
     title: string;
@@ -77,26 +78,34 @@ export class UserService {
   createUser(user: {
     fullName: string;
     email: string;
-    adUsername: string;
+    username?: string;
+    adUsername?: string;
     jobTitleId?: number;
     positionId?: number;
     organizationId: number;
     departmentId?: number;
+    loginMethod?: number;
+    temporaryPassword?: string;
+    roleIds?: number[];
   }): Observable<any> {
     return this.http.post(`${this.baseUrl}/Users`, user);
   }
 
-  updateUser(user: {
-    id: number;
+  updateUser(userId: string, user: {
     fullName: string;
     email: string;
-    adUsername: string;
+    username?: string;
+    adUsername?: string;
     jobTitleId?: number;
     positionId?: number;
     organizationId: number;
     departmentId?: number;
+    loginMethod?: number;
+    temporaryPassword?: string;
+    emailVerified?: boolean;
+    roleIds?: number[];
   }): Observable<any> {
-    return this.http.put(`${this.baseUrl}/Users/${user.id}`, user);
+    return this.http.put(`${this.baseUrl}/Users/${userId}`, user);
   }
 
   checkADUser(username: string): Observable<ADUserResponse> {
@@ -150,6 +159,14 @@ export class UserService {
 
   createRole(role: { name: string; isActive: boolean }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/Roles`, role);
+  }
+
+  updateRole(id: number, role: { name: string }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/Roles/${id}`, role);
+  }
+
+  deleteRole(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/Roles/${id}`);
   }
 
   deleteRolePermission(roleId: number, permissionId: number) {

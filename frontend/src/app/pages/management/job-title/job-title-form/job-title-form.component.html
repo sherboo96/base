@@ -2,10 +2,10 @@
   <!-- Header Section -->
   <div class="mb-8">
     <div class="flex items-center space-x-3">
-      <div class="p-2 bg-[#c9ae81]/10 rounded-lg">
+      <div class="p-2 bg-accent/10 rounded-lg">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-[#c9ae81]"
+          class="h-6 w-6 text-accent font-poppins"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -19,14 +19,14 @@
         </svg>
       </div>
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">
-          {{ isEdit ? 'Edit Job Title' : 'Add New Job Title' }}
+        <h2 class="text-2xl font-bold text-gray-800 font-poppins">
+          {{ isEdit ? ('jobTitle.editJobTitle' | translate) : ('jobTitle.addJobTitle' | translate) }}
         </h2>
-        <p class="text-sm text-gray-500 mt-1">
+        <p class="text-sm text-gray-500 mt-1 font-poppins">
           {{
             isEdit
-              ? 'Update job title details'
-              : 'Fill in the details to create a new job title'
+              ? ('jobTitle.updateJobTitleDetails' | translate)
+              : ('jobTitle.fillJobTitleDetails' | translate)
           }}
         </p>
       </div>
@@ -36,15 +36,15 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
     <!-- Name (English) -->
     <div class="space-y-2">
-      <label for="nameEn" class="block text-sm font-medium text-gray-700">
-        Name (English)
+      <label for="nameEn" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'jobTitle.nameEnglish' | translate }}
         <span class="text-red-500">*</span>
       </label>
       <input
         type="text"
         id="nameEn"
         formControlName="nameEn"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
         placeholder="Enter job title name in English"
       />
       <div
@@ -80,7 +80,7 @@
         id="nameAr"
         formControlName="nameAr"
         dir="rtl"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
         placeholder="أدخل اسم المسمى الوظيفي بالعربية"
       />
       <div
@@ -114,7 +114,7 @@
         type="text"
         id="code"
         formControlName="code"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
         placeholder="Enter job title code"
       />
     </div>
@@ -131,7 +131,7 @@
         id="description"
         formControlName="description"
         rows="3"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200"
+        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
         placeholder="Enter job title description"
       ></textarea>
     </div>
@@ -167,7 +167,7 @@
         <select
           id="departmentId"
           formControlName="departmentId"
-          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-[#c9ae81] focus:border-[#c9ae81] transition-colors duration-200 appearance-none"
+          class="form-control w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 appearance-none font-poppins"
         >
           <option value="">Select a department</option>
           <option *ngFor="let dept of departments" [value]="dept.id">
@@ -229,7 +229,7 @@
       <button
         type="submit"
         [disabled]="form.invalid || isSubmitting"
-        class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-[#c9ae81] hover:bg-[#b89a6e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-poppins"
       >
         <span *ngIf="!isSubmitting" class="flex items-center">
           <svg

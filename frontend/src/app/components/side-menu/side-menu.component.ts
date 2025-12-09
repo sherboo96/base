@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { StorageService } from '../../services/storage.service';
 import { TranslateModule } from '@ngx-translate/core';
+import { SideMenuService } from '../../services/side-menu.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-side-menu',
@@ -11,13 +13,19 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './side-menu.component.html',
   styleUrl: './side-menu.component.css',
 })
-export class SideMenuComponent {
+export class SideMenuComponent implements OnInit, OnDestroy {
   activeRoute: string = '';
   currentYear: number = new Date().getFullYear();
   userPermissions: any[] = [];
   sideMenuPermissions: any[] = [];
+  isCollapsed: boolean = false;
+  private subscription?: Subscription;
 
-  constructor(private router: Router, private storageService: StorageService) {
+  constructor(
+    private router: Router,
+    private storageService: StorageService,
+    private sideMenuService: SideMenuService
+  ) {
     this.router.events.subscribe((event: any) => {
       if (event.url) {
         this.activeRoute = event.url;
@@ -35,6 +43,24 @@ export class SideMenuComponent {
     if (storedSideMenu) {
       this.sideMenuPermissions = storedSideMenu;
     }
+  }
+
+  ngOnInit(): void {
+    this.subscription = this.sideMenuService.collapsed$.subscribe(
+      (collapsed) => {
+        this.isCollapsed = collapsed;
+      }
+    );
+  }
+
+  ngOnDestroy(): void {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
+
+  toggleCollapse(): void {
+    this.sideMenuService.toggle();
   }
 
   isActiveRoute(route: string): boolean {
@@ -79,6 +105,11 @@ export class SideMenuComponent {
   navigateToDepartment() {
     this.activeRoute = '/management/department';
     this.router.navigate(['/management/department']);
+  }
+
+  navigateToSegments() {
+    this.activeRoute = '/management/segment';
+    this.router.navigate(['/management/segment']);
   }
 
   navigateToPositions() {

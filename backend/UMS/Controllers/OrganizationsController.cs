@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos;
 using UMS.Dtos.Shared;
+using UMS.Models;
+using UMS.Services;
 
 namespace UMS.Controllers;
 
@@ -15,10 +17,12 @@ public class OrganizationsController : ControllerBase
 {
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly OrganizationAccessService _orgAccessService;
 
-    public OrganizationsController(IUnitOfWork unitOfWork)
+    public OrganizationsController(IUnitOfWork unitOfWork, OrganizationAccessService orgAccessService)
     {
         _unitOfWork = unitOfWork;
+        _orgAccessService = orgAccessService;
     }
 
     [HttpGet]
@@ -42,6 +46,9 @@ public class OrganizationsController : ControllerBase
         var isActiveOnly = filterStatus == "active";
         var isInactiveOnly = filterStatus == "inactive";
 
+        // Get organization filter based on user's role
+        var orgFilter = await _orgAccessService.GetOrganizationFilterAsync();
+        
         Expression<Func<Organization, bool>> filter = x => 
             !x.IsDeleted &&
             (!hasSearch || 
@@ -52,7 +59,9 @@ public class OrganizationsController : ControllerBase
             (!isMainOnly || x.IsMain) &&
             (!isNotMain || !x.IsMain) &&
             (!isActiveOnly || x.IsActive) &&
-            (!isInactiveOnly || !x.IsActive);
+            (!isInactiveOnly || !x.IsActive) &&
+            // If user is restricted to their own organization, only show their organization
+            (!orgFilter.HasValue || x.Id == orgFilter.Value);
 
         var total = await _unitOfWork.Organizations.CountAsync(filter);
         var data = await _unitOfWork.Organizations.GetAllAsync(
@@ -117,6 +126,69 @@ public class OrganizationsController : ControllerBase
             StatusCode = 200,
             Message = "Organization retrieved successfully.",
             Result = organization
+        });
+    }
+
+    [HttpGet("{id}/login-methods")]
+    public async Task<IActionResult> GetLoginMethods(int id)
+    {
+        var organization = await _unitOfWork.Organizations.FindAsync(x => x.Id == id);
+        if (organization == null)
+        {
+            return NotFound(new BaseResponse<List<object>>
+            {
+                StatusCode = 404,
+                Message = "Organization not found.",
+                Result = new List<object>()
+            });
+        }
+
+        // Parse allowed login methods from JSON string
+        List<LoginMethod> allowedMethods = new List<LoginMethod>();
+        
+        if (!string.IsNullOrWhiteSpace(organization.AllowedLoginMethods))
+        {
+            try
+            {
+                var methodIds = System.Text.Json.JsonSerializer.Deserialize<List<int>>(organization.AllowedLoginMethods);
+                if (methodIds != null)
+                {
+                    allowedMethods = methodIds
+                        .Where(id => Enum.IsDefined(typeof(LoginMethod), id))
+                        .Select(id => (LoginMethod)id)
+                        .ToList();
+                }
+            }
+            catch
+            {
+                // If parsing fails, use all methods as fallback
+            }
+        }
+
+        // If no methods configured, return all available methods
+        if (allowedMethods.Count == 0)
+        {
+            allowedMethods = Enum.GetValues(typeof(LoginMethod)).Cast<LoginMethod>().ToList();
+        }
+
+        var loginMethods = allowedMethods.Select(m => new
+        {
+            id = (int)m,
+            name = m.ToString(),
+            displayName = m switch
+            {
+                LoginMethod.Credentials => "Credentials (Username/Password)",
+                LoginMethod.ActiveDirectory => "Active Directory",
+                LoginMethod.KMNID => "KMNID",
+                _ => m.ToString()
+            }
+        }).ToList();
+
+        return Ok(new BaseResponse<List<object>>
+        {
+            StatusCode = 200,
+            Message = "Login methods retrieved successfully.",
+            Result = loginMethods.Cast<object>().ToList()
         });
     }
 

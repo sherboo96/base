@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos;
 using UMS.Dtos.Shared;
 using UMS.Models;
+using UMS.Services;
 
 namespace UMS.Controllers;
 
@@ -15,10 +16,12 @@ namespace UMS.Controllers;
 public class JobTitlesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly OrganizationAccessService _orgAccessService;
 
-    public JobTitlesController(IUnitOfWork unitOfWork)
+    public JobTitlesController(IUnitOfWork unitOfWork, OrganizationAccessService orgAccessService)
     {
         _unitOfWork = unitOfWork;
+        _orgAccessService = orgAccessService;
     }
 
     [HttpGet]
@@ -29,9 +32,13 @@ public class JobTitlesController : ControllerBase
 
         var skip = (page - 1) * pageSize;
 
+        // Get organization filter based on user's role
+        var orgFilter = await _orgAccessService.GetOrganizationFilterAsync();
+        
         Expression<Func<JobTitle, bool>> filter = x => 
             !x.IsDeleted && 
-            (!department.HasValue || x.DepartmentId == department);
+            (!department.HasValue || x.DepartmentId == department) &&
+            (!orgFilter.HasValue || (x.Department != null && x.Department.OrganizationId == orgFilter.Value));
         var total = await _unitOfWork.JobTitles.CountAsync(filter);
         var data = await _unitOfWork.JobTitles.GetAllAsync(
             pageSize,

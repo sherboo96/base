@@ -10,17 +10,43 @@ namespace UMS.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Users_Locations_LocationId",
-                table: "Users");
+            // Drop foreign key constraint if it exists
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 
+                    FROM sys.foreign_keys 
+                    WHERE name = 'FK_Users_Locations_LocationId'
+                )
+                BEGIN
+                    ALTER TABLE [Users] DROP CONSTRAINT [FK_Users_Locations_LocationId];
+                END
+            ");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Users_LocationId",
-                table: "Users");
+            // Drop index if it exists
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 
+                    FROM sys.indexes 
+                    WHERE name = 'IX_Users_LocationId' 
+                    AND object_id = OBJECT_ID('Users')
+                )
+                BEGIN
+                    DROP INDEX [IX_Users_LocationId] ON [Users];
+                END
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "LocationId",
-                table: "Users");
+            // Drop column if it exists
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'Users' 
+                    AND COLUMN_NAME = 'LocationId'
+                )
+                BEGIN
+                    ALTER TABLE [Users] DROP COLUMN [LocationId];
+                END
+            ");
         }
 
         /// <inheritdoc />

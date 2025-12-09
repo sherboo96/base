@@ -73,6 +73,8 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<SystemConfigurationService>();
+builder.Services.AddScoped<OrganizationAccessService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(Mapping)));
 
 

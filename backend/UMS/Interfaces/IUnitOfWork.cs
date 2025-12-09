@@ -15,6 +15,7 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<Instructor, InstructorDto> Instructors { get; }
     IBaseRepository<SystemConfiguration, SystemConfigurationDto> SystemConfigurations { get; }
     IBaseRepository<Location, LocationDto> Locations { get; }
+    ISegmentRepository Segments { get; }
 
     IBaseRepository<UserRole, UserRoleDto> UserRoles { get; }
     IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; }

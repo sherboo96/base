@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Output, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -6,6 +6,8 @@ import { StorageService } from '../../services/storage.service';
 import { LanguageSwitcherComponent } from '../language-switcher/language-switcher.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from '../../services/translation.service';
+import { SideMenuService } from '../../services/side-menu.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-nav-bar',
@@ -14,11 +16,13 @@ import { TranslationService } from '../../services/translation.service';
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.css',
 })
-export class NavBarComponent {
+export class NavBarComponent implements OnInit, OnDestroy {
   dropdownOpen = false;
   name = '';
   role = '';
   avatarImage: string | null = null;
+  isSideMenuCollapsed: boolean = false;
+  private subscription?: Subscription;
 
   // Map of route paths to translation keys
   private pageTitleKeys: { [key: string]: string } = {
@@ -38,13 +42,28 @@ export class NavBarComponent {
     private authService: AuthService,
     private router: Router,
     private storageService: StorageService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private sideMenuService: SideMenuService
   ) {
     // Initialize user info from encrypted storage
     const currentUser = this.storageService.getItem<any>('currentUser');
     if (currentUser) {
       this.name = currentUser.fullName || 'User';
       this.role = currentUser.position?.title || 'Ministry User';
+    }
+  }
+
+  ngOnInit(): void {
+    this.subscription = this.sideMenuService.collapsed$.subscribe(
+      (collapsed) => {
+        this.isSideMenuCollapsed = collapsed;
+      }
+    );
+  }
+
+  ngOnDestroy(): void {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
     }
   }
 

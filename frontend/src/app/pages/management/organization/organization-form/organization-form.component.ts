@@ -11,12 +11,13 @@ import { OrganizationService } from '../../../../services/organization.service';
 import { ToastrService } from 'ngx-toastr';
 import { DialogRef } from '@ngneat/dialog';
 import { CommonModule } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-organization-form',
   templateUrl: './organization-form.component.html',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, TranslateModule],
   styles: [
     `
       :host {

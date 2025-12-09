@@ -5,7 +5,7 @@
   <!-- Back Button -->
   <button
     (click)="router.navigate(['/request'])"
-    class="mb-6 flex items-center text-[#c9ae81] hover:text-[#b89a6d] transition-colors duration-200"
+    class="mb-6 flex items-center text-accent hover:text-accentDark transition-colors duration-200 font-poppins"
   >
     <i class="fas fa-arrow-left mr-2"></i>
     <span>Back to Requests</span>
@@ -14,7 +14,7 @@
   <!-- Loading State -->
   <div *ngIf="isLoading" class="flex justify-center items-center h-64">
     <div
-      class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#c9ae81]"
+      class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"
     ></div>
   </div>
 
@@ -32,7 +32,7 @@
         <div class="flex items-center gap-4">
           <button
             (click)="openReplyModal()"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#c9ae81] hover:bg-[#b89a6d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81]"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent font-poppins"
           >
             <i class="fas fa-reply mr-2"></i>
             Reply
@@ -196,7 +196,7 @@
                   <div class="relative">
                     <button
                       (click)="toggleDropdown(activity.id, $event)"
-                      class="dropdown-trigger inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c9ae81]"
+                      class="dropdown-trigger inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent font-poppins"
                     >
                       <i class="fas fa-ellipsis-v mr-2"></i>
                       Actions
@@ -264,7 +264,7 @@
       <div class="space-y-4">
         <div class="flex items-start">
           <div
-            class="flex-shrink-0 w-2 h-2 mt-2 bg-[#c9ae81] rounded-full"
+            class="flex-shrink-0 w-2 h-2 mt-2 bg-accent rounded-full"
           ></div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-800">Request Created</p>
@@ -275,7 +275,7 @@
         </div>
         <div class="flex items-start">
           <div
-            class="flex-shrink-0 w-2 h-2 mt-2 bg-[#c9ae81] rounded-full"
+            class="flex-shrink-0 w-2 h-2 mt-2 bg-accent rounded-full"
           ></div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-800">Last Updated</p>

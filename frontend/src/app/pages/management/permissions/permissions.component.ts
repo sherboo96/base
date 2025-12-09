@@ -7,11 +7,12 @@ import { LoadingService } from '../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingComponent } from '../../../components/loading/loading.component';
 import { PermissionFormComponent } from './permission-form/permission-form.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-permissions',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, LoadingComponent, TranslateModule],
   templateUrl: './permissions.component.html',
 })
 export class PermissionsComponent implements OnInit {

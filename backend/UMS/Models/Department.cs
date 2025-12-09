@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace UMS.Models;
 
@@ -14,4 +14,5 @@ public class Department: BaseModel
     public Organization Organization { get; set; }
     public int? ParentDepartmentId { get; set; }
     public Department? ParentDepartment { get; set; }
+    public int? OrderIndex { get; set; } // For ordering departments within the same parent
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos;
 using UMS.Dtos.Shared;
 using UMS.Models;
+using UMS.Services;
 
 namespace UMS.Controllers;
 
@@ -15,10 +16,12 @@ namespace UMS.Controllers;
 public class LocationsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly OrganizationAccessService _orgAccessService;
 
-    public LocationsController(IUnitOfWork unitOfWork)
+    public LocationsController(IUnitOfWork unitOfWork, OrganizationAccessService orgAccessService)
     {
         _unitOfWork = unitOfWork;
+        _orgAccessService = orgAccessService;
     }
 
     [HttpGet]
@@ -51,6 +54,10 @@ public class LocationsController : ControllerBase
             };
         }
 
+        // Get organization filter based on user's role
+        var orgFilter = await _orgAccessService.GetOrganizationFilterAsync();
+        var effectiveOrgFilter = organizationId ?? orgFilter;
+
         Expression<Func<Location, bool>> filter = x =>
             !x.IsDeleted &&
             (!hasSearch ||
@@ -58,7 +65,7 @@ public class LocationsController : ControllerBase
              (x.NameAr != null && x.NameAr.ToLower().Contains(searchLower)) ||
              (x.Floor != null && x.Floor.ToLower().Contains(searchLower)) ||
              (x.Building != null && x.Building.ToLower().Contains(searchLower))) &&
-            (!organizationId.HasValue || x.OrganizationId == organizationId) &&
+            (!effectiveOrgFilter.HasValue || x.OrganizationId == effectiveOrgFilter.Value) &&
             (!hasCategoryFilter || !categoryFilter.HasValue || x.Category == categoryFilter.Value);
 
         var total = await _unitOfWork.Locations.CountAsync(filter);

@@ -9,6 +9,7 @@ import { BehaviorSubject } from 'rxjs';
 import { LoadingService } from '../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingComponent } from '../../../components/loading/loading.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface UserRole {
   userId: number;
@@ -55,7 +56,7 @@ interface UserRolesResponse {
 @Component({
   selector: 'app-user-roles',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, LoadingComponent, TranslateModule],
   templateUrl: './user-roles.component.html',
 })
 export class UserRolesComponent implements OnInit {

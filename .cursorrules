@@ -1,0 +1,470 @@
+# Cursor Rules for UMS Frontend (Angular 18 + Tailwind CSS)
+
+# GLOBAL RULE: DESIGN SYSTEM & UI/UX (TAILWIND + ANGULAR + TEMPLATE PROJECT)
+
+You are working in a **TEMPLATE ANGULAR PROJECT** that will be reused for many entities (users, courses, products, organizations, attendance, etc.).  
+
+All UI you generate MUST be:
+- 100% compatible with **Angular 18**
+- Use **TailwindCSS** and theme tokens from `tailwind.config.js`
+- Entity-agnostic, reusable, and scalable
+- Professional in appearance and UX
+- Designed with clean **Angular architecture** (standalone components, services, inputs/outputs)
+
+---
+
+## 1. Tailwind Design System Usage
+
+### ALWAYS:
+- Use **only Tailwind utility classes** (including custom theme tokens).
+- Use only theme values defined in `tailwind.config.js`:
+  - **Colors (Primary - Teal/Cyan Theme):**  
+    `bg-primary`, `bg-primary-light`, `bg-primary-dark`,  
+    `text-primary`, `border-primary`,
+    `bg-accent`, `bg-accent-light`, `bg-accent-dark`, `bg-accent-darker`,
+    `text-accent`, `bg-teal`, `bg-cyan`,
+    `bg-gradient-teal`, `bg-gradient-cyan`
+  - **Legacy Colors (for backward compatibility):**  
+    `bg-customGold`, `bg-darkGray`, `bg-secondary`,
+    `bg-accentOld`, `bg-accentDark`, `bg-accentDarker`
+  - **Radii:**  
+    `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-2xl`, `rounded-full`
+  - **Spacing:**  
+    `p-2`, `p-3`, `p-4`, `px-6`, `py-3`, `gap-4`, `gap-6`, `space-y-4`
+  - **Typography:**  
+    `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`,  
+    `font-medium`, `font-semibold`, `leading-relaxed`
+    - **Font Family:** Always use `font-poppins` (Poppins font family)
+  - **Shadows:**  
+    `shadow-sm`, `shadow`, `shadow-md`
+
+### NEVER:
+- Use inline CSS (`style=""`) unless absolutely required.
+- Hardcode colors like `#ff0000` or `rgb()` values.
+- Invent class names not approved in the design system.
+- Use CSS files for styling - use Tailwind utilities only.
+
+If unsure, pick the closest **semantic token** (primary, accent, teal, cyan).
+
+---
+
+## 2. Layout & Responsiveness (Angular Templates)
+
+### Page container:
+```html
+<div class="max-w-5xl mx-auto px-4 lg:px-6">
+```
+
+### Layout patterns:
+- **Horizontal sections:**
+```html
+<div class="flex flex-col gap-4 md:flex-row md:items-start">
+```
+
+- **Grid:**
+```html
+<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+```
+
+- **Avoid fixed dimensions:** Use responsive utility classes: `w-full`, `max-w-*`, `flex-1`, `min-w-0`.
+
+- **Cards:**
+```html
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4 md:p-6 space-y-3">
+```
+
+---
+
+## 3. Angular Component Architecture (Reusable Template System)
+
+This is a TEMPLATE project. Components MUST be:
+- Generic & reusable
+- Entity-agnostic (avoid domain-specific naming)
+- Config-driven
+
+### 3.1 Naming Conventions
+- **Components:** `entity-list.component.ts`, `record-form.component.ts`
+- **Services:** `entity.service.ts`
+- **Inputs & Outputs:**
+```typescript
+@Input() entity!: any;
+@Output() submit = new EventEmitter<any>();
+```
+
+### 3.2 Use UI Libraries First
+
+If the project includes shadcn-angular, material, or shared components:
+
+**Always prefer:**
+- `<ui-button>`
+- `<ui-input>`
+- `<ui-select>`
+- `<ui-dialog>`
+- `<ui-card>`
+- `<ui-table>`
+
+**Never rebuild components that already exist.**
+
+**Project-specific components to use:**
+- `<app-loading>` - LoadingComponent (for global loading state)
+- `<app-generic-table>` - GenericTableComponent (for data tables)
+- `<app-generic-modal>` - GenericModalComponent (for forms/modals)
+- `<app-pagination>` - PaginationComponent (for pagination)
+- `<app-searchable-select>` - SearchableSelectComponent (for searchable dropdowns)
+- `<app-delete-confirmation-dialog>` - DeleteConfirmationDialogComponent (for delete confirmations)
+- `<app-dialog>` - DialogComponent (generic dialog wrapper)
+- `<app-side-menu>` - SideMenuComponent (navigation menu)
+- `<app-nav-bar>` - NavBarComponent (top navigation bar)
+- `<app-language-switcher>` - LanguageSwitcherComponent (for i18n)
+
+### 3.3 Composition Rules
+
+Break pages into:
+- Header
+- Filters bar
+- Table or list
+- Drawer/sidebar
+- Dialog (modal)
+- Pagination
+
+**Avoid components over 200–250 lines.**
+
+### 3.4 Standalone Components
+
+**ALWAYS use standalone components:**
+```typescript
+@Component({
+  selector: 'app-entity',
+  standalone: true,
+  imports: [CommonModule, FormsModule, TranslateModule],
+  templateUrl: './entity.component.html',
+})
+```
+
+---
+
+## 4. Forms & Inputs (Angular Reactive Forms)
+
+**Use Reactive Forms by default:**
+```html
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+```
+
+**Input field pattern:**
+```html
+<div class="space-y-1">
+  <label for="email" class="text-sm font-medium text-gray-700 font-poppins">Email</label>
+  <input 
+    id="email" 
+    formControlName="email" 
+    type="email"
+    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-colors font-poppins" 
+  />
+  <p *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="text-xs text-red-600">
+    Invalid email
+  </p>
+</div>
+```
+
+**Buttons (use Tailwind classes):**
+```html
+<div class="flex items-center gap-2">
+  <button 
+    type="submit" 
+    class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors font-poppins font-medium"
+  >
+    Save
+  </button>
+  <button 
+    type="button" 
+    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-poppins font-medium"
+  >
+    Cancel
+  </button>
+</div>
+```
+
+---
+
+## 5. Tables, Lists & Data Display
+
+**Wrapper:**
+```html
+<div class="w-full overflow-x-auto">
+```
+
+**Tailwind Table:**
+```html
+<table class="min-w-full border-separate border-spacing-0">
+  <thead>
+    <tr>
+      <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide bg-muted/50 px-4 py-3">
+        Name
+      </th>
+    </tr>
+  </thead>
+</table>
+```
+
+**Empty State:**
+```html
+<div class="flex flex-col items-center justify-center py-10 text-center text-sm text-muted-foreground">
+  No data available.
+</div>
+```
+
+**Loading Skeleton:**
+```html
+<div class="h-24 w-full animate-pulse rounded-xl bg-muted"></div>
+```
+
+**Use LoadingService for global loading state:**
+```typescript
+constructor(public loadingService: LoadingService) {}
+```
+
+---
+
+## 6. UX & Accessibility (Angular Adapted)
+
+**MUST follow:**
+- Use `aria-label`, `role="dialog"`, etc.
+- Always connect `<label>` with `<input>` via `for` & `id`.
+
+**UX rules:**
+- Primary action on the right
+- Clear destructive actions
+- No clutter — use spacing utilities
+- Typography hierarchy:
+  - Page title: `text-2xl font-semibold tracking-tight`
+  - Section title: `text-lg font-semibold`
+  - Body text: `text-sm text-muted-foreground`
+
+**Notifications:**
+- Use `ToastrService` for success/error messages:
+```typescript
+this.toastr.success('Operation completed successfully');
+this.toastr.error('An error occurred');
+```
+
+---
+
+## 7. Internationalization (Angular i18n / Transloco)
+
+**NEVER hardcode text.**
+
+**Instead use:**
+```html
+{{ 'entity.name' | translate }}
+```
+
+or Angular i18n:
+```html
+<span i18n="@@entityName">Name</span>
+```
+
+**Use generic naming:**
+- Name
+- Code
+- Status
+- Created At
+- Updated At
+
+**Project uses `@ngx-translate/core` - always use TranslateModule:**
+```typescript
+imports: [TranslateModule]
+```
+
+---
+
+## 8. Angular Code Style & Structure
+
+### ALWAYS:
+- Use standalone components unless project uses modules.
+- Enable OnPush where appropriate:
+```typescript
+changeDetection: ChangeDetectionStrategy.OnPush
+```
+
+### Services:
+- Use RxJS streams.
+- Do NOT put business logic inside components.
+- Standard service naming: `EntityService`
+- Extend or use `ApiService` for HTTP calls:
+```typescript
+constructor(private apiService: ApiService) {}
+
+getData(params?: any): Observable<any> {
+  return this.apiService.getData('endpoint', params);
+}
+```
+
+### State Management:
+- Use `BehaviorSubject` for shared state (e.g., AuthService)
+- Use `StorageService` for localStorage operations:
+```typescript
+this.storageService.setItem('key', value);
+this.storageService.getItem('key');
+```
+
+### HTTP Interceptors:
+- `AuthInterceptor` - Automatically adds JWT token
+- `LoadingInterceptor` - Manages global loading state
+
+### Guards:
+- `AuthGuard` - Protects authenticated routes
+- `PermissionGuard` - Protects permission-based routes
+
+---
+
+## 9. Backend Integration (ASP.NET Core 8.0)
+
+### API Response Format:
+All API responses follow `BaseResponse<T>`:
+```typescript
+interface BaseResponse<T> {
+  statusCode: number;
+  message: string;
+  result: T;
+  total?: number;
+  pagination?: Pagination;
+}
+```
+
+### Error Handling:
+```typescript
+this.apiService.getData('endpoint').subscribe({
+  next: (response: BaseResponse<any>) => {
+    if (response.statusCode === 200) {
+      // Handle success
+    }
+  },
+  error: (error) => {
+    this.toastr.error(error.message || 'An error occurred');
+  }
+});
+```
+
+### Authentication:
+- Store JWT token in localStorage via `StorageService`
+- Token automatically added by `AuthInterceptor`
+- Use `AuthService` for login/logout:
+```typescript
+this.authService.login(credentials).subscribe({
+  next: (response) => {
+    // Token stored automatically
+  }
+});
+```
+
+---
+
+## 10. Editing Existing Code
+
+**When modifying existing components:**
+- Do NOT break Tailwind design system.
+- Replace any inline CSS with Tailwind utilities.
+- Normalize spacing & typography.
+- Remove entity-specific names and propose reusable abstractions.
+- Maintain component structure and avoid introducing unnecessary complexity.
+
+**When adding new features:**
+- Follow existing patterns (Repository Pattern, Unit of Work for backend)
+- Use DTOs for data transfer
+- Follow existing naming conventions
+- Add proper error handling
+- Include loading states
+- Add proper TypeScript types
+
+---
+
+## 11. Project-Specific Patterns
+
+### Backend (C# / ASP.NET Core):
+- **Repository Pattern:** Use `IUnitOfWork` and `IBaseRepository<T, TViewModel>`
+- **DTOs:** Always use DTOs for API communication (AutoMapper)
+- **Controllers:** Return `BaseResponse<T>` with proper status codes
+- **Authorization:** Use `[Authorize]` attribute on controllers
+- **Async/Await:** All database operations must be async
+
+### Frontend (Angular):
+- **Services:** One service per entity (UserService, RoleService, etc.)
+- **Components:** Separate list and form components
+- **Routing:** Use `app.routes.ts` with guards
+- **Pagination:** Use existing pagination component
+- **Modals:** Use `DialogService` from `@ngneat/dialog`
+
+### Database:
+- **Soft Delete:** Use `IsDeleted` flag instead of hard deletes
+- **Audit Fields:** Include `CreatedOn`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`
+- **Active Flag:** Use `IsActive` for enabling/disabling entities
+
+---
+
+## 12. Security Best Practices
+
+- **Never expose sensitive data** in frontend code
+- **Always validate** user input
+- **Use HTTPS** in production
+- **Implement proper error handling** without exposing system details
+- **Follow permission-based access control** using PermissionGuard
+- **Sanitize user inputs** before database operations
+
+---
+
+## 13. Code Quality Standards
+
+- **TypeScript:** Use strict typing, avoid `any` when possible
+- **C#:** Use nullable reference types, proper exception handling
+- **Comments:** Add meaningful comments for complex logic
+- **Naming:** Use descriptive, self-documenting names
+- **DRY:** Don't repeat yourself - extract common logic
+- **SOLID:** Follow SOLID principles
+
+---
+
+## 14. Testing Considerations
+
+- Write testable code (dependency injection, pure functions)
+- Separate business logic from UI logic
+- Use mocks for external dependencies
+- Test error scenarios
+
+---
+
+## 15. File Organization
+
+### Frontend Structure:
+```
+src/app/
+├── components/     # Reusable components
+├── pages/          # Feature pages
+├── services/       # Business logic services
+├── guards/         # Route guards
+├── interceptors/  # HTTP interceptors
+├── models/         # TypeScript models
+└── app.routes.ts   # Route configuration
+```
+
+### Backend Structure:
+```
+UMS/
+├── Controllers/    # API controllers
+├── Models/         # Entity models
+├── Dtos/           # Data transfer objects
+├── Services/       # Business logic services
+├── Repository/     # Data access layer
+├── Interfaces/     # Repository interfaces
+└── Data/           # DbContext and migrations
+```
+
+---
+
+## REMEMBER:
+- This is a **TEMPLATE PROJECT** - make everything reusable
+- Use **Tailwind utilities** exclusively
+- Follow **Angular best practices**
+- Maintain **clean architecture**
+- Keep components **small and focused**
+- Use **TypeScript strict typing**
+- Follow **existing patterns** in the codebase

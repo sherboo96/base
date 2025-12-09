@@ -17,7 +17,7 @@
         alt="Ministry of Oil Logo"
         class="h-36 mb-4"
       />
-      <h2 class="text-2xl font-bold text-[#c9ae81] mb-2 flex items-center">
+      <h2 class="text-2xl font-bold text-accent mb-2 flex items-center font-poppins">
         {{ 'login.title' | translate }}
         <span class="ml-2 rtl:ml-0 rtl:mr-2">👋</span>
       </h2>
@@ -165,7 +165,7 @@
             type="checkbox"
             id="remember-me"
             formControlName="rememberMe"
-            class="w-4 h-4 border-gray-300 rounded focus:ring-[#c9ae81] checked:bg-[#c9ae81] checked:border-[#c9ae81]"
+            class="w-4 h-4 border-gray-300 rounded focus:ring-accent checked:bg-accent checked:border-accent"
           />
           <label for="remember-me" class="ml-2 rtl:ml-0 rtl:mr-2 text-sm text-gray-600"
             >{{ 'login.rememberMe' | translate }}</label
@@ -179,14 +179,14 @@
             'opacity-70 cursor-not-allowed':
               loginForm.invalid && formSubmitted
           }"
-          class="w-full py-2.5 px-4 bg-gradient-to-r from-[#c9ae81] to-[#d4bc92] text-white rounded-lg shadow-md hover:from-[#b79c70] hover:to-[#c4ab7e] hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#c9ae81]/30 transform hover:-translate-y-0.5 flex justify-center items-center"
+          class="w-full py-2.5 px-4 bg-accentLight text-white rounded-lg shadow-md hover:bg-accent hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/30 transform hover:-translate-y-0.5 flex justify-center items-center font-poppins"
         >
           <span>{{ 'login.signIn' | translate }}</span>
         </button>
 
         <div class="text-xs text-gray-500 mt-2">
           <p class="text-center">
-            <i class="fas fa-shield-alt mr-1 rtl:mr-0 rtl:ml-1 text-[#c9ae81]"></i>
+            <i class="fas fa-shield-alt mr-1 rtl:mr-0 rtl:ml-1 text-accent"></i>
             {{ 'login.securityMessage' | translate }}
           </p>
         </div>

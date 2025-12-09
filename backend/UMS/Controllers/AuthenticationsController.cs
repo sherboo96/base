@@ -208,6 +208,8 @@ public class AuthenticationsController : ControllerBase
                     id = (int)user.LoginMethod,
                     name = user.LoginMethod.ToString()
                 },
+                isTemporaryPassword = user.IsTemporaryPassword,
+                emailVerified = user.EmailVerified,
                 organization = organization != null ? new LoginOrganizationDto
                 {
                     id = organization.Id,

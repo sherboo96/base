@@ -16,6 +16,14 @@ export interface Department {
     name: string;
     code: string;
   };
+  parentDepartmentId?: number | null;
+  parentDepartment?: {
+    id: number;
+    nameEn: string;
+    nameAr: string;
+    code: string;
+  } | null;
+  orderIndex?: number | null;
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;
@@ -50,6 +58,13 @@ export class DepartmentService {
     );
   }
 
+  getAllDepartments(organizationId?: number): Observable<any> {
+    const url = organizationId 
+      ? `${this.apiUrl}/all?organizationId=${organizationId}`
+      : `${this.apiUrl}/all`;
+    return this.http.get<any>(url);
+  }
+
   getDepartment(id: number): Observable<Department> {
     return this.http.get<Department>(`${this.apiUrl}/${id}`);
   }
@@ -64,10 +79,17 @@ export class DepartmentService {
     id: number,
     department: Partial<Department>
   ): Observable<Department> {
-    return this.http.put<Department>(`${this.apiUrl}/${id}`, department);
+    return this.http.patch<Department>(`${this.apiUrl}/${id}`, department);
   }
 
   deleteDepartment(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  moveDepartment(id: number, newParentDepartmentId: number | null, newOrderIndex?: number | null): Observable<Department> {
+    return this.http.patch<Department>(`${this.apiUrl}/${id}/move`, {
+      newParentDepartmentId: newParentDepartmentId,
+      newOrderIndex: newOrderIndex ?? null
+    });
   }
 }

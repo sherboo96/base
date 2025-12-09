@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using UMS.Const;
 
 namespace UMS.Interfaces;
@@ -8,31 +8,31 @@ public interface IBaseRepository<T, TViewModel> where T : class where TViewModel
     /// <summary>
     /// Finds a single entity by predicate.
     /// </summary>
-    Task<T> FindAsync(Expression<Func<T, bool>> match, string[] includes = null);
+    Task<T> FindAsync(Expression<Func<T, bool>> match, string[]? includes = null);
 
     /// <summary>
     /// Gets all entities.
     /// </summary>
-    Task<IEnumerable<T>> GetAllAsync(string[] includes = null);
+    Task<IEnumerable<T>> GetAllAsync(string[]? includes = null);
 
-    Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> match, string[] includes = null);
+    Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> match, string[]? includes = null);
 
-    Task<IEnumerable<T>> GetAllAsync(int take, int skip, string[] includes = null);
+    Task<IEnumerable<T>> GetAllAsync(int take, int skip, string[]? includes = null);
 
     Task<IEnumerable<T>> GetAllAsync(
         int? take,
         int? skip,
-        Expression<Func<T, object>> orderBy = null,
+        Expression<Func<T, object>>? orderBy = null,
         string orderByDirection = OrderBy.Ascending,
-        string[] includes = null);
+        string[]? includes = null);
 
     Task<IEnumerable<T>> GetAllAsync(
         int? take,
         int? skip,
         Expression<Func<T, bool>> match,
-        Expression<Func<T, object>> orderBy = null,
+        Expression<Func<T, object>>? orderBy = null,
         string orderByDirection = OrderBy.Ascending,
-        string[] includes = null);
+        string[]? includes = null);
 
     /// <summary>
     /// Adds a new entity using a view model.
@@ -86,5 +86,5 @@ public interface IBaseRepository<T, TViewModel> where T : class where TViewModel
         Expression<Func<T, TKey>> keySelector,
         Expression<Func<T, T>> elementSelector,
         Expression<Func<TKey, IEnumerable<T>, TResult>> resultSelector,
-        Expression<Func<T, bool>> filter = null);
+        Expression<Func<T, bool>>? filter = null);
 }

@@ -19,6 +19,7 @@ import { UserRolesComponent } from './pages/management/user-roles/user-roles.com
 import { LocationComponent } from './pages/management/location/location.component';
 import { InstructorComponent } from './pages/management/instructor/instructor.component';
 import { InstitutionComponent } from './pages/management/institution/institution.component';
+import { SegmentComponent } from './pages/management/segment/segment.component';
 
 export const routes: Routes = [
   {
@@ -59,6 +60,15 @@ export const routes: Routes = [
     data: {
       redirectIfLoggedIn: false,
       permission: 'DEPARTMENTS_VIEW',
+    },
+  },
+  {
+    path: 'management/segment',
+    component: SegmentComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'SEGMENTS_VIEW',
     },
   },
   {
