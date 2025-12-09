@@ -661,6 +661,14 @@ export class DepartmentComponent implements OnInit, OnDestroy {
   getEmptyChildrenArray(): DepartmentTreeNode[] {
     return [];
   }
+
+  get paginationParams() {
+    return {
+      from: (this.currentPage - 1) * this.pageSize + 1,
+      to: Math.min(this.currentPage * this.pageSize, this.totalItems),
+      total: this.totalItems
+    };
+  }
 }
 
 interface DepartmentTreeNode extends Omit<Department, 'level'> {

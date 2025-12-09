@@ -150,4 +150,46 @@ export class SideMenuComponent implements OnInit, OnDestroy {
     this.activeRoute = '/management/roles';
     this.router.navigate(['/management/roles']);
   }
+
+  navigateToSystemConfiguration() {
+    this.activeRoute = '/management/system-configuration';
+    this.router.navigate(['/management/system-configuration']);
+  }
+
+  navigateToAdoptionUser() {
+    this.activeRoute = '/management/adoption-user';
+    this.router.navigate(['/management/adoption-user']);
+  }
+
+  get copyrightParams() {
+    return { year: this.currentYear };
+  }
+
+  // Check if section has any visible items
+  hasManagementItems(): boolean {
+    return this.hasPermission('ORGANIZATIONS_VIEW') ||
+           this.hasPermission('DEPARTMENTS_VIEW') ||
+           this.hasPermission('JOB_TITLES_VIEW') ||
+           this.hasPermission('POSITIONS_VIEW') ||
+           this.hasPermission('LOCATIONS_VIEW');
+  }
+
+  hasUserManagementItems(): boolean {
+    return this.hasPermission('USERS_VIEW') ||
+           this.hasPermission('SEGMENTS_VIEW');
+  }
+
+  hasRoleManagementItems(): boolean {
+    return this.hasPermission('ROLES_VIEW');
+  }
+
+  hasCourseConfigurationItems(): boolean {
+    return this.hasPermission('ADOPTION_USERS_VIEW') ||
+           this.hasPermission('INSTRUCTORS_VIEW') ||
+           this.hasPermission('INSTITUTIONS_VIEW');
+  }
+
+  hasSystemAdministrationItems(): boolean {
+    return this.hasPermission('SYSTEM_CONFIG_VIEW');
+  }
 }

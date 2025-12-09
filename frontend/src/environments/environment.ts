@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  baseUrl: 'http://localhost:5148/api',
+  baseUrl: 'https://localhost:7138/api',
   encryptionKey: 'MOOP@ssw0rd20242025', // Change this in production
 };

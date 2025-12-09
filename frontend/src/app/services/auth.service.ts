@@ -42,6 +42,32 @@ export class AuthService {
       );
   }
 
+  // Check user's login method by username
+  checkLoginMethod(username: string): Observable<any> {
+    return this.http.post(`${environment.baseUrl}/Authentications/check-login-method`, { username, password: '' });
+  }
+
+  // Request OTP for OTP verification login
+  requestOtp(username: string): Observable<any> {
+    return this.http.post(`${environment.baseUrl}/Authentications/request-otp`, { username, password: '' });
+  }
+
+  // Register new user
+  register(registrationData: {
+    email: string;
+    fullName: string;
+    fullNameAr?: string;
+    civilNo?: string;
+    username: string;
+  }): Observable<any> {
+    return this.http.post(`${environment.baseUrl}/Authentications/register`, registrationData);
+  }
+
+  // Verify registration OTP
+  verifyRegistrationOtp(email: string, otp: string): Observable<any> {
+    return this.http.post(`${environment.baseUrl}/Authentications/verify-registration-otp`, { email, otp });
+  }
+
   // Example of other auth-related methods (optional)
   getToken(): string | null {
     return this.storageService.getItem('token');

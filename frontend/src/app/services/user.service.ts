@@ -76,6 +76,7 @@ export class UserService {
   }
 
   createUser(user: {
+    civilNo?: string;
     fullName: string;
     email: string;
     username?: string;
@@ -92,6 +93,7 @@ export class UserService {
   }
 
   updateUser(userId: string, user: {
+    civilNo?: string;
     fullName: string;
     email: string;
     username?: string;
@@ -114,12 +116,20 @@ export class UserService {
     );
   }
 
-  unlockUser(userId: number): Observable<any> {
+  unlockUser(userId: string): Observable<any> {
     return this.http.patch<any>(`${this.baseUrl}/Users/${userId}/Unlock`, {});
   }
 
-  toggleUserStatus(userId: number): Observable<any> {
+  toggleUserStatus(userId: string): Observable<any> {
     return this.http.patch<any>(`${this.baseUrl}/Users/${userId}/Toggle`, {});
+  }
+
+  getUserPassword(userId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Users/${userId}/password`);
+  }
+
+  resetUserPassword(userId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Users/${userId}/reset-password`, {});
   }
 
   getPermissions(page: number, pageSize: number): Observable<any> {
@@ -190,8 +200,10 @@ export class UserService {
     return this.http.post(`${this.baseUrl}/UserRoles`, userRole);
   }
 
-  updateUserRole(id: number, userRole: any): Observable<any> {
-    return this.http.put(`${this.baseUrl}/UserRoles/${id}`, userRole);
+  updateUserRole(userId: string | number, roleId: number, userRole: any): Observable<any> {
+    // Convert userId to string for the route parameter
+    const userIdStr = typeof userId === 'number' ? userId.toString() : userId;
+    return this.http.put(`${this.baseUrl}/UserRoles/${userIdStr}/${roleId}`, userRole);
   }
 
   deleteUserRole(userId: number, roleId: number): Observable<any> {

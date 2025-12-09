@@ -21,4 +21,6 @@ public class Location : BaseModel
     public LocationCategory Category { get; set; } = LocationCategory.Onsite;
     public int OrganizationId { get; set; }
     public Organization Organization { get; set; }
+    public string? Logo { get; set; } // Path to logo file
+    public string? Template { get; set; } // Path to template file
 }

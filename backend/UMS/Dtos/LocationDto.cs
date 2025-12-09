@@ -10,4 +10,6 @@ public class LocationDto
     public string? Building { get; set; }
     public LocationCategory Category { get; set; } = LocationCategory.Onsite;
     public int OrganizationId { get; set; }
+    public string? Logo { get; set; } // Path to logo file
+    public string? Template { get; set; } // Path to template file
 }

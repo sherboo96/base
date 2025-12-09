@@ -229,6 +229,29 @@ export class SegmentFormComponent implements OnInit {
     return this.selectedUserIds.includes(userId);
   }
 
+  areAllUsersSelected(): boolean {
+    if (this.filteredUsers.length === 0) {
+      return false;
+    }
+    return this.filteredUsers.every(user => this.isUserSelected(user.id));
+  }
+
+  toggleSelectAll(): void {
+    if (this.areAllUsersSelected()) {
+      // Deselect all - remove all filtered user IDs
+      const filteredUserIds = this.filteredUsers.map(user => user.id);
+      this.selectedUserIds = this.selectedUserIds.filter(id => !filteredUserIds.includes(id));
+    } else {
+      // Select all - add all filtered user IDs that aren't already selected
+      const filteredUserIds = this.filteredUsers.map(user => user.id);
+      filteredUserIds.forEach(userId => {
+        if (!this.selectedUserIds.includes(userId)) {
+          this.selectedUserIds.push(userId);
+        }
+      });
+    }
+  }
+
   onSubmit(): void {
     // Special handling for assign users mode
     if (this.isAssignUsersMode) {

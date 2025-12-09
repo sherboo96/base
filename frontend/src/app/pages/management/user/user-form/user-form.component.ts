@@ -56,7 +56,7 @@ export class UserFormComponent implements OnInit {
   departments: any[] = [];
   loginMethods: any[] = [];
   roles: any[] = [];
-  selectedLoginMethod: number = 0; // Track selected login method: 1=KMNID, 2=AD, 3=Credentials
+  selectedLoginMethod: number = 0; // Track selected login method: 1=OTP Verification, 2=AD, 3=Credentials
   selectedOrganization: any = null; // Track selected organization to check isMain
   isSubmitting = false;
   isEdit = false;
@@ -77,6 +77,7 @@ export class UserFormComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       id: [''], // Add ID field for updates
+      civilNo: ['', Validators.required],
       fullName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       username: [''], // Username for login (optional, defaults to email)
@@ -147,17 +148,15 @@ export class UserFormComponent implements OnInit {
   }
 
   generateTemporaryPassword(): void {
-    // Generate a secure random password
-    const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
+    // Generate password in format MOO@YYYY + random suffix (e.g., MOO@2025A3)
+    const currentYear = new Date().getFullYear();
+    // Add random alphanumeric suffix (2 characters) to make it unique each time
+    const randomSuffix = Math.random().toString(36).substring(2, 4).toUpperCase();
+    const password = `MOO@${currentYear}${randomSuffix}`;
     this.generatedPassword = password;
     this.form.patchValue({ temporaryPassword: password });
     this.cdr.detectChanges();
-    console.log('Generated temporary password');
+    console.log('Generated temporary password:', password);
   }
 
   populateForm(user: any): void {
@@ -178,6 +177,7 @@ export class UserFormComponent implements OnInit {
     
     this.form.patchValue({
       id: user.id, // Make sure ID is included for updates
+      civilNo: user.civilNo || user.civilId || '',
       fullName: user.fullName || '',
       email: user.email || '',
       username: user.userName || user.username || user.email || '', // Use userName from Identity, username from DTO, or fallback to email
@@ -443,6 +443,7 @@ export class UserFormComponent implements OnInit {
     
     // Prepare user data with proper type conversions
     const userData: any = {
+      civilNo: rawValue.civilNo || '',
       fullName: rawValue.fullName || '',
       email: rawValue.email || '',
       username: rawValue.username || undefined, // Username (optional, defaults to email on backend)
@@ -467,9 +468,9 @@ export class UserFormComponent implements OnInit {
       userData.adUsername = rawValue.adUsername;
     }
     
-    // Remove empty string values and undefined fields
+    // Remove empty string values and undefined fields (but keep civilNo as it's required)
     Object.keys(userData).forEach(key => {
-      if (userData[key] === '' || userData[key] === undefined || userData[key] === null) {
+      if (key !== 'civilNo' && (userData[key] === '' || userData[key] === undefined || userData[key] === null)) {
         delete userData[key];
       }
     });

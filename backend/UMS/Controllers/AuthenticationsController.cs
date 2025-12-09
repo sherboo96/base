@@ -9,6 +9,9 @@ using UMS.Dtos.Shared;
 using UMS.Models;
 using UMS.Services;
 using Microsoft.Extensions.Hosting;
+using UMS.Interfaces;
+using System.Linq;
+using UMS.Dtos;
 
 namespace UMS.Controllers;
 
@@ -23,6 +26,7 @@ public class AuthenticationsController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly JwtTokenGenerator _jwt;
     private readonly IHostEnvironment _env;
+    private readonly OtpService _otpService;
 
     public AuthenticationsController(
         LdapAuthenticator ldapAuthenticator, 
@@ -31,7 +35,8 @@ public class AuthenticationsController : ControllerBase
         SystemConfigurationService configService,
         IUnitOfWork unitOfWork, 
         JwtTokenGenerator jwt, 
-        IHostEnvironment env)
+        IHostEnvironment env,
+        OtpService otpService)
     {
         _ldapAuthenticator = ldapAuthenticator;
         _passwordHasher = passwordHasher;
@@ -40,6 +45,7 @@ public class AuthenticationsController : ControllerBase
         _unitOfWork = unitOfWork;
         _jwt = jwt;
         _env = env;
+        _otpService = otpService;
     }
 
     [HttpPost("login")]
@@ -92,8 +98,8 @@ public class AuthenticationsController : ControllerBase
         else if (user.LoginMethod == LoginMethod.ActiveDirectory)
         {
             // Active Directory authentication
-        var adUser = _ldapAuthenticator.GetUserFromDomain(request.Username);
-        if (adUser is null)
+            var adUser = _ldapAuthenticator.GetUserFromDomain(request.Username);
+            if (adUser is null)
             {
                 return NotFound(new BaseResponse<bool> 
                 { 
@@ -104,6 +110,32 @@ public class AuthenticationsController : ControllerBase
             }
 
             isValidCredentials = _ldapAuthenticator.ValidateCredentials(request.Username, request.Password);
+        }
+        else if (user.LoginMethod == LoginMethod.KMNID) // OTP Verification
+        {
+            // OTP Verification - request.Password contains the OTP code
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return BadRequest(new BaseResponse<bool> 
+                { 
+                    StatusCode = 400, 
+                    Message = "Email is required for OTP verification.", 
+                    Result = false 
+                });
+            }
+
+            // Verify OTP
+            isValidCredentials = await _otpService.VerifyOtpAsync(user.Id, request.Password);
+            
+            if (!isValidCredentials)
+            {
+                return BadRequest(new BaseResponse<bool> 
+                { 
+                    StatusCode = 400, 
+                    Message = "Invalid or expired OTP code.", 
+                    Result = false 
+                });
+            }
         }
         else
         {
@@ -137,6 +169,127 @@ public class AuthenticationsController : ControllerBase
         }
 
         return await ValidateAndProcessLogin(user);
+    }
+
+    [HttpPost("check-login-method")]
+    public async Task<IActionResult> CheckLoginMethod([FromBody] LoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            return BadRequest(new BaseResponse<object>
+            {
+                StatusCode = 400,
+                Message = "Username is required.",
+                Result = null
+            });
+        }
+
+        // Find user by username or email
+        User? user = await _userManager.FindByEmailAsync(request.Username) 
+                     ?? await _userManager.FindByNameAsync(request.Username);
+        
+        if (user == null)
+        {
+            var untrackedUser = await _unitOfWork.Users.FindAsync(u => u.ADUsername == request.Username);
+            if (untrackedUser != null)
+            {
+                user = await _userManager.FindByIdAsync(untrackedUser.Id);
+            }
+        }
+
+        if (user is null)
+        {
+            return NotFound(new BaseResponse<object>
+            {
+                StatusCode = 404,
+                Message = "User not found.",
+                Result = null
+            });
+        }
+
+        // Check if the login method is enabled in system configuration
+        var isLoginMethodEnabled = await _configService.IsLoginMethodEnabledAsync(user.LoginMethod);
+        
+        return Ok(new BaseResponse<object>
+        {
+            StatusCode = 200,
+            Message = "Login method retrieved successfully.",
+            Result = new
+            {
+                loginMethod = new LoginMethodDto
+                {
+                    id = (int)user.LoginMethod,
+                    name = user.LoginMethod.ToString()
+                },
+                isEnabled = isLoginMethodEnabled,
+                email = user.Email
+            }
+        });
+    }
+
+    [HttpPost("request-otp")]
+    public async Task<IActionResult> RequestOtp([FromBody] LoginRequest request)
+    {
+        // Find user by username or email
+        User? user = await _userManager.FindByEmailAsync(request.Username) 
+                     ?? await _userManager.FindByNameAsync(request.Username);
+        
+        if (user == null)
+        {
+            var untrackedUser = await _unitOfWork.Users.FindAsync(u => u.ADUsername == request.Username);
+            if (untrackedUser != null)
+            {
+                user = await _userManager.FindByIdAsync(untrackedUser.Id);
+            }
+        }
+
+        if (user is null)
+        {
+            return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "User not found.", Result = false });
+        }
+
+        // Check if user has OTP login method
+        if (user.LoginMethod != LoginMethod.KMNID)
+        {
+            return BadRequest(new BaseResponse<bool> 
+            { 
+                StatusCode = 400, 
+                Message = "OTP verification is not available for this user's login method.", 
+                Result = false 
+            });
+        }
+
+        // Check if OTP login method is enabled
+        var isOtpEnabled = await _configService.IsLoginMethodEnabledAsync(LoginMethod.KMNID);
+        if (!isOtpEnabled)
+        {
+            return BadRequest(new BaseResponse<bool> 
+            { 
+                StatusCode = 400, 
+                Message = "OTP verification is not enabled in system configuration.", 
+                Result = false 
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            return BadRequest(new BaseResponse<bool> 
+            { 
+                StatusCode = 400, 
+                Message = "Email is required for OTP verification.", 
+                Result = false 
+            });
+        }
+
+        // Generate and send OTP (email is sent automatically in GenerateAndStoreOtpAsync)
+        var otp = await _otpService.GenerateAndStoreOtpAsync(user.Id, user.Email, user.FullName);
+
+        return Ok(new BaseResponse<bool>
+        {
+            StatusCode = 200,
+            Message = "OTP has been sent to your email address.",
+            Result = true
+        });
     }
 
     private async Task<IActionResult> ValidateAndProcessLogin(User user)
@@ -243,6 +396,335 @@ public class AuthenticationsController : ControllerBase
             Message = "Login successful.",
             Result = response
         });
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
+    {
+        try
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Email is required.",
+                    Result = false
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.FullName))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Full name (English) is required.",
+                    Result = false
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Username))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Username is required.",
+                    Result = false
+                });
+            }
+
+            // Check if user already exists
+            var existingUser = await _userManager.FindByEmailAsync(request.Email)
+                             ?? await _userManager.FindByNameAsync(request.Username);
+            
+            if (existingUser != null)
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "A user with this email or username already exists.",
+                    Result = false
+                });
+            }
+
+            // Extract domain from email
+            var emailParts = request.Email.Split('@');
+            if (emailParts.Length != 2)
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Invalid email format.",
+                    Result = false
+                });
+            }
+
+            var emailDomain = emailParts[1].ToLower();
+
+            // Find organization by domain
+            var organization = await _unitOfWork.Organizations.FindAsync(
+                o => !o.IsDeleted && o.Domain.ToLower() == emailDomain
+            );
+
+            if (organization == null)
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = $"No organization found for email domain '{emailDomain}'. Please contact your administrator.",
+                    Result = false
+                });
+            }
+
+            // Check if organization is active
+            if (!organization.IsActive)
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "The organization associated with your email domain is not active.",
+                    Result = false
+                });
+            }
+
+            // Create new user with OTP Verification as default login method
+            // User will be inactive until OTP is verified
+            var newUser = new User
+            {
+                UserName = request.Username,
+                Email = request.Email,
+                FullName = request.FullName,
+                ADUsername = string.Empty, // Not used for OTP verification, but required field
+                CivilNo = request.CivilNo, // Optional civil number
+                LoginMethod = LoginMethod.KMNID, // OTP Verification
+                OrganizationId = organization.Id,
+                IsActive = false, // User will be activated after OTP verification
+                IsDeleted = false,
+                EmailVerified = false, // Will be verified after OTP confirmation
+                CreatedOn = DateTime.UtcNow,
+                CreatedBy = "Registration System",
+                FailedLoginAttempts = 0,
+                IsLocked = false
+            };
+            
+            // Note: FullNameAr is not currently stored in User model
+            // If needed, it can be added to the User model in a future migration
+
+            // Create user using UserManager (this handles Identity requirements)
+            // For OTP verification, we don't need a password, but Identity requires one
+            // We'll create a temporary random password that will never be used for OTP users
+            // Password must meet Identity requirements: uppercase, lowercase, number, special char, min 6 chars
+            var tempPassword = "TempPass123!@#" + Guid.NewGuid().ToString("N").Substring(0, 10);
+            var result = await _userManager.CreateAsync(newUser, tempPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = $"Failed to create user: {errors}",
+                    Result = false
+                });
+            }
+
+            // Reload user to get the generated ID
+            var createdUser = await _userManager.FindByEmailAsync(request.Email);
+            if (createdUser == null)
+            {
+                return StatusCode(500, new BaseResponse<bool>
+                {
+                    StatusCode = 500,
+                    Message = "User was created but could not be retrieved.",
+                    Result = false
+                });
+            }
+
+            // Find and assign default role for the organization
+            // Priority: 1) Organization-specific default role, 2) Global default role (ApplyToAllOrganizations)
+            // First try to find organization-specific default role
+            var defaultRole = await _unitOfWork.Roles.FindAsync(
+                r => !r.IsDeleted && 
+                     r.IsDefault && 
+                     r.IsActive &&
+                     r.OrganizationId == organization.Id
+            );
+            
+            // If no organization-specific default role, try global default role
+            if (defaultRole == null)
+            {
+                defaultRole = await _unitOfWork.Roles.FindAsync(
+                    r => !r.IsDeleted && 
+                         r.IsDefault && 
+                         r.IsActive &&
+                         r.ApplyToAllOrganizations &&
+                         (!r.OrganizationId.HasValue || r.OrganizationId == null)
+                );
+            }
+
+            if (defaultRole != null)
+            {
+                var userRole = new UserRole
+                {
+                    UserId = createdUser.Id,
+                    RoleId = defaultRole.Id
+                };
+                await _unitOfWork.UserRoles.AddAsync(userRole);
+                await _unitOfWork.CompleteAsync();
+            }
+
+            // Generate and send OTP for email verification
+            try
+            {
+                var userEmail = createdUser.Email ?? request.Email;
+                if (!string.IsNullOrWhiteSpace(userEmail))
+                {
+                    await _otpService.GenerateAndStoreOtpAsync(createdUser.Id, userEmail, createdUser.FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail registration - user can request OTP later
+                Console.WriteLine($"Warning: Failed to send OTP email during registration: {ex.Message}");
+            }
+
+            return Ok(new BaseResponse<bool>
+            {
+                StatusCode = 200,
+                Message = "Registration successful. An OTP has been sent to your email for verification. Please verify your email to activate your account.",
+                Result = true
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log the full exception details for debugging
+            var errorMessage = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorMessage += $" Inner Exception: {ex.InnerException.Message}";
+            }
+            
+            // Check if it's a database constraint violation
+            if (ex.InnerException != null && ex.InnerException.Message.Contains("FOREIGN KEY"))
+            {
+                errorMessage = "Database constraint violation. Please ensure all required relationships are valid.";
+            }
+            else if (ex.InnerException != null && ex.InnerException.Message.Contains("UNIQUE"))
+            {
+                errorMessage = "A user with this email or username already exists.";
+            }
+            
+            return StatusCode(500, new BaseResponse<bool>
+            {
+                StatusCode = 500,
+                Message = $"Error during registration: {errorMessage}",
+                Result = false
+            });
+        }
+    }
+
+    [HttpPost("verify-registration-otp")]
+    public async Task<IActionResult> VerifyRegistrationOtp([FromBody] VerifyRegistrationOtpRequest request)
+    {
+        try
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Email is required.",
+                    Result = false
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Otp))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "OTP code is required.",
+                    Result = false
+                });
+            }
+
+            // Find user by email
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return NotFound(new BaseResponse<bool>
+                {
+                    StatusCode = 404,
+                    Message = "User not found.",
+                    Result = false
+                });
+            }
+
+            // Check if user is already verified
+            if (user.EmailVerified && user.IsActive)
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Your account is already verified and active.",
+                    Result = false
+                });
+            }
+
+            // Verify OTP
+            var isValidOtp = await _otpService.VerifyOtpAsync(user.Id, request.Otp);
+            if (!isValidOtp)
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Invalid or expired OTP code.",
+                    Result = false
+                });
+            }
+
+            // Activate user and mark email as verified
+            user.EmailVerified = true;
+            user.IsActive = true;
+            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedBy = "OTP Verification System";
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+                return StatusCode(500, new BaseResponse<bool>
+                {
+                    StatusCode = 500,
+                    Message = $"Failed to activate user: {errors}",
+                    Result = false
+                });
+            }
+
+            return Ok(new BaseResponse<bool>
+            {
+                StatusCode = 200,
+                Message = "Email verified successfully. Your account has been activated.",
+                Result = true
+            });
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorMessage += $" Inner Exception: {ex.InnerException.Message}";
+            }
+
+            return StatusCode(500, new BaseResponse<bool>
+            {
+                StatusCode = 500,
+                Message = $"Error during OTP verification: {errorMessage}",
+                Result = false
+            });
+        }
     }
 
     [HttpGet("permissions")]
@@ -397,6 +879,16 @@ public class AuthenticationsController : ControllerBase
                 icon = "supervisor_account",
                 section = "Role Management",
                 hasAccess = isSuperAdmin || permissionCodes.Contains("ROLES_VIEW")
+            },
+            // System Administration Section
+            new SideMenuPermissionDto
+            {
+                code = "SYSTEM_CONFIG_VIEW",
+                route = "/management/system-configuration",
+                label = "System Configuration",
+                icon = "settings",
+                section = "System Administration",
+                hasAccess = isSuperAdmin || permissionCodes.Contains("SYSTEM_CONFIG_VIEW")
             }
         };
 

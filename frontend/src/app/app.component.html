@@ -1,34 +1,14 @@
 <div class="flex h-screen overflow-hidden bg-gray-50 rtl:flex-row-reverse">
-  <!-- Loading Component -->
-  <app-loading></app-loading>
-
-  <!-- Render Side Menu Conditionally -->
-  <div
-    class="transition-all duration-300 rtl:order-2"
-    [ngClass]="{ 'w-0 overflow-hidden': isLoginRoute(), 'w-auto': !isLoginRoute() }"
-  >
-    <app-side-menu
-      *ngIf="!isLoginRoute()"
-      class="animate-fade-in"
-    ></app-side-menu>
-  </div>
-
-  <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300 rtl:order-1">
-    <!-- Render Nav Bar Conditionally - Fixed navbar -->
-    <app-nav-bar *ngIf="!isLoginRoute()"></app-nav-bar>
-
-    <!-- Main Content Area -->
-    <main
-      class="overflow-y-auto transition-colors duration-300"
-      [class.bg-gray-50]="!isLoginRoute()"
-      [class.bg-white]="isLoginRoute()"
-      [style.height]="!isLoginRoute() ? 'calc(100vh - 72px)' : '100vh'"
-      [style.margin-top]="!isLoginRoute() ? '72px' : '0'"
-    >
-      <!-- Content Container with max width constraint for better readability on wide screens -->
-      <div class="min-h-full w-full mx-auto animate-fade-in px-4">
-        <router-outlet></router-outlet>
-      </div>
-    </main>
-  </div>
+    <app-loading></app-loading>
+    <div class="transition-all duration-300 rtl:order-2" [ngClass]="{'w-0 overflow-hidden':isLoginRoute(),'w-auto':!isLoginRoute()}">
+        <app-side-menu *ngIf="!isLoginRoute()" class="animate-fade-in"></app-side-menu>
+    </div>
+    <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300 rtl:order-1">
+        <app-nav-bar *ngIf="!isLoginRoute()"></app-nav-bar>
+        <main class="overflow-y-auto transition-colors duration-300" [class.bg-gray-50]="!isLoginRoute()" [class.bg-white]="isLoginRoute()" [style.height]="!isLoginRoute()?'calc(100vh - 72px)':'100vh'" [style.margin-top]="!isLoginRoute()?'72px':'0'">
+            <div class="min-h-full w-full mx-auto animate-fade-in px-4">
+                <router-outlet></router-outlet>
+            </div>
+        </main>
+    </div>
 </div>

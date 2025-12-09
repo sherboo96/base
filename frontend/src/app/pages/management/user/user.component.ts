@@ -9,6 +9,8 @@ import { ToastrService } from 'ngx-toastr';
 import { UserFormComponent } from './user-form/user-form.component';
 import { LoadingComponent } from '../../../components/loading/loading.component';
 import { TranslationService } from '../../../services/translation.service';
+import { ResetPasswordDialogComponent } from '../../../components/reset-password-dialog/reset-password-dialog.component';
+import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 
 @Component({
   selector: 'app-user',
@@ -139,6 +141,86 @@ export class UserComponent implements OnInit {
         this.toastr.error(error.error?.message || this.translationService.instant('user.toggleStatusError'));
         this.loadingService.hide();
       },
+    });
+  }
+
+  viewUser(user: any): void {
+    // Open user form in view/edit mode
+    const dialogRef = this.dialogService.open(UserFormComponent, {
+      data: { user },
+      width: '700px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        setTimeout(() => {
+          this.loadUsers();
+        }, 300);
+      }
+    });
+  }
+
+  resetPassword(user: any): void {
+    // Only reset password for Credentials login method
+    if (user.loginMethod !== 3) {
+      this.toastr.warning(this.translationService.instant('user.passwordResetNotAvailable'));
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmDialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
+      data: {
+        title: this.translationService.instant('user.resetPassword'),
+        message: this.translationService.instant('user.confirmResetPassword'),
+        confirmText: this.translationService.instant('user.resetPassword'),
+        cancelText: this.translationService.instant('common.cancel'),
+        type: 'warning',
+        warningMessage: this.translationService.instant('user.passwordResetWarning')
+      },
+      width: '400px',
+      enableClose: true,
+      closeButton: true,
+    });
+
+    confirmDialogRef.afterClosed$.subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
+
+      this.loadingService.show();
+      this.userService.resetUserPassword(user.id).subscribe({
+        next: (response) => {
+          this.loadingService.hide();
+          const newPassword = response.result?.temporaryPassword || response.result?.TemporaryPassword || response.result;
+          if (newPassword) {
+            // Show password in custom dialog
+            const passwordDialogRef = this.dialogService.open(ResetPasswordDialogComponent, {
+              data: { password: newPassword },
+              width: '500px',
+              enableClose: true,
+              closeButton: true,
+            });
+
+            passwordDialogRef.afterClosed$.subscribe(() => {
+              this.loadUsers();
+            });
+          } else {
+            this.toastr.success(response.message || this.translationService.instant('user.passwordResetSuccess'));
+            this.loadUsers();
+          }
+        },
+        error: (error) => {
+          console.error('Error resetting password:', error);
+          this.toastr.error(error.error?.message || this.translationService.instant('user.passwordResetError'));
+          this.loadingService.hide();
+        },
+      });
     });
   }
 

@@ -1,4 +1,5 @@
 using UMS.Dtos;
+using UMS.Models;
 
 namespace UMS.Interfaces;
 
@@ -16,6 +17,7 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<SystemConfiguration, SystemConfigurationDto> SystemConfigurations { get; }
     IBaseRepository<Location, LocationDto> Locations { get; }
     ISegmentRepository Segments { get; }
+    IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; }
 
     IBaseRepository<UserRole, UserRoleDto> UserRoles { get; }
     IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; }

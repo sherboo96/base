@@ -6,6 +6,7 @@ using UMS.Dtos;
 using UMS.Dtos.Shared;
 using UMS.Models;
 using UMS.Services;
+using System.IO;
 
 namespace UMS.Controllers;
 
@@ -128,6 +129,8 @@ public class LocationsController : ControllerBase
         existing.Building = dto.Building;
         existing.Category = dto.Category;
         existing.OrganizationId = dto.OrganizationId;
+        existing.Logo = dto.Logo;
+        existing.Template = dto.Template;
         existing.UpdatedAt = DateTime.Now;
 
         var updated = await _unitOfWork.Locations.UpdateAsync(existing);
@@ -176,6 +179,140 @@ public class LocationsController : ControllerBase
             StatusCode = 200,
             Message = $"Location {(existing.IsActive ? "activated" : "deactivated")} successfully.",
             Result = existing
+        });
+    }
+
+    [HttpPost("{id}/upload-logo")]
+    public async Task<IActionResult> UploadLogo(int id, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "No file uploaded.", Result = false });
+        }
+
+        var existing = await _unitOfWork.Locations.FindAsync(x => x.Id == id && !x.IsDeleted);
+        if (existing == null)
+        {
+            return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "Location not found.", Result = false });
+        }
+
+        // Validate file type (images only)
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp" };
+        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(fileExtension))
+        {
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Invalid file type. Only image files are allowed.", Result = false });
+        }
+
+        // Create uploads directory if it doesn't exist
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "locations", "logos");
+        if (!Directory.Exists(uploadsDir))
+        {
+            Directory.CreateDirectory(uploadsDir);
+        }
+
+        // Generate unique filename
+        var fileName = $"{id}_{Guid.NewGuid()}{fileExtension}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        // Save file
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Delete old logo if exists
+        if (!string.IsNullOrEmpty(existing.Logo))
+        {
+            var oldLogoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existing.Logo.TrimStart('/'));
+            if (System.IO.File.Exists(oldLogoPath))
+            {
+                try
+                {
+                    System.IO.File.Delete(oldLogoPath);
+                }
+                catch { /* Ignore deletion errors */ }
+            }
+        }
+
+        // Update location with new logo path (relative to wwwroot)
+        existing.Logo = $"/uploads/locations/logos/{fileName}";
+        existing.UpdatedAt = DateTime.Now;
+        await _unitOfWork.Locations.UpdateAsync(existing);
+        await _unitOfWork.CompleteAsync();
+
+        return Ok(new BaseResponse<object>
+        {
+            StatusCode = 200,
+            Message = "Logo uploaded successfully.",
+            Result = new { logoPath = existing.Logo }
+        });
+    }
+
+    [HttpPost("{id}/upload-template")]
+    public async Task<IActionResult> UploadTemplate(int id, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "No file uploaded.", Result = false });
+        }
+
+        var existing = await _unitOfWork.Locations.FindAsync(x => x.Id == id && !x.IsDeleted);
+        if (existing == null)
+        {
+            return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "Location not found.", Result = false });
+        }
+
+        // Validate file type (documents/templates)
+        var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".html", ".htm", ".txt" };
+        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(fileExtension))
+        {
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Invalid file type. Allowed types: PDF, DOC, DOCX, XLS, XLSX, HTML, TXT.", Result = false });
+        }
+
+        // Create uploads directory if it doesn't exist
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "locations", "templates");
+        if (!Directory.Exists(uploadsDir))
+        {
+            Directory.CreateDirectory(uploadsDir);
+        }
+
+        // Generate unique filename
+        var fileName = $"{id}_{Guid.NewGuid()}{fileExtension}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        // Save file
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Delete old template if exists
+        if (!string.IsNullOrEmpty(existing.Template))
+        {
+            var oldTemplatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existing.Template.TrimStart('/'));
+            if (System.IO.File.Exists(oldTemplatePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(oldTemplatePath);
+                }
+                catch { /* Ignore deletion errors */ }
+            }
+        }
+
+        // Update location with new template path (relative to wwwroot)
+        existing.Template = $"/uploads/locations/templates/{fileName}";
+        existing.UpdatedAt = DateTime.Now;
+        await _unitOfWork.Locations.UpdateAsync(existing);
+        await _unitOfWork.CompleteAsync();
+
+        return Ok(new BaseResponse<object>
+        {
+            StatusCode = 200,
+            Message = "Template uploaded successfully.",
+            Result = new { templatePath = existing.Template }
         });
     }
 }

@@ -20,6 +20,8 @@ import { LocationComponent } from './pages/management/location/location.componen
 import { InstructorComponent } from './pages/management/instructor/instructor.component';
 import { InstitutionComponent } from './pages/management/institution/institution.component';
 import { SegmentComponent } from './pages/management/segment/segment.component';
+import { SystemConfigurationComponent } from './pages/management/system-configuration/system-configuration.component';
+import { AdoptionUserComponent } from './pages/management/adoption-user/adoption-user.component';
 
 export const routes: Routes = [
   {
@@ -159,6 +161,24 @@ export const routes: Routes = [
     data: {
       redirectIfLoggedIn: false,
       permission: 'USER_ROLES_VIEW',
+    },
+  },
+  {
+    path: 'management/system-configuration',
+    component: SystemConfigurationComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'SYSTEM_CONFIG_VIEW',
+    },
+  },
+  {
+    path: 'management/adoption-user',
+    component: AdoptionUserComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'ADOPTION_USERS_VIEW',
     },
   },
   {

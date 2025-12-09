@@ -1,520 +1,307 @@
-<div class="p-6 mx-auto max-w-full">
-  <!-- Hidden component reference for dialog usage (prevents Angular warning) -->
-  <app-department-form *ngIf="false"></app-department-form>
-  <!-- Add app-loading component for global loading -->
-  <app-loading></app-loading>
-
-  <!-- Dashboard-style Loading Spinner (local component loading) -->
-  <div
-    *ngIf="isLoading && !departments.length"
-    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
-    id="custom-loader"
-  >
-    <div class="spinner-container">
-      <div class="spinner"></div>
-      <p class="mt-4 text-accent font-medium">{{ 'department.loadingDepartments' | translate }}</p>
-    </div>
-  </div>
-
-  <!-- Page Header -->
-  <div class="mb-6 flex justify-between items-center">
-    <div>
-      <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3">
-        <i class="fas fa-building text-accent"></i>
-        <span>{{ 'department.title' | translate }}</span>
-      </h1>
-      <p class="text-sm text-gray-600">
-        {{ 'department.subtitle' | translate }}
-      </p>
-    </div>
-    <!-- View Toggle Button -->
-    <div class="flex items-center gap-3">
-      <button
-        (click)="toggleViewMode()"
-        class="px-4 py-2.5 bg-white border-2 border-accent text-accent rounded-lg hover:bg-accent hover:text-white transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
-        [title]="viewMode === 'table' ? ('department.switchToTreeView' | translate) : ('department.switchToTableView' | translate)"
-      >
-        <i class="fas" [ngClass]="{'fa-sitemap': viewMode === 'table', 'fa-table': viewMode === 'tree'}"></i>
-        <span>{{ viewMode === 'table' ? ('department.treeView' | translate) : ('department.tableView' | translate) }}</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Search Section -->
-  <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-accentDark px-4 py-2">
-      <div class="flex items-center gap-2">
-        <i class="fas fa-search text-white text-sm"></i>
-        <h3 class="text-sm font-semibold text-white">{{ 'common.search' | translate }}</h3>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-3">
-          <label class="block text-sm font-medium text-textDark mb-2">
-            <i class="fas fa-search mr-2 text-accent"></i>{{ 'department.searchPlaceholder' | translate }}
-          </label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <i class="fas fa-search text-gray-400"></i>
-            </div>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (keyup.enter)="onSearch()"
-              [placeholder]="'department.searchPlaceholder' | translate"
-              class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-all duration-200"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-end gap-3 mt-4">
-        <button
-          (click)="onSearch()"
-          class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
-        >
-          <i class="fas fa-search"></i>
-          <span>{{ 'common.search' | translate }}</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Departments Table Card -->
-  <div
-    class="department-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
-  >
-    <div
-      class="bg-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
-    >
-      <!-- Table Header -->
-      <div class="flex items-center gap-3">
-        <i class="fas fa-building text-white text-xl"></i>
-        <h3 class="text-lg font-semibold text-white">{{ 'department.title' | translate }}</h3>
-        <span
-          *ngIf="totalItems > 0"
-          class="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full"
-        >
-          {{ totalItems }} {{ totalItems === 1 ? ('department.department' | translate) : ('department.departments' | translate) }}
-        </span>
-      </div>
-      <!-- Add Department Button -->
-      <button
-        (click)="addNewDepartment()"
-        class="bg-white hover:bg-gray-50 text-accent px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
-      >
-        <i class="fas fa-plus-circle"></i>
-        <span>{{ 'department.addDepartment' | translate }}</span>
-      </button>
-    </div>
-
-    <!-- Empty State -->
-    <div
-      *ngIf="departments.length === 0 && !isLoading && viewMode === 'table'"
-      class="empty-state py-16 flex flex-col items-center justify-center"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-16 w-16 text-gray-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      <h3 class="text-2xl font-bold text-textDark mb-2">{{ 'department.noDepartmentsFound' | translate }}</h3>
-      <p class="text-sm text-gray-600 text-center max-w-md mb-6">
-        {{ 'department.noDepartmentsMatching' | translate }}
-      </p>
-    </div>
-
-    <!-- Loading Placeholder for Table (only when no data is available) -->
-    <div
-      *ngIf="isLoading && departments.length === 0 && viewMode === 'table'"
-      class="py-16 flex flex-col items-center justify-center"
-    >
-      <div class="spinner-container">
-        <div class="spinner"></div>
-        <p class="mt-4 text-accent font-medium">
-          {{ 'department.loadingDepartmentData' | translate }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Small loading indicator when refreshing with existing data -->
-    <div
-      *ngIf="isLoading && departments.length > 0 && viewMode === 'table'"
-      class="absolute top-4 right-4 z-10"
-    >
-      <div class="spinner w-5 h-5"></div>
-    </div>
-
-    <!-- Tree View -->
-    <div *ngIf="viewMode === 'tree'" class="p-6">
-      <!-- Loading State -->
-      <div *ngIf="isLoading" class="py-16 flex flex-col items-center justify-center">
+<div class="p-4 mx-auto max-w-full">
+    <app-department-form *ngIf="false"></app-department-form>
+    <app-loading></app-loading>
+    <div *ngIf="isLoading && !departments.length" class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50" id="custom-loader">
         <div class="spinner-container">
-          <div class="spinner"></div>
-          <p class="mt-4 text-accent font-medium">
-            {{ 'department.loadingDepartmentData' | translate }}
-          </p>
+            <div class="spinner"></div>
+            <p class="mt-3 text-accent font-medium text-sm">{{'department.loadingDepartments'|translate}}</p>
         </div>
-      </div>
-      
-      <!-- Empty State -->
-      <div *ngIf="departmentTree.length === 0 && !isLoading" class="text-center py-16">
-        <i class="fas fa-sitemap text-gray-400 text-6xl mb-4"></i>
-        <h3 class="text-2xl font-bold text-textDark mb-2">{{ 'department.noDepartmentsFound' | translate }}</h3>
-        <p class="text-sm text-gray-600">{{ 'department.noDepartmentsMatching' | translate }}</p>
-      </div>
-      
-      <!-- Tree Content - Cards Layout -->
-      <div 
-        *ngIf="departmentTree.length > 0 && !isLoading"
-        cdkDropList
-        id="root-drop-list"
-        [cdkDropListConnectedTo]="cachedDropListIds.length > 0 ? cachedDropListIds : getAllDropListIds()"
-        (cdkDropListDropped)="onDragDrop($event)"
-        [cdkDropListData]="departmentTree"
-        class="root-drop-zone p-4"
-      >
-        <div class="grid grid-cols-1 gap-4">
-          <div *ngFor="let node of departmentTree; trackBy: trackByNodeId" class="department-tree-node">
-            <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { node: node }"></ng-container>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <!-- Table View -->
-    <div *ngIf="viewMode === 'table'" class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-100">
-          <tr>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-building mr-2 text-accent"></i>{{ 'department.name' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-sitemap mr-2 text-accent"></i>{{ 'department.organization' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-toggle-on mr-2 text-accent"></i>{{ 'department.status' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-calendar mr-2 text-accent"></i>{{ 'department.createdOn' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-right text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-cog mr-2 text-accent"></i>{{ 'department.actions' | translate }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let department of departments" class="hover:bg-gray-50 transition-all duration-150">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ department.nameEn }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ department.organization.name }} ({{
-                department.organization.code
-              }})
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                [ngClass]="getStatusClass(department.isActive)"
-                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-              >
-                {{ getStatusText(department.isActive) }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(department.createdOn) }}
-            </td>
-            <td
-              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-            >
-              <div class="flex items-center justify-end gap-2">
-              <button
-                  (click)="editDepartment(department)"
-                class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'department.editDepartment' | translate"
-              >
-                  <i class="fas fa-edit mr-1.5"></i>
-                  <span>{{ 'common.edit' | translate }}</span>
-                </button>
-                <button
-                  (click)="deleteDepartment(department)"
-                  class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'common.delete' | translate"
-                >
-                  <i class="fas fa-trash mr-1.5"></i>
-                  <span>{{ 'common.delete' | translate }}</span>
-              </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Tree Node Template - Card Style -->
-    <ng-template #treeNodeTemplate let-node="node">
-      <div class="department-card-wrapper" [class.is-child]="node.parentDepartmentId">
-        <!-- Visual Hierarchy Connector for Child Cards -->
-        <div *ngIf="node.parentDepartmentId" class="hierarchy-connector">
-          <div class="connector-line"></div>
-          <div class="connector-arrow">
-            <i class="fas fa-arrow-down text-white"></i>
-          </div>
+    <div class="mb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-textDark mb-0.5 flex items-center gap-2">
+                <i class="fas fa-building text-accent text-lg"></i>
+                <span>{{'department.title'|translate}}</span>
+            </h1>
+            <p class="text-xs text-gray-600">
+                {{'department.subtitle'|translate}}
+            </p>
         </div>
-        
-        <!-- Department Card - Draggable (card itself is draggable) -->
-        <div 
-          cdkDrag
-          [cdkDragData]="node"
-          class="department-card-drag-item"
-        >
-            <!-- Card Content -->
-            <div class="bg-white rounded-xl shadow-md hover:shadow-lg border-2 border-gray-200 hover:border-accent transition-all duration-200 p-5 h-full flex flex-col group relative">
-              
-              <!-- Drag Handle Badge -->
-              <div class="absolute top-2 right-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-accent transition-colors z-10" cdkDragHandle>
-                <i class="fas fa-grip-vertical text-sm"></i>
-              </div>
-              
-              <!-- Card Header -->
-              <div class="flex items-start gap-3 mb-3">
-                <div class="flex-shrink-0">
-                  <div class="w-14 h-14 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-                    <i class="fas fa-building text-accent text-xl"></i>
-                  </div>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-bold text-gray-900 font-poppins text-lg mb-1 truncate">{{ node.nameEn }}</h3>
-                  <div class="text-xs text-gray-500 font-poppins">
-                    <span *ngIf="node.code" class="font-medium">{{ node.code }}</span>
-                    <span *ngIf="node.code && node.organization"> • </span>
-                    <span *ngIf="node.organization" class="text-gray-600">{{ node.organization.name }}</span>
-                    <span *ngIf="!node.code && !node.organization" class="text-gray-400">N/A</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Card Body -->
-              <div class="flex-1 space-y-2 mb-4">
-                <!-- Parent Department Info -->
-                <div *ngIf="node.parentDepartment" class="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-                  <i class="fas fa-level-up-alt text-accent"></i>
-                  <span class="font-poppins truncate">
-                    <span class="font-medium">{{ 'department.parentDepartment' | translate }}:</span>
-                    {{ node.parentDepartment.nameEn }}
-                  </span>
-                </div>
-                
-                <!-- Status Badge -->
-                <div class="flex items-center justify-between">
-                  <span
-                    [ngClass]="getStatusClass(node.isActive)"
-                    class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full font-poppins"
-                  >
-                    {{ getStatusText(node.isActive) }}
-                  </span>
-                  
-                  <!-- Children Count Badge -->
-                  <div *ngIf="node.children && node.children.length > 0" class="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 rounded-full px-2 py-1">
-                    <i class="fas fa-sitemap text-accent"></i>
-                    <span class="font-medium">{{ node.children.length }}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Card Footer - Actions -->
-              <div class="flex items-center gap-2 pt-3 border-t border-gray-200 mt-auto">
-                <button
-                  (click)="editDepartment(node); $event.stopPropagation()"
-                  class="flex-1 inline-flex items-center justify-center px-3 py-2 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins"
-                  [title]="'department.editDepartment' | translate"
-                >
-                  <i class="fas fa-edit mr-1.5"></i>
-                  <span>{{ 'common.edit' | translate }}</span>
-                </button>
-                <button
-                  (click)="deleteDepartment(node); $event.stopPropagation()"
-                  class="flex-1 inline-flex items-center justify-center px-3 py-2 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins"
-                  [title]="'common.delete' | translate"
-                >
-                  <i class="fas fa-trash mr-1.5"></i>
-                  <span>{{ 'common.delete' | translate }}</span>
-                </button>
-              </div>
-            </div>
-            
-            <!-- CDK Drag Preview -->
-            <div *cdkDragPreview class="bg-white rounded-xl shadow-2xl border-2 border-accent p-5 flex flex-col gap-3 min-w-[280px] max-w-[320px]">
-              <!-- Preview Header -->
-              <div class="flex items-start gap-3">
-                <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                  <i class="fas fa-building text-accent text-lg"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-bold text-gray-900 font-poppins text-base mb-1 truncate">{{ node.nameEn }}</h3>
-                  <div class="text-xs text-gray-500 font-poppins">
-                    <span *ngIf="node.code" class="font-medium">{{ node.code }}</span>
-                    <span *ngIf="node.code && node.organization"> • </span>
-                    <span *ngIf="node.organization" class="text-gray-600">{{ node.organization.name }}</span>
-                  </div>
-                </div>
-                <div class="text-accent">
-                  <i class="fas fa-grip-vertical"></i>
-                </div>
-              </div>
-              <!-- Preview Status -->
-              <div class="flex items-center justify-between pt-2 border-t border-gray-200">
-                <span
-                  [ngClass]="getStatusClass(node.isActive)"
-                  class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full font-poppins"
-                >
-                  {{ getStatusText(node.isActive) }}
-                </span>
-                <div *ngIf="node.children && node.children.length > 0" class="flex items-center gap-1 text-xs text-gray-600">
-                  <i class="fas fa-sitemap text-accent"></i>
-                  <span class="font-medium">{{ node.children.length }}</span>
-                </div>
-              </div>
-            </div>
-            
-          <!-- CDK Drag Placeholder -->
-          <div *cdkDragPlaceholder class="bg-white rounded-xl border-2 border-dashed border-accent bg-accent/5 min-h-[200px] flex items-center justify-center">
-            <div class="text-center">
-              <i class="fas fa-building text-accent text-2xl mb-2"></i>
-              <div class="text-sm text-gray-600 font-poppins">{{ 'department.dragToReorder' | translate }}</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Drop Zone for Children - This is where cards can be dropped TO BECOME children of this card -->
-        <div 
-          *ngIf="node.children && node.children.length > 0"
-          cdkDropList
-          [id]="'drop-list-' + node.id"
-          [cdkDropListConnectedTo]="getConnectedDropLists(node)"
-          (cdkDropListDropped)="onDragDrop($event)"
-          [cdkDropListData]="node.children"
-          class="children-drop-zone"
-        >
-          <div class="children-container mt-6 ml-8 pl-4 border-l-2 border-gray-200">
-            <div class="grid grid-cols-1 gap-4">
-              <ng-container *ngFor="let child of node.children; trackBy: trackByNodeId">
-                <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { node: child }"></ng-container>
-              </ng-container>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Empty Drop Zone - For cards without children, allow drops to create first child -->
-        <div 
-          *ngIf="!node.children || node.children.length === 0"
-          cdkDropList
-          [id]="'drop-list-' + node.id"
-          [cdkDropListConnectedTo]="getConnectedDropLists(node)"
-          (cdkDropListDropped)="onDragDrop($event)"
-          [cdkDropListData]="node.children || getEmptyChildrenArray()"
-          class="empty-children-drop-zone mt-4"
-        >
-          <div class="text-center py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-            {{ 'department.dropHereToAddChild' | translate }}
-          </div>
-        </div>
-      </div>
-    </ng-template>
-
-    <!-- Pagination -->
-    <div
-      *ngIf="departments.length > 0 && viewMode === 'table'"
-      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t border-gray-200"
-    >
-      <div class="text-sm text-textDark mb-2 sm:mb-0 font-medium">
-        {{ 'department.showing' | translate: { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems } }}
-      </div>
-      <div class="flex items-center gap-3">
-        <select
-          [(ngModel)]="pageSize"
-          (change)="onPageSizeChange()"
-          class="text-sm border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white font-medium"
-        >
-          <option [value]="5">5 {{ 'department.perPage' | translate }}</option>
-          <option [value]="10">10 {{ 'department.perPage' | translate }}</option>
-          <option [value]="20">20 {{ 'department.perPage' | translate }}</option>
-          <option [value]="50">50 {{ 'department.perPage' | translate }}</option>
-        </select>
-        <div class="flex gap-1">
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(1)"
-            [title]="'common.firstPage' | translate"
-          >
-            <i class="fas fa-angle-double-left"></i>
-          </button>
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(currentPage - 1)"
-            [title]="'common.previousPage' | translate"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="flex gap-1">
-            <button
-              *ngFor="let page of getPageNumbers()"
-              (click)="goToPage(page)"
-              class="px-4 py-2 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200"
-              [ngClass]="{
-                'bg-accentDark text-white border-accent shadow-md':
-                  currentPage === page,
-                'border-gray-300 hover:bg-white hover:border-accent': currentPage !== page
-              }"
-            >
-              {{ page }}
+        <div class="flex items-center gap-2">
+            <button (click)="toggleViewMode()" class="px-3 py-1.5 bg-white border-2 border-accent text-accent rounded-lg hover:bg-accent hover:text-white transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-xs flex items-center gap-1.5" [title]="viewMode==='table'?('department.switchToTreeView'|translate):('department.switchToTableView'|translate)">
+                <i class="fas text-xs" [ngClass]="{'fa-sitemap':viewMode==='table','fa-table':viewMode==='tree'}"></i>
+                <span>{{viewMode==='table'?('department.treeView'|translate):('department.tableView'|translate)}}</span>
             </button>
-          </div>
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(currentPage + 1)"
-            [title]="'common.nextPage' | translate"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(totalPages)"
-            [title]="'common.lastPage' | translate"
-          >
-            <i class="fas fa-angle-double-right"></i>
-          </button>
         </div>
-      </div>
     </div>
-  </div>
+    <div class="mb-3 bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        <div class="bg-accentDark px-3 py-1.5">
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-search text-white text-xs"></i>
+                <h3 class="text-xs font-semibold text-white">{{'common.search'|translate}}</h3>
+            </div>
+        </div>
+        <div class="p-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-medium text-textDark mb-1">
+                        <i class="fas fa-search mr-1.5 text-accent text-xs"></i>{{'department.searchPlaceholder'|translate}}
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                            <i class="fas fa-search text-gray-400 text-xs"></i>
+                        </div>
+                        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" [placeholder]="'department.searchPlaceholder'|translate" class="w-full pl-8 pr-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-xs transition-all duration-200" />
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-2">
+                <button (click)="onSearch()" class="px-4 py-1.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-xs flex items-center gap-1.5">
+                    <i class="fas fa-search text-xs"></i>
+                    <span>{{'common.search'|translate}}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="department-card relative flex flex-col w-full h-full bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        <div class="bg-gray-50 py-2 px-3 border-b border-gray-200 flex flex-wrap gap-2 items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-building text-gray-600 text-sm"></i>
+                <h3 class="text-sm font-semibold text-gray-800">{{'department.title'|translate}}</h3>
+                <span *ngIf="totalItems>0" class="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-full">
+                    {{totalItems}} {{totalItems===1?('department.department'|translate):('department.departments'|translate)}}
+                </span>
+            </div>
+            <button (click)="addNewDepartment()" class="bg-accent hover:bg-accentDark text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors duration-200 text-xs">
+                <i class="fas fa-plus-circle text-xs"></i>
+                <span>{{'department.addDepartment'|translate}}</span>
+            </button>
+        </div>
+        <div *ngIf="departments.length===0&&!isLoading&&viewMode==='table'" class="empty-state py-12 flex flex-col items-center justify-center bg-gray-50">
+            <div class="bg-white rounded-full p-4 mb-3 shadow-md">
+                <i class="fas fa-building text-4xl text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-bold text-textDark mb-1">{{'department.noDepartmentsFound'|translate}}</h3>
+            <p class="text-xs text-gray-600 text-center max-w-md mb-4">
+                {{'department.noDepartmentsMatching'|translate}}
+            </p>
+        </div>
+        <div *ngIf="isLoading&&departments.length===0&&viewMode==='table'" class="py-12 flex flex-col items-center justify-center">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p class="mt-3 text-accent font-medium text-sm">
+                    {{'department.loadingDepartmentData'|translate}}
+                </p>
+            </div>
+        </div>
+        <div *ngIf="isLoading&&departments.length>0&&viewMode==='table'" class="absolute top-3 right-3 z-10">
+            <div class="spinner w-4 h-4"></div>
+        </div>
+        <div *ngIf="viewMode==='tree'" class="p-4">
+            <div *ngIf="isLoading" class="py-12 flex flex-col items-center justify-center">
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                    <p class="mt-3 text-accent font-medium text-sm">
+                        {{'department.loadingDepartmentData'|translate}}
+                    </p>
+                </div>
+            </div>
+            <div *ngIf="departmentTree.length===0&&!isLoading" class="text-center py-12">
+                <i class="fas fa-sitemap text-gray-400 text-4xl mb-3"></i>
+                <h3 class="text-xl font-bold text-textDark mb-1">{{'department.noDepartmentsFound'|translate}}</h3>
+                <p class="text-xs text-gray-600">{{'department.noDepartmentsMatching'|translate}}</p>
+            </div>
+            <div *ngIf="departmentTree.length>0&&!isLoading" cdkDropList id="root-drop-list" [cdkDropListConnectedTo]="cachedDropListIds.length>0?cachedDropListIds:getAllDropListIds()" (cdkDropListDropped)="onDragDrop($event)" [cdkDropListData]="departmentTree" class="root-drop-zone p-3">
+                <div class="grid grid-cols-1 gap-3">
+                    <div *ngFor="let node of departmentTree;trackBy:trackByNodeId" class="department-tree-node">
+                        <ng-container *ngTemplateOutlet="treeNodeTemplate;context:{node:node}"></ng-container>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="viewMode==='table'" class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-building mr-1.5 text-accent text-xs"></i>{{'department.name'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-sitemap mr-1.5 text-accent text-xs"></i>{{'department.organization'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{'department.status'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-calendar mr-1.5 text-accent text-xs"></i>{{'department.createdOn'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-right text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-cog mr-1.5 text-accent text-xs"></i>{{'department.actions'|translate}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr *ngFor="let department of departments" class="hover:bg-gray-50 transition-all duration-150">
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            {{department.nameEn}}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            {{department.organization.name}} ({{department.organization.code}})
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span [ngClass]="getStatusClass(department.isActive)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                {{getStatusText(department.isActive)}}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            {{formatDate(department.createdOn)}}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button (click)="editDepartment(department)" class="inline-flex items-center px-2 py-1 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'department.editDepartment'|translate">
+                                    <i class="fas fa-edit mr-1 text-xs"></i>
+                                    <span>{{'common.edit'|translate}}</span>
+                                </button>
+                                <button (click)="deleteDepartment(department)" class="inline-flex items-center px-2 py-1 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'common.delete'|translate">
+                                    <i class="fas fa-trash mr-1 text-xs"></i>
+                                    <span>{{'common.delete'|translate}}</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <ng-template #treeNodeTemplate let-node="node">
+            <div class="department-card-wrapper" [class.is-child]="node.parentDepartmentId">
+                <div *ngIf="node.parentDepartmentId" class="hierarchy-connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow">
+                        <i class="fas fa-arrow-down text-white"></i>
+                    </div>
+                </div>
+                <div cdkDrag [cdkDragData]="node" class="department-card-drag-item">
+                    <div class="bg-white rounded-xl shadow-md hover:shadow-lg border-2 border-gray-200 hover:border-accent transition-all duration-200 p-4 h-full flex flex-col group relative">
+                        <div class="absolute top-2 right-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-accent transition-colors z-10" cdkDragHandle>
+                            <i class="fas fa-grip-vertical text-xs"></i>
+                        </div>
+                        <div class="flex items-start gap-2 mb-2">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                                    <i class="fas fa-building text-accent text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-gray-900 font-poppins text-base mb-0.5 truncate">{{node.nameEn}}</h3>
+                                <div class="text-xs text-gray-500 font-poppins">
+                                    <span *ngIf="node.code" class="font-medium">{{node.code}}</span>
+                                    <span *ngIf="node.code&&node.organization"> • </span>
+                                    <span *ngIf="node.organization" class="text-gray-600">{{node.organization.name}}</span>
+                                    <span *ngIf="!node.code&&!node.organization" class="text-gray-400">N/A</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-1 space-y-1.5 mb-3">
+                            <div *ngIf="node.parentDepartment" class="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 rounded-lg px-2 py-1">
+                                <i class="fas fa-level-up-alt text-accent text-xs"></i>
+                                <span class="font-poppins truncate">
+                                    <span class="font-medium">{{'department.parentDepartment'|translate}}:</span>
+                                    {{node.parentDepartment.nameEn}}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span [ngClass]="getStatusClass(node.isActive)" class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full font-poppins">
+                                    {{getStatusText(node.isActive)}}
+                                </span>
+                                <div *ngIf="node.children&&node.children.length>0" class="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">
+                                    <i class="fas fa-sitemap text-accent text-xs"></i>
+                                    <span class="font-medium">{{node.children.length}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 pt-2 border-t border-gray-200 mt-auto">
+                            <button (click)="editDepartment(node);$event.stopPropagation()" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins" [title]="'department.editDepartment'|translate">
+                                <i class="fas fa-edit mr-1 text-xs"></i>
+                                <span>{{'common.edit'|translate}}</span>
+                            </button>
+                            <button (click)="deleteDepartment(node);$event.stopPropagation()" class="flex-1 inline-flex items-center justify-center px-2 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs font-poppins" [title]="'common.delete'|translate">
+                                <i class="fas fa-trash mr-1 text-xs"></i>
+                                <span>{{'common.delete'|translate}}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div *cdkDragPreview class="bg-white rounded-xl shadow-2xl border-2 border-accent p-4 flex flex-col gap-2 min-w-[260px] max-w-[300px]">
+                        <div class="flex items-start gap-2">
+                            <div class="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-building text-accent text-base"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-gray-900 font-poppins text-sm mb-0.5 truncate">{{node.nameEn}}</h3>
+                                <div class="text-xs text-gray-500 font-poppins">
+                                    <span *ngIf="node.code" class="font-medium">{{node.code}}</span>
+                                    <span *ngIf="node.code&&node.organization"> • </span>
+                                    <span *ngIf="node.organization" class="text-gray-600">{{node.organization.name}}</span>
+                                </div>
+                            </div>
+                            <div class="text-accent">
+                                <i class="fas fa-grip-vertical text-xs"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1.5 border-t border-gray-200">
+                            <span [ngClass]="getStatusClass(node.isActive)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full font-poppins">
+                                {{getStatusText(node.isActive)}}
+                            </span>
+                            <div *ngIf="node.children&&node.children.length>0" class="flex items-center gap-1 text-xs text-gray-600">
+                                <i class="fas fa-sitemap text-accent text-xs"></i>
+                                <span class="font-medium">{{node.children.length}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div *cdkDragPlaceholder class="bg-white rounded-xl border-2 border-dashed border-accent bg-accent/5 min-h-[180px] flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-building text-accent text-xl mb-1.5"></i>
+                            <div class="text-xs text-gray-600 font-poppins">{{'department.dragToReorder'|translate}}</div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="node.children&&node.children.length>0" cdkDropList [id]="'drop-list-'+node.id" [cdkDropListConnectedTo]="getConnectedDropLists(node)" (cdkDropListDropped)="onDragDrop($event)" [cdkDropListData]="node.children" class="children-drop-zone">
+                    <div class="children-container mt-4 ml-6 pl-3 border-l-2 border-gray-200">
+                        <div class="grid grid-cols-1 gap-3">
+                            <ng-container *ngFor="let child of node.children;trackBy:trackByNodeId">
+                                <ng-container *ngTemplateOutlet="treeNodeTemplate;context:{node:child}"></ng-container>
+                            </ng-container>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="!node.children||node.children.length===0" cdkDropList [id]="'drop-list-'+node.id" [cdkDropListConnectedTo]="getConnectedDropLists(node)" (cdkDropListDropped)="onDragDrop($event)" [cdkDropListData]="node.children||getEmptyChildrenArray()" class="empty-children-drop-zone mt-3">
+                    <div class="text-center py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-xs">
+                        {{'department.dropHereToAddChild'|translate}}
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+        <div *ngIf="departments.length>0&&viewMode==='table'" class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-3 border-t-2 border-gray-200">
+            <div class="text-xs font-medium text-textDark mb-2 sm:mb-0">
+                <i class="fas fa-info-circle mr-1.5 text-accent text-xs"></i>
+                {{'department.showing'|translate:paginationParams}}
+            </div>
+            <div class="flex items-center space-x-2">
+                <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="text-xs border-2 border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium">
+                    <option [value]="5">5 {{'department.perPage'|translate}}</option>
+                    <option [value]="10">10 {{'department.perPage'|translate}}</option>
+                    <option [value]="20">20 {{'department.perPage'|translate}}</option>
+                    <option [value]="50">50 {{'department.perPage'|translate}}</option>
+                </select>
+                <div class="flex space-x-1">
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage===1" (click)="goToPage(1)" [title]="'common.firstPage'|translate">
+                        <i class="fas fa-angle-double-left text-xs"></i>
+                    </button>
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage===1" (click)="goToPage(currentPage-1)" [title]="'common.previousPage'|translate">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                    <div class="flex space-x-1">
+                        <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)" class="px-3 py-1 rounded-lg border-2 text-xs min-w-[36px] font-medium transition-all duration-200 shadow-sm hover:shadow-md" [ngClass]="{'bg-accentDark text-white border-accent shadow-md':currentPage===page,'border-gray-300 hover:bg-gray-100 hover:border-gray-400':currentPage!==page}">
+                            {{page}}
+                        </button>
+                    </div>
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage===totalPages" (click)="goToPage(currentPage+1)" [title]="'common.nextPage'|translate">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage===totalPages" (click)="goToPage(totalPages)" [title]="'common.lastPage'|translate">
+                        <i class="fas fa-angle-double-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

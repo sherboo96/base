@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { UserService } from '../../../../services/user.service';
+import { OrganizationService } from '../../../../services/organization.service';
 import { ToastrService } from 'ngx-toastr';
 import { DialogRef } from '@ngneat/dialog';
 
@@ -43,6 +44,24 @@ import { DialogRef } from '@ngneat/dialog';
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
+              Organization
+            </label>
+            <select
+              formControlName="organizationId"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#c9ae81] text-sm"
+            >
+              <option [value]="null">Select Organization (Optional)</option>
+              <option *ngFor="let org of organizations" [value]="org.id">
+                {{ org.name }} ({{ org.code }})
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Select the organization this role belongs to. Leave empty for roles that apply to all organizations.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Permission Scope
             </label>
             <div class="space-y-2">
@@ -67,6 +86,20 @@ import { DialogRef } from '@ngneat/dialog';
             </div>
             <p class="text-xs text-gray-500 mt-1">
               Select whether permissions for this role apply to all organizations or only the role's own organization.
+            </p>
+          </div>
+
+          <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                formControlName="isDefault"
+                class="text-[#c9ae81] focus:ring-[#c9ae81] rounded"
+              />
+              <span class="text-sm text-gray-700">Set as Default Role for Organization</span>
+            </label>
+            <p class="text-xs text-gray-500 mt-1">
+              If checked, this role will be automatically assigned to new users registering with this organization's email domain.
             </p>
           </div>
 
@@ -96,16 +129,20 @@ export class RoleFormComponent implements OnInit {
   roleForm: FormGroup;
   isEdit = false;
   roleId?: number;
+  organizations: any[] = [];
 
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
+    private organizationService: OrganizationService,
     private toastr: ToastrService,
     public dialogRef: DialogRef<{ role?: any }>
   ) {
     this.roleForm = this.fb.group({
       name: ['', Validators.required],
       applyToAllOrganizations: [false],
+      organizationId: [null],
+      isDefault: [false],
     });
 
     // Check if editing
@@ -115,19 +152,36 @@ export class RoleFormComponent implements OnInit {
       this.roleForm.patchValue({
         name: this.dialogRef.data.role.name || '',
         applyToAllOrganizations: this.dialogRef.data.role.applyToAllOrganizations ?? false,
+        organizationId: this.dialogRef.data.role.organizationId || null,
+        isDefault: this.dialogRef.data.role.isDefault ?? false,
       });
     }
   }
 
   ngOnInit(): void {
-    // Initialization complete
+    this.loadOrganizations();
+  }
+
+  loadOrganizations(): void {
+    this.organizationService.getOrganizations(1, 1000).subscribe({
+      next: (response) => {
+        if (response.statusCode === 200) {
+          this.organizations = response.result || [];
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load organizations:', error);
+      },
+    });
   }
 
   onSubmit(): void {
     if (this.roleForm.valid) {
       const formValue = {
         ...this.roleForm.value,
-        applyToAllOrganizations: this.roleForm.value.applyToAllOrganizations === 'true' || this.roleForm.value.applyToAllOrganizations === true
+        applyToAllOrganizations: this.roleForm.value.applyToAllOrganizations === 'true' || this.roleForm.value.applyToAllOrganizations === true,
+        organizationId: this.roleForm.value.organizationId || null,
+        isDefault: this.roleForm.value.isDefault === true || this.roleForm.value.isDefault === 'true'
       };
       
       if (this.isEdit && this.roleId) {

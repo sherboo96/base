@@ -15,32 +15,58 @@ import { firstValueFrom } from 'rxjs';
   templateUrl: './role-permissions-manager.component.html',
   styles: [`
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       max-height: 90vh;
+      height: 90vh;
+      overflow: hidden;
+    }
+    
+    .dialog-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
       overflow: hidden;
     }
     
     .permissions-scroll-container {
-      max-height: 60vh;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: auto;
+      scrollbar-color: #0b5367 #f1f1f1;
+      -webkit-overflow-scrolling: touch;
     }
     
     .permissions-scroll-container::-webkit-scrollbar {
-      width: 8px;
+      width: 14px;
     }
     
     .permissions-scroll-container::-webkit-scrollbar-track {
       background: #f1f1f1;
       border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      margin: 4px 0;
     }
     
     .permissions-scroll-container::-webkit-scrollbar-thumb {
-      background: #c9ae81;
+      background: #0b5367;
       border-radius: 10px;
+      border: 2px solid #f1f1f1;
+      min-height: 40px;
     }
     
     .permissions-scroll-container::-webkit-scrollbar-thumb:hover {
-      background: #b89a6e;
+      background: #094152;
+    }
+    
+    .permissions-scroll-container::-webkit-scrollbar-thumb:active {
+      background: #062d38;
+    }
+    
+    .dialog-actions {
+      flex-shrink: 0;
     }
   `]
 })
@@ -179,14 +205,18 @@ export class RolePermissionsManagerComponent implements OnInit, AfterViewChecked
       'ORGANIZATION': 'Organizations',
       'DEPARTMENTS': 'Departments',
       'DEPARTMENT': 'Departments',
+      'SEGMENTS': 'Segments',
+      'SEGMENT': 'Segments',
       'LOCATIONS': 'Locations',
       'LOCATION': 'Locations',
       'POSITIONS': 'Positions',
       'POSITION': 'Positions',
       'INSTRUCTORS': 'Instructors',
       'INSTRUCTOR': 'Instructors',
+      'INSTITUTIONS': 'Institutions',
+      'INSTITUTION': 'Institutions',
       'DASHBOARD': 'Dashboard',
-      'SYSTEM': 'System',
+      'SYSTEM': 'System Configuration',
       'TRAINING': 'Training',
       'COURSES': 'Courses',
       'COURSE': 'Courses'

@@ -1,4 +1,4 @@
-﻿using UMS.Data;
+using UMS.Data;
 using UMS.Interfaces;
 using UMS.Models;
 using Microsoft.AspNetCore.Identity;
@@ -68,8 +68,17 @@ public class DataSeeder
         {
             { "LoginMethod.Credentials.Enabled", ("true", "Enable credentials-based login (username/password)") },
             { "LoginMethod.ActiveDirectory.Enabled", ("true", "Enable Active Directory login") },
-            { "LoginMethod.KMNID.Enabled", ("false", "Enable KMNID login") },
-            { "LoginMethod.Default", ("ActiveDirectory", "Default login method") }
+            { "LoginMethod.OTP.Enabled", ("true", "Enable OTP login") },
+            { "LoginMethod.Default", ("ActiveDirectory", "Default login method") },
+            // Email Configuration
+            { "Smtp:Host", ("smtp.office365.com", "SMTP server host") },
+            { "Smtp:Port", ("587", "SMTP server port") },
+            { "Smtp:Username", ("no-reply@moo.gov.kw", "SMTP username") },
+            { "Smtp:Password", ("", "SMTP password (encrypted)") },
+            { "Smtp:FromName", ("Ministry of Oil", "Email sender name") },
+            { "Smtp:FromEmail", ("no-reply@moo.gov.kw", "Email sender address") },
+            { "Smtp:TestEmail", ("m.sherbeny@moo.gov.kw", "Test email address for testing") },
+            { "Smtp:EnableSsl", ("true", "Enable SSL for SMTP") }
         };
 
         foreach (var config in configurations)
@@ -181,8 +190,47 @@ public class DataSeeder
             // Dashboard Permissions
             new Permission { Name = "View Dashboard", Code = "DASHBOARD_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
+            // Segment Management Permissions
+            new Permission { Name = "View Segments", Code = "SEGMENTS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Segments", Code = "SEGMENTS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Segments", Code = "SEGMENTS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Segments", Code = "SEGMENTS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
+            // Location Management Permissions
+            new Permission { Name = "View Locations", Code = "LOCATIONS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Locations", Code = "LOCATIONS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Locations", Code = "LOCATIONS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Locations", Code = "LOCATIONS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
+            // Position Management Permissions
+            new Permission { Name = "View Positions", Code = "POSITIONS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Positions", Code = "POSITIONS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Positions", Code = "POSITIONS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Positions", Code = "POSITIONS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
+            // Instructor Management Permissions
+            new Permission { Name = "View Instructors", Code = "INSTRUCTORS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Instructors", Code = "INSTRUCTORS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Instructors", Code = "INSTRUCTORS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Instructors", Code = "INSTRUCTORS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
+            // Institution Management Permissions
+            new Permission { Name = "View Institutions", Code = "INSTITUTIONS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            
+            // Adoption Users Permissions
+            new Permission { Name = "View Adoption Users", Code = "ADOPTION_USERS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Adoption Users", Code = "ADOPTION_USERS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Adoption Users", Code = "ADOPTION_USERS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Adoption Users", Code = "ADOPTION_USERS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Institutions", Code = "INSTITUTIONS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Institutions", Code = "INSTITUTIONS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Institutions", Code = "INSTITUTIONS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
             // System Administration Permissions
             new Permission { Name = "System Administration", Code = "SYSTEM_ADMIN", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "View System Configuration", Code = "SYSTEM_CONFIG_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create System Configuration", Code = "SYSTEM_CONFIG_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update System Configuration", Code = "SYSTEM_CONFIG_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
         };
 
         foreach (var permission in permissions)

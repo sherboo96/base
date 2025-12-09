@@ -1,0 +1,148 @@
+<div class="dialog-content">
+    <!-- Header Section -->
+    <div class="dialog-header p-6 pb-4 border-b border-gray-200">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-accent/10 rounded-lg">
+                <i class="fas fa-user-graduate text-accent text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-textDark font-poppins">
+                    {{ isEdit ? ('adoptionUser.editAdoptionUser' | translate) : ('adoptionUser.addAdoptionUser' | translate) }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-1 font-poppins">
+                    {{
+            isEdit
+              ? ('adoptionUser.editAdoptionUserDescription' | translate)
+              : ('adoptionUser.addAdoptionUserDescription' | translate)
+          }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrollable Form Content -->
+    <div class="form-scroll-container p-6">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+            <!-- Name -->
+            <div class="space-y-2">
+                <label for="name" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'adoptionUser.name' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-font text-gray-400"></i>
+                    </div>
+                    <input type="text" id="name" formControlName="name" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'adoptionUser.namePlaceholder' | translate" />
+                </div>
+                <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    {{ 'adoptionUser.nameRequired' | translate }}
+                </div>
+            </div>
+
+            <!-- Name (Arabic) -->
+            <div class="space-y-2">
+                <label for="nameAr" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'adoptionUser.nameAr' | translate }}
+                </label>
+                <input type="text" id="nameAr" formControlName="nameAr" dir="rtl" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" [placeholder]="'adoptionUser.nameArPlaceholder' | translate" />
+            </div>
+
+            <!-- Email -->
+            <div class="space-y-2">
+                <label for="email" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'adoptionUser.email' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-gray-400"></i>
+                    </div>
+                    <input type="email" id="email" formControlName="email" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'adoptionUser.emailPlaceholder' | translate" />
+                </div>
+                <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    <span *ngIf="form.get('email')?.errors?.['required']">{{ 'adoptionUser.emailRequired' | translate }}</span>
+                    <span *ngIf="form.get('email')?.errors?.['email']">{{ 'adoptionUser.emailInvalid' | translate }}</span>
+                </div>
+            </div>
+
+            <!-- Attendance -->
+            <div class="space-y-2">
+                <label for="attendance" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'adoptionUser.attendance' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-calendar-check text-gray-400"></i>
+                    </div>
+                    <select id="attendance" formControlName="attendance" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white">
+                        <option [value]="1">{{ 'adoptionUser.attendance.optional' | translate }}</option>
+                        <option [value]="2">{{ 'adoptionUser.attendance.mandatory' | translate }}</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+                <div *ngIf="form.get('attendance')?.invalid && form.get('attendance')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    {{ 'adoptionUser.attendanceRequired' | translate }}
+                </div>
+            </div>
+
+            <!-- Organization -->
+            <div class="space-y-2">
+                <label for="organizationId" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'adoptionUser.organization' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-building text-gray-400"></i>
+                    </div>
+                    <select id="organizationId" formControlName="organizationId" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white">
+                        <option [value]="null">{{ 'adoptionUser.selectOrganization' | translate }}</option>
+                        <option *ngFor="let org of organizations" [value]="org.id">
+                            {{ org.name }} ({{ org.code }})
+                        </option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+                <div *ngIf="form.get('organizationId')?.invalid && form.get('organizationId')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    {{ 'adoptionUser.organizationRequired' | translate }}
+                </div>
+            </div>
+
+            <!-- Bio -->
+            <div class="space-y-2">
+                <label for="bio" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'adoptionUser.bio' | translate }}
+                </label>
+                <textarea id="bio" formControlName="bio" rows="4" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'adoptionUser.bioPlaceholder' | translate"></textarea>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="dialog-actions flex justify-end space-x-3 p-6 pt-4 border-t border-gray-200 bg-white">
+        <button type="button" (click)="onCancel()" class="px-5 py-2.5 border-2 border-gray-300 rounded-lg text-sm font-medium text-textDark bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 font-poppins">
+            {{ 'common.cancel' | translate }}
+        </button>
+        <button type="button" (click)="onSubmit()" [disabled]="form.invalid || isSubmitting" class="px-5 py-2.5 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accentDark hover:bg-accentDarker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg font-poppins">
+            <span *ngIf="!isSubmitting" class="flex items-center">
+                <i class="fas fa-check mr-2"></i>
+                {{ isEdit ? ('adoptionUser.update' | translate) : ('adoptionUser.create' | translate) }}
+            </span>
+            <span *ngIf="isSubmitting" class="flex items-center">
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                {{ isEdit ? ('adoptionUser.updating' | translate) : ('adoptionUser.creating' | translate) }}
+            </span>
+        </button>
+    </div>
+</div>

@@ -1,209 +1,208 @@
-<div class="p-8">
-  <!-- Header Section -->
-  <div class="mb-8">
-    <div class="flex items-center space-x-3">
-      <div class="p-2 bg-accent/10 rounded-lg">
-        <i class="fas fa-map-marker-alt text-accent text-xl"></i>
-      </div>
-      <div>
-        <h2 class="text-2xl font-bold text-textDark font-poppins">
-          {{ isEdit ? ('location.editLocation' | translate) : ('location.addLocation' | translate) }}
-        </h2>
-        <p class="text-sm text-gray-600 mt-1 font-poppins">
-          {{
+<div class="dialog-content">
+    <!-- Header Section -->
+    <div class="dialog-header p-6 pb-4 border-b border-gray-200">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-accent/10 rounded-lg">
+                <i class="fas fa-map-marker-alt text-accent text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-textDark font-poppins">
+                    {{ isEdit ? ('location.editLocation' | translate) : ('location.addLocation' | translate) }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-1 font-poppins">
+                    {{
             isEdit
               ? ('location.editLocationDescription' | translate)
               : ('location.addLocationDescription' | translate)
           }}
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-    <!-- Name -->
-    <div class="space-y-2">
-      <label for="name" class="block text-sm font-medium text-textDark font-poppins">
-        {{ 'location.name' | translate }}
-        <span class="text-red-500">*</span>
-      </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-font text-gray-400"></i>
+                </p>
+            </div>
         </div>
-        <input
-          type="text"
-          id="name"
-          formControlName="name"
-          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
-          [placeholder]="'location.namePlaceholder' | translate"
-        />
-      </div>
-      <div
-        *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
-        class="flex items-center text-sm text-red-600"
-      >
-        <i class="fas fa-exclamation-circle mr-1"></i>
-        {{ 'location.nameRequired' | translate }}
-      </div>
     </div>
 
-    <!-- Name (Arabic) -->
-    <div class="space-y-2">
-      <label for="nameAr" class="block text-sm font-medium text-textDark font-poppins">
-        {{ 'location.nameAr' | translate }}
-      </label>
-      <input
-        type="text"
-        id="nameAr"
-        formControlName="nameAr"
-        dir="rtl"
-        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
-        [placeholder]="'location.nameArPlaceholder' | translate"
-      />
-    </div>
+    <!-- Scrollable Form Content -->
+    <div class="form-scroll-container p-6">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+            <!-- Name -->
+            <div class="space-y-2">
+                <label for="name" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.name' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-font text-gray-400"></i>
+                    </div>
+                    <input type="text" id="name" formControlName="name" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'location.namePlaceholder' | translate" />
+                </div>
+                <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    {{ 'location.nameRequired' | translate }}
+                </div>
+            </div>
 
-    <!-- Organization -->
-    <div class="space-y-2">
-      <label for="organizationId" class="block text-sm font-medium text-textDark font-poppins">
-        {{ 'location.organization' | translate }}
-        <span class="text-red-500">*</span>
-      </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-building text-gray-400"></i>
-        </div>
-        <select
-          id="organizationId"
-          formControlName="organizationId"
-          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
-        >
-          <option [value]="null">{{ 'location.selectOrganization' | translate }}</option>
-          <option *ngFor="let org of organizations" [value]="org.id">
-            {{ org.name }} ({{ org.code }})
-          </option>
-        </select>
-        <div
-          class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-chevron-down text-gray-400"></i>
-        </div>
-      </div>
-      <div
-        *ngIf="form.get('organizationId')?.invalid && form.get('organizationId')?.touched"
-        class="flex items-center text-sm text-red-600"
-      >
-        <i class="fas fa-exclamation-circle mr-1"></i>
-        {{ 'location.organizationRequired' | translate }}
-      </div>
-    </div>
+            <!-- Name (Arabic) -->
+            <div class="space-y-2">
+                <label for="nameAr" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.nameAr' | translate }}
+                </label>
+                <input type="text" id="nameAr" formControlName="nameAr" dir="rtl" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" [placeholder]="'location.nameArPlaceholder' | translate" />
+            </div>
 
-    <!-- Category -->
-    <div class="space-y-2">
-      <label for="category" class="block text-sm font-medium text-textDark font-poppins">
-        {{ 'location.category' | translate }}
-        <span class="text-red-500">*</span>
-      </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-tags text-gray-400"></i>
-        </div>
-        <select
-          id="category"
-          formControlName="category"
-          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
-        >
-          <option [value]="1">{{ 'location.categories.onsite' | translate }}</option>
-          <option [value]="2">{{ 'location.categories.online' | translate }}</option>
-          <option [value]="3">{{ 'location.categories.outsite' | translate }}</option>
-          <option [value]="4">{{ 'location.categories.abroad' | translate }}</option>
-        </select>
-        <div
-          class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-chevron-down text-gray-400"></i>
-        </div>
-      </div>
-      <div
-        *ngIf="form.get('category')?.invalid && form.get('category')?.touched"
-        class="flex items-center text-sm text-red-600"
-      >
-        <i class="fas fa-exclamation-circle mr-1"></i>
-        {{ 'location.categoryRequired' | translate }}
-      </div>
-    </div>
+            <!-- Organization -->
+            <div class="space-y-2">
+                <label for="organizationId" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.organization' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-building text-gray-400"></i>
+                    </div>
+                    <select id="organizationId" formControlName="organizationId" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white">
+                        <option [value]="null">{{ 'location.selectOrganization' | translate }}</option>
+                        <option *ngFor="let org of organizations" [value]="org.id">
+                            {{ org.name }} ({{ org.code }})
+                        </option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+                <div *ngIf="form.get('organizationId')?.invalid && form.get('organizationId')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    {{ 'location.organizationRequired' | translate }}
+                </div>
+            </div>
 
-    <!-- Floor -->
-    <div class="space-y-2">
-      <label for="floor" class="block text-sm font-medium text-textDark font-poppins">
-        {{ 'location.floor' | translate }}
-      </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-layer-group text-gray-400"></i>
-        </div>
-        <input
-          type="text"
-          id="floor"
-          formControlName="floor"
-          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
-          [placeholder]="'location.floorPlaceholder' | translate"
-        />
-      </div>
-    </div>
+            <!-- Category -->
+            <div class="space-y-2">
+                <label for="category" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.category' | translate }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-tags text-gray-400"></i>
+                    </div>
+                    <select id="category" formControlName="category" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white">
+                        <option [value]="1">{{ 'location.categories.onsite' | translate }}</option>
+                        <option [value]="2">{{ 'location.categories.online' | translate }}</option>
+                        <option [value]="3">{{ 'location.categories.outsite' | translate }}</option>
+                        <option [value]="4">{{ 'location.categories.abroad' | translate }}</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+                <div *ngIf="form.get('category')?.invalid && form.get('category')?.touched" class="flex items-center text-sm text-red-600">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    {{ 'location.categoryRequired' | translate }}
+                </div>
+            </div>
 
-    <!-- Building -->
-    <div class="space-y-2">
-      <label for="building" class="block text-sm font-medium text-textDark font-poppins">
-        {{ 'location.building' | translate }}
-      </label>
-      <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-building text-gray-400"></i>
-        </div>
-        <input
-          type="text"
-          id="building"
-          formControlName="building"
-          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
-          [placeholder]="'location.buildingPlaceholder' | translate"
-        />
-      </div>
+            <!-- Floor -->
+            <div class="space-y-2">
+                <label for="floor" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.floor' | translate }}
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-layer-group text-gray-400"></i>
+                    </div>
+                    <input type="text" id="floor" formControlName="floor" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'location.floorPlaceholder' | translate" />
+                </div>
+            </div>
+
+            <!-- Building -->
+            <div class="space-y-2">
+                <label for="building" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.building' | translate }}
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-building text-gray-400"></i>
+                    </div>
+                    <input type="text" id="building" formControlName="building" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'location.buildingPlaceholder' | translate" />
+                </div>
+            </div>
+
+            <!-- Logo Upload -->
+            <div class="space-y-2">
+                <label for="logo" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.logo' | translate }}
+                </label>
+                <div class="space-y-3">
+                    <div *ngIf="logoPreview" class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border-2 border-gray-200">
+                        <img [src]="logoPreview" alt="Logo preview" class="h-16 w-16 object-contain rounded-lg border border-gray-300" />
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-textDark">{{ 'location.currentLogo' | translate }}</p>
+                            <button type="button" (click)="removeLogo()" class="text-xs text-red-600 hover:text-red-800 mt-1">
+                                <i class="fas fa-times mr-1"></i>{{ 'location.removeLogo' | translate }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input type="file" id="logo" accept="image/*" (change)="onLogoSelected($event)" class="hidden" #logoInput />
+                        <label for="logo" class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-accent hover:bg-accent/5 transition-all duration-200">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-image text-2xl text-gray-400 mb-2"></i>
+                                <span class="text-sm text-textDark font-medium">{{ 'location.selectLogo' | translate }}</span>
+                                <span class="text-xs text-gray-500 mt-1">{{ 'location.logoHint' | translate }}</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Upload -->
+            <div class="space-y-2">
+                <label for="template" class="block text-sm font-medium text-textDark font-poppins">
+                    {{ 'location.template' | translate }}
+                </label>
+                <div class="space-y-3">
+                    <div *ngIf="templateFileName" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-2 border-gray-200">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-file text-2xl text-accent"></i>
+                            <div>
+                                <p class="text-sm font-medium text-textDark">{{ templateFileName }}</p>
+                                <p class="text-xs text-gray-500">{{ 'location.currentTemplate' | translate }}</p>
+                            </div>
+                        </div>
+                        <button type="button" (click)="removeTemplate()" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input type="file" id="template" accept=".pdf,.doc,.docx,.xls,.xlsx,.html,.htm,.txt" (change)="onTemplateSelected($event)" class="hidden" #templateInput />
+                        <label for="template" class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-accent hover:bg-accent/5 transition-all duration-200">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-alt text-2xl text-gray-400 mb-2"></i>
+                                <span class="text-sm text-textDark font-medium">{{ 'location.selectTemplate' | translate }}</span>
+                                <span class="text-xs text-gray-500 mt-1">{{ 'location.templateHint' | translate }}</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </form>
     </div>
 
     <!-- Form Actions -->
-    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-      <button
-        type="button"
-        (click)="onCancel()"
-        class="px-5 py-2.5 border-2 border-gray-300 rounded-lg text-sm font-medium text-textDark bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 font-poppins"
-      >
-        {{ 'common.cancel' | translate }}
-      </button>
-      <button
-        type="submit"
-        [disabled]="form.invalid || isSubmitting"
-        class="px-5 py-2.5 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accentDark hover:bg-accentDarker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg font-poppins"
-      >
-        <span *ngIf="!isSubmitting" class="flex items-center">
-          <i class="fas fa-check mr-2"></i>
-          {{ isEdit ? ('location.update' | translate) : ('location.create' | translate) }}
-        </span>
-        <span *ngIf="isSubmitting" class="flex items-center">
-          <i class="fas fa-spinner fa-spin mr-2"></i>
-          {{ isEdit ? ('location.updating' | translate) : ('location.creating' | translate) }}
-        </span>
-      </button>
+    <div class="dialog-actions flex justify-end space-x-3 p-6 pt-4 border-t border-gray-200 bg-white">
+        <button type="button" (click)="onCancel()" class="px-5 py-2.5 border-2 border-gray-300 rounded-lg text-sm font-medium text-textDark bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 font-poppins">
+            {{ 'common.cancel' | translate }}
+        </button>
+        <button type="button" (click)="onSubmit()" [disabled]="form.invalid || isSubmitting" class="px-5 py-2.5 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accentDark hover:bg-accentDarker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg font-poppins">
+            <span *ngIf="!isSubmitting" class="flex items-center">
+                <i class="fas fa-check mr-2"></i>
+                {{ isEdit ? ('location.update' | translate) : ('location.create' | translate) }}
+            </span>
+            <span *ngIf="isSubmitting" class="flex items-center">
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                {{ isEdit ? ('location.updating' | translate) : ('location.creating' | translate) }}
+            </span>
+        </button>
     </div>
-  </form>
 </div>

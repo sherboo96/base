@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using UMS.Dtos.Shared;
 using UMS.Dtos;
@@ -110,6 +110,68 @@ public class UserRolesController : ControllerBase
             StatusCode = 200,
             Message = "UserRole deleted successfully.",
             Result = true
+        });
+    }
+
+    [HttpPut("{userId}/{roleId}")]
+    public async Task<IActionResult> Update(string userId, int roleId, [FromBody] UserRoleDto dto)
+    {
+        // Find the existing user role
+        var existingItem = await _unitOfWork.UserRoles.FindAsync(x => x.UserId == userId && x.RoleId == roleId);
+        if (existingItem == null)
+        {
+            return NotFound(new BaseResponse<bool>
+            {
+                StatusCode = 404,
+                Message = "UserRole not found.",
+                Result = false
+            });
+        }
+
+        // Convert dto.UserId (int) to string for comparison
+        string newUserId = dto.UserId.ToString();
+
+        // Check if the user or role actually changed
+        if (existingItem.UserId == newUserId && existingItem.RoleId == dto.RoleId)
+        {
+            // No change needed
+            return Ok(new BaseResponse<UserRole>
+            {
+                StatusCode = 200,
+                Message = "UserRole unchanged.",
+                Result = existingItem
+            });
+        }
+
+        // Check if the new user-role combination already exists
+        var existingNewItem = await _unitOfWork.UserRoles.FindAsync(x => x.UserId == newUserId && x.RoleId == dto.RoleId);
+        if (existingNewItem != null)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "User already has this role.",
+                Result = false
+            });
+        }
+
+        // Delete the old user role
+        await _unitOfWork.UserRoles.DeleteAsync(existingItem);
+        
+        // Create the new user role with proper UserId conversion
+        var newUserRoleDto = new UserRoleDto
+        {
+            UserId = dto.UserId,
+            RoleId = dto.RoleId
+        };
+        var newEntity = await _unitOfWork.UserRoles.AddAsync(newUserRoleDto);
+        await _unitOfWork.CompleteAsync();
+
+        return Ok(new BaseResponse<UserRole>
+        {
+            StatusCode = 200,
+            Message = "UserRole updated successfully.",
+            Result = (UserRole)newEntity
         });
     }
 

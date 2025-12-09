@@ -1,309 +1,188 @@
-<div class="p-6 mx-auto max-w-full">
-  <!-- Add app-loading component for global loading -->
-  <app-loading></app-loading>
-
-  <!-- Dashboard-style Loading Spinner (local component loading) -->
-  <div
-    *ngIf="isLoading && !jobTitles.length"
-    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
-    id="custom-loader"
-  >
-    <div class="spinner-container">
-      <div class="spinner"></div>
-      <p class="mt-4 text-accent font-medium">{{ 'jobTitle.loadingJobTitles' | translate }}</p>
+<div class="p-4 mx-auto max-w-full">
+    <app-loading></app-loading>
+    <div *ngIf="isLoading && !jobTitles.length" class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50" id="custom-loader">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <p class="mt-3 text-accent font-medium text-sm">{{'jobTitle.loadingJobTitles'|translate}}</p>
+        </div>
     </div>
-  </div>
-
-  <!-- Page Header -->
-  <div class="mb-6 flex justify-between items-center">
-    <div>
-      <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3">
-        <i class="fas fa-id-card text-accent"></i>
-        <span>{{ 'jobTitle.title' | translate }}</span>
-      </h1>
-      <p class="text-sm text-gray-600">
-        {{ 'jobTitle.subtitle' | translate }}
-      </p>
+    <div class="mb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-textDark mb-0.5 flex items-center gap-2">
+                <i class="fas fa-id-card text-accent text-lg"></i>
+                <span>{{'jobTitle.title'|translate}}</span>
+            </h1>
+            <p class="text-xs text-gray-600">
+                {{'jobTitle.subtitle'|translate}}
+            </p>
+        </div>
     </div>
-  </div>
-
-  <!-- Search Section -->
-  <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-accentDark px-4 py-2">
-      <div class="flex items-center gap-2">
-        <i class="fas fa-search text-white text-sm"></i>
-        <h3 class="text-sm font-semibold text-white">{{ 'common.search' | translate }}</h3>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-3">
-          <label class="block text-sm font-medium text-textDark mb-2">
-            <i class="fas fa-search mr-2 text-accent"></i>{{ 'jobTitle.searchPlaceholder' | translate }}
-          </label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <i class="fas fa-search text-gray-400"></i>
+    <div class="mb-3 bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        <div class="bg-accentDark px-3 py-1.5">
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-search text-white text-xs"></i>
+                <h3 class="text-xs font-semibold text-white">{{'common.search'|translate}}</h3>
             </div>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (keyup.enter)="onSearch()"
-              [placeholder]="'jobTitle.searchPlaceholder' | translate"
-              class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-all duration-200"
-            />
-          </div>
         </div>
-      </div>
-      <div class="flex justify-end gap-3 mt-4">
-        <button
-          (click)="onSearch()"
-          class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
-        >
-          <i class="fas fa-search"></i>
-          <span>{{ 'common.search' | translate }}</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Job Titles Table Card -->
-  <div
-    class="job-title-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
-  >
-    <div
-      class="bg-accentDark py-4 px-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
-    >
-      <!-- Table Header -->
-      <div class="flex items-center gap-3">
-        <i class="fas fa-id-card text-white text-xl"></i>
-        <h3 class="text-lg font-semibold text-white">{{ 'jobTitle.title' | translate }}</h3>
-        <span
-          *ngIf="totalItems > 0"
-          class="px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full"
-        >
-          {{ totalItems }} {{ totalItems === 1 ? ('jobTitle.jobTitle' | translate) : ('jobTitle.jobTitles' | translate) }}
-        </span>
-      </div>
-      <!-- Add Job Title Button -->
-      <button
-        (click)="addNewJobTitle()"
-        class="bg-white hover:bg-gray-50 text-accent px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
-      >
-        <i class="fas fa-plus-circle"></i>
-        <span>{{ 'jobTitle.addJobTitle' | translate }}</span>
-      </button>
-    </div>
-
-    <!-- Empty State -->
-    <div
-      *ngIf="jobTitles.length === 0 && !isLoading"
-      class="empty-state py-16 flex flex-col items-center justify-center"
-    >
-      <i class="fas fa-id-card text-gray-400 text-6xl mb-4"></i>
-      <h3 class="text-2xl font-bold text-textDark mb-2">{{ 'jobTitle.noJobTitlesFound' | translate }}</h3>
-      <p class="text-sm text-gray-600 text-center max-w-md mb-6">
-        {{ 'jobTitle.noJobTitlesMatching' | translate }}
-      </p>
-    </div>
-
-    <!-- Loading Placeholder for Table (only when no data is available) -->
-    <div
-      *ngIf="isLoading && jobTitles.length === 0"
-      class="py-16 flex flex-col items-center justify-center"
-    >
-      <div class="spinner-container">
-        <div class="spinner"></div>
-        <p class="mt-4 text-accent font-medium">
-          {{ 'jobTitle.loadingJobTitleData' | translate }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Small loading indicator when refreshing with existing data -->
-    <div
-      *ngIf="isLoading && jobTitles.length > 0"
-      class="absolute top-4 right-4 z-10"
-    >
-      <div class="spinner w-5 h-5"></div>
-    </div>
-
-    <!-- Table -->
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-100">
-          <tr>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-font mr-2 text-accent"></i>{{ 'jobTitle.nameEnglish' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-font mr-2 text-accent"></i>{{ 'jobTitle.nameArabic' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-code mr-2 text-accent"></i>{{ 'jobTitle.code' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-building mr-2 text-accent"></i>{{ 'jobTitle.department' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-toggle-on mr-2 text-accent"></i>{{ 'jobTitle.status' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-calendar mr-2 text-accent"></i>{{ 'jobTitle.createdOn' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-right text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-cog mr-2 text-accent"></i>{{ 'jobTitle.actions' | translate }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let jobTitle of jobTitles" class="hover:bg-gray-50 transition-all duration-150">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ jobTitle.nameEn }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" dir="rtl">
-              {{ jobTitle.nameAr }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              <span class="px-2 py-1 bg-primary/10 text-primary rounded-md font-medium text-xs">
-                {{ jobTitle.code || '-' }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">
-                {{ jobTitle.department?.nameEn || '-' }}
-              </div>
-              <div class="text-sm text-gray-500">
-                {{ jobTitle.department?.organization?.name || '' }}
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                [ngClass]="getStatusClass(jobTitle.isActive)"
-                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-              >
-                {{ getStatusText(jobTitle.isActive) }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(jobTitle.createdOn) }}
-            </td>
-            <td
-              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-            >
-              <div class="flex items-center justify-end gap-2">
-                <button
-                  (click)="editJobTitle(jobTitle)"
-                  class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'jobTitle.edit' | translate"
-                >
-                  <i class="fas fa-edit mr-1.5"></i>
-                  <span>{{ 'jobTitle.edit' | translate }}</span>
+        <div class="p-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-medium text-textDark mb-1">
+                        <i class="fas fa-search mr-1.5 text-accent text-xs"></i>{{'jobTitle.searchPlaceholder'|translate}}
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                            <i class="fas fa-search text-gray-400 text-xs"></i>
+                        </div>
+                        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" [placeholder]="'jobTitle.searchPlaceholder'|translate" class="w-full pl-8 pr-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-xs transition-all duration-200" />
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-2">
+                <button (click)="onSearch()" class="px-4 py-1.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-xs flex items-center gap-1.5">
+                    <i class="fas fa-search text-xs"></i>
+                    <span>{{'common.search'|translate}}</span>
                 </button>
-                <button
-                  (click)="deleteJobTitle(jobTitle)"
-                  class="inline-flex items-center px-3 py-1.5 border-2 border-red-600 rounded-lg text-red-600 bg-white hover:bg-red-600 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'jobTitle.delete' | translate"
-                >
-                  <i class="fas fa-trash mr-1.5"></i>
-                  <span>{{ 'jobTitle.delete' | translate }}</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+        </div>
     </div>
-
-    <!-- Pagination -->
-    <div
-      *ngIf="jobTitles.length > 0"
-      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t border-gray-200"
-    >
-      <div class="text-sm text-textDark mb-2 sm:mb-0 font-medium">
-        {{ 'jobTitle.showing' | translate: { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems } }}
-      </div>
-      <div class="flex items-center gap-3">
-        <select
-          [(ngModel)]="pageSize"
-          (change)="onPageSizeChange()"
-          class="text-sm border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white font-medium"
-        >
-          <option [value]="5">5 {{ 'jobTitle.perPage' | translate }}</option>
-          <option [value]="10">10 {{ 'jobTitle.perPage' | translate }}</option>
-          <option [value]="20">20 {{ 'jobTitle.perPage' | translate }}</option>
-          <option [value]="50">50 {{ 'jobTitle.perPage' | translate }}</option>
-        </select>
-        <div class="flex gap-1">
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(1)"
-            [title]="'common.firstPage' | translate"
-          >
-            <i class="fas fa-angle-double-left"></i>
-          </button>
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(currentPage - 1)"
-            [title]="'common.previousPage' | translate"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="flex gap-1">
-            <button
-              *ngFor="let page of getPageNumbers()"
-              (click)="goToPage(page)"
-              class="px-4 py-2 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200"
-              [ngClass]="{
-                'bg-accentDark text-white border-accent shadow-md':
-                  currentPage === page,
-                'border-gray-300 hover:bg-white hover:border-accent': currentPage !== page
-              }"
-            >
-              {{ page }}
+    <div class="job-title-card relative flex flex-col w-full h-full bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        <div class="bg-gray-50 py-2 px-3 border-b border-gray-200 flex flex-wrap gap-2 items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-id-card text-gray-600 text-sm"></i>
+                <h3 class="text-sm font-semibold text-gray-800">{{'jobTitle.title'|translate}}</h3>
+                <span *ngIf="totalItems>0" class="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-full">
+                    {{totalItems}} {{totalItems===1?('jobTitle.jobTitle'|translate):('jobTitle.jobTitles'|translate)}}
+                </span>
+            </div>
+            <button (click)="addNewJobTitle()" class="bg-accent hover:bg-accentDark text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors duration-200 text-xs">
+                <i class="fas fa-plus-circle text-xs"></i>
+                <span>{{'jobTitle.addJobTitle'|translate}}</span>
             </button>
-          </div>
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(currentPage + 1)"
-            [title]="'common.nextPage' | translate"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          <button
-            class="px-3 py-2 rounded-lg border-2 border-gray-300 text-sm hover:bg-white hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(totalPages)"
-            [title]="'common.lastPage' | translate"
-          >
-            <i class="fas fa-angle-double-right"></i>
-          </button>
         </div>
-      </div>
+        <div *ngIf="jobTitles.length===0&&!isLoading" class="empty-state py-12 flex flex-col items-center justify-center bg-gray-50">
+            <div class="bg-white rounded-full p-4 mb-3 shadow-md">
+                <i class="fas fa-id-card text-4xl text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-bold text-textDark mb-1">{{'jobTitle.noJobTitlesFound'|translate}}</h3>
+            <p class="text-xs text-gray-600 text-center max-w-md mb-4">
+                {{'jobTitle.noJobTitlesMatching'|translate}}
+            </p>
+        </div>
+        <div *ngIf="isLoading&&jobTitles.length===0" class="py-12 flex flex-col items-center justify-center">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p class="mt-3 text-accent font-medium text-sm">
+                    {{'jobTitle.loadingJobTitleData'|translate}}
+                </p>
+            </div>
+        </div>
+        <div *ngIf="isLoading&&jobTitles.length>0" class="absolute top-3 right-3 z-10">
+            <div class="spinner w-4 h-4"></div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-font mr-1.5 text-accent text-xs"></i>{{'jobTitle.nameEnglish'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-font mr-1.5 text-accent text-xs"></i>{{'jobTitle.nameArabic'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-code mr-1.5 text-accent text-xs"></i>{{'jobTitle.code'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-building mr-1.5 text-accent text-xs"></i>{{'jobTitle.department'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{'jobTitle.status'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-calendar mr-1.5 text-accent text-xs"></i>{{'jobTitle.createdOn'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-right text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-cog mr-1.5 text-accent text-xs"></i>{{'jobTitle.actions'|translate}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr *ngFor="let jobTitle of jobTitles" class="hover:bg-gray-50 transition-all duration-150">
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            {{jobTitle.nameEn}}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900" dir="rtl">
+                            {{jobTitle.nameAr}}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            <span class="px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium text-xs">
+                                {{jobTitle.code||'-'}}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-xs text-gray-900">
+                                {{jobTitle.department?.nameEn||'-'}}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{jobTitle.department?.organization?.name||''}}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span [ngClass]="getStatusClass(jobTitle.isActive)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                {{getStatusText(jobTitle.isActive)}}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            {{formatDate(jobTitle.createdOn)}}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button (click)="editJobTitle(jobTitle)" class="inline-flex items-center px-2 py-1 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'jobTitle.edit'|translate">
+                                    <i class="fas fa-edit mr-1 text-xs"></i>
+                                    <span>{{'jobTitle.edit'|translate}}</span>
+                                </button>
+                                <button (click)="deleteJobTitle(jobTitle)" class="inline-flex items-center px-2 py-1 border-2 border-red-600 rounded-lg text-red-600 bg-white hover:bg-red-600 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'jobTitle.delete'|translate">
+                                    <i class="fas fa-trash mr-1 text-xs"></i>
+                                    <span>{{'jobTitle.delete'|translate}}</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div *ngIf="jobTitles.length>0" class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-3 border-t-2 border-gray-200">
+            <div class="text-xs text-textDark mb-2 sm:mb-0 font-medium">
+                {{'jobTitle.showing'|translate:paginationParams}}
+            </div>
+            <div class="flex items-center gap-2">
+                <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="text-xs border-2 border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white font-medium">
+                    <option [value]="5">5 {{'jobTitle.perPage'|translate}}</option>
+                    <option [value]="10">10 {{'jobTitle.perPage'|translate}}</option>
+                    <option [value]="20">20 {{'jobTitle.perPage'|translate}}</option>
+                    <option [value]="50">50 {{'jobTitle.perPage'|translate}}</option>
+                </select>
+                <div class="flex gap-1">
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium" [disabled]="currentPage===1" (click)="goToPage(1)" [title]="'common.firstPage'|translate">
+                        <i class="fas fa-angle-double-left text-xs"></i>
+                    </button>
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium" [disabled]="currentPage===1" (click)="goToPage(currentPage-1)" [title]="'common.previousPage'|translate">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                    <div class="flex gap-1">
+                        <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)" class="px-3 py-1 rounded-lg border-2 text-xs min-w-[36px] font-medium transition-all duration-200 shadow-sm hover:shadow-md" [ngClass]="{'bg-accentDark text-white border-accent shadow-md':currentPage===page,'border-gray-300 hover:bg-gray-100 hover:border-gray-400':currentPage!==page}">
+                            {{page}}
+                        </button>
+                    </div>
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium" [disabled]="currentPage===totalPages" (click)="goToPage(currentPage+1)" [title]="'common.nextPage'|translate">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
+                    <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md font-medium" [disabled]="currentPage===totalPages" (click)="goToPage(totalPages)" [title]="'common.lastPage'|translate">
+                        <i class="fas fa-angle-double-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>

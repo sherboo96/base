@@ -36,6 +36,26 @@ public class SystemConfigurationService
     {
         var existingConfig = await _unitOfWork.SystemConfigurations.FindAsync(c => c.Key == key);
         
+        // If password field and value is empty, keep existing value
+        if (key.ToLower().Contains("password") && string.IsNullOrEmpty(value) && existingConfig != null)
+        {
+            // Keep existing password, only update description if provided
+            if (!string.IsNullOrEmpty(description))
+            {
+                existingConfig.Description = description;
+                existingConfig.UpdatedAt = DateTime.UtcNow;
+                await _unitOfWork.SystemConfigurations.UpdateAsync(existingConfig);
+            }
+            await _unitOfWork.CompleteAsync();
+            return;
+        }
+
+        // Encrypt password fields if value is provided
+        if (key.ToLower().Contains("password") && !string.IsNullOrEmpty(value) && !value.StartsWith("ENC:"))
+        {
+            value = EmailService.EncryptPassword(value);
+        }
+
         if (existingConfig != null)
         {
             existingConfig.Value = value;
@@ -62,6 +82,26 @@ public class SystemConfigurationService
     }
 
     /// <summary>
+    /// Masks password values for display
+    /// </summary>
+    public static string MaskPassword(string key, string value)
+    {
+        if (key.ToLower().Contains("password") && !string.IsNullOrEmpty(value))
+        {
+            if (value.Length <= 4)
+            {
+                return new string('*', value.Length);
+            }
+            // Show first 4 chars and last 2 chars: Pass********rd
+            var firstPart = value.Substring(0, 4);
+            var lastPart = value.Length > 8 ? value.Substring(value.Length - 2) : "";
+            var maskedLength = Math.Max(value.Length - 4 - (lastPart.Length > 0 ? lastPart.Length : 0), 8);
+            return firstPart + new string('*', maskedLength) + lastPart;
+        }
+        return value;
+    }
+
+    /// <summary>
     /// Checks if a specific login method is enabled
     /// </summary>
     public async Task<bool> IsLoginMethodEnabledAsync(LoginMethod loginMethod)
@@ -70,7 +110,7 @@ public class SystemConfigurationService
         {
             LoginMethod.Credentials => "LoginMethod.Credentials.Enabled",
             LoginMethod.ActiveDirectory => "LoginMethod.ActiveDirectory.Enabled",
-            LoginMethod.KMNID => "LoginMethod.KMNID.Enabled",
+            LoginMethod.KMNID => "LoginMethod.OTP.Enabled", // KMNID is OTP Verification
             _ => null
         };
 

@@ -1,159 +1,66 @@
-<div class="p-8">
-  <!-- Header Section -->
-  <div class="mb-8">
-    <div class="flex items-center space-x-3">
-      <div class="p-2 bg-accent/10 rounded-lg">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 text-accent font-poppins"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-          />
-        </svg>
-      </div>
-      <div>
-        <h2 class="text-2xl font-bold text-gray-800 font-poppins">
-          {{ isEdit ? ('position.editPosition' | translate) : ('position.addPosition' | translate) }}
-        </h2>
-        <p class="text-sm text-gray-500 mt-1 font-poppins">
-          {{
-            isEdit
-              ? ('position.editPositionDescription' | translate)
-              : ('position.addPositionDescription' | translate)
-          }}
-        </p>
-      </div>
+<div class="p-4">
+    <div class="mb-4">
+        <div class="flex items-center space-x-2">
+            <div class="p-1.5 bg-accent/10 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent font-poppins" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 font-poppins">
+                    {{isEdit?('position.editPosition'|translate):('position.addPosition'|translate)}}
+                </h2>
+                <p class="text-xs text-gray-500 mt-0.5 font-poppins">
+                    {{isEdit?('position.editPositionDescription'|translate):('position.addPositionDescription'|translate)}}
+                </p>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-    <!-- Name (English) -->
-    <div class="space-y-2">
-      <label for="nameEn" class="block text-sm font-medium text-gray-700 font-poppins">
-        {{ 'position.nameEnglish' | translate }}
-        <span class="text-red-500">*</span>
-      </label>
-      <input
-        type="text"
-        id="nameEn"
-        formControlName="nameEn"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
-        [placeholder]="'position.nameEnglishPlaceholder' | translate"
-      />
-      <div
-        *ngIf="form.get('nameEn')?.invalid && form.get('nameEn')?.touched"
-        class="flex items-center text-sm text-red-600"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 mr-1"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        {{ 'position.nameEnglishRequired' | translate }}
-      </div>
-    </div>
-
-    <!-- Name (Arabic) -->
-    <div class="space-y-2">
-      <label for="nameAr" class="block text-sm font-medium text-gray-700">
-        {{ 'position.nameArabic' | translate }}
-      </label>
-      <input
-        type="text"
-        id="nameAr"
-        formControlName="nameAr"
-        dir="rtl"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
-        [placeholder]="'position.nameArabicPlaceholder' | translate"
-      />
-    </div>
-
-    <!-- Code -->
-    <div class="space-y-2">
-      <label for="code" class="block text-sm font-medium text-gray-700">
-        {{ 'position.code' | translate }}
-      </label>
-      <input
-        type="text"
-        id="code"
-        formControlName="code"
-        class="form-control w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins"
-        [placeholder]="'position.codePlaceholder' | translate"
-      />
-    </div>
-
-
-    <!-- Form Actions -->
-    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-      <button
-        type="button"
-        (click)="onCancel()"
-        class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200 font-poppins"
-      >
-        {{ 'common.cancel' | translate }}
-      </button>
-      <button
-        type="submit"
-        [disabled]="form.invalid || isSubmitting"
-        class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-poppins"
-      >
-        <span *ngIf="!isSubmitting" class="flex items-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          {{ isEdit ? ('position.update' | translate) : ('position.create' | translate) }}
-        </span>
-        <span *ngIf="isSubmitting" class="flex items-center">
-          <svg
-            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          {{ isEdit ? ('position.updating' | translate) : ('position.creating' | translate) }}
-        </span>
-      </button>
-    </div>
-  </form>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+        <div class="space-y-1">
+            <label for="nameEn" class="block text-xs font-medium text-gray-700 font-poppins">
+                {{'position.nameEnglish'|translate}}
+                <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="nameEn" formControlName="nameEn" class="form-control w-full border border-gray-300 rounded-lg py-2 px-3 text-xs focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins" [placeholder]="'position.nameEnglishPlaceholder'|translate" />
+            <div *ngIf="form.get('nameEn')?.invalid&&form.get('nameEn')?.touched" class="flex items-center text-xs text-red-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{'position.nameEnglishRequired'|translate}}
+            </div>
+        </div>
+        <div class="space-y-1">
+            <label for="nameAr" class="block text-xs font-medium text-gray-700">
+                {{'position.nameArabic'|translate}}
+            </label>
+            <input type="text" id="nameAr" formControlName="nameAr" dir="rtl" class="form-control w-full border border-gray-300 rounded-lg py-2 px-3 text-xs focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins" [placeholder]="'position.nameArabicPlaceholder'|translate" />
+        </div>
+        <div class="space-y-1">
+            <label for="code" class="block text-xs font-medium text-gray-700">
+                {{'position.code'|translate}}
+            </label>
+            <input type="text" id="code" formControlName="code" class="form-control w-full border border-gray-300 rounded-lg py-2 px-3 text-xs focus:ring focus:ring-opacity-50 focus:ring-accent focus:border-accent transition-colors duration-200 font-poppins" [placeholder]="'position.codePlaceholder'|translate" />
+        </div>
+        <div class="flex justify-end space-x-2 pt-4 border-t border-gray-200">
+            <button type="button" (click)="onCancel()" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200 font-poppins">
+                {{'common.cancel'|translate}}
+            </button>
+            <button type="submit" [disabled]="form.invalid||isSubmitting" class="px-3 py-1.5 border border-transparent rounded-lg text-xs font-medium text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-poppins">
+                <span *ngIf="!isSubmitting" class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {{isEdit?('position.update'|translate):('position.create'|translate)}}
+                </span>
+                <span *ngIf="isSubmitting" class="flex items-center">
+                    <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{isEdit?('position.updating'|translate):('position.creating'|translate)}}
+                </span>
+            </button>
+        </div>
+    </form>
 </div>

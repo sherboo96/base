@@ -23,6 +23,8 @@ export interface Location {
     name: string;
     code: string;
   };
+  logo?: string;
+  template?: string;
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;
@@ -91,5 +93,17 @@ export class LocationService {
 
   toggleLocationStatus(id: number): Observable<Location> {
     return this.http.patch<Location>(`${this.apiUrl}/${id}/toggle-status`, {});
+  }
+
+  uploadLogo(id: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/${id}/upload-logo`, formData);
+  }
+
+  uploadTemplate(id: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/${id}/upload-template`, formData);
   }
 }

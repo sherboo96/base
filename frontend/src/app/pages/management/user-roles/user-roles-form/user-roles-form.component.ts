@@ -200,15 +200,21 @@ export class UserRolesFormComponent {
           },
         });
       } else {
+        // For update, we need the original userId and roleId from the existing userRole
+        const originalUserId = this.data.userRole.userId;
+        const originalRoleId = this.data.userRole.roleId;
+        
         this.userService
-          .updateUserRole(this.data.userRole.userId, userRole)
+          .updateUserRole(originalUserId, originalRoleId, userRole)
           .subscribe({
             next: (response) => {
               if (response.statusCode === 200) {
                 this.toastr.success('User role updated successfully');
                 this.dialogRef.close(true);
+              } else {
+                this.toastr.warning(response.message || 'Update completed with warnings');
+                this.isLoading$.next(false);
               }
-              this.isLoading$.next(false);
             },
             error: (error) => {
               console.error('Failed to update user role:', error);

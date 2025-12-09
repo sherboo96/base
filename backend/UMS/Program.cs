@@ -124,6 +124,8 @@ builder.Services.AddScoped(sp => new LdapAuthenticator("moil.com"));
 builder.Services.AddScoped<PasswordHasher>();
 builder.Services.AddScoped<JwtTokenGenerator>();
 builder.Services.AddScoped<SystemConfigurationService>();
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<DataSeeder>();
 
 var app = builder.Build();

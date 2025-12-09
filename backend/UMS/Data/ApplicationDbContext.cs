@@ -22,6 +22,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
     public DbSet<Location> Locations { get; set; }
     public DbSet<Segment> Segments { get; set; }
+    public DbSet<AdoptionUser> AdoptionUsers { get; set; }
 
     public new DbSet<UserRole> UserRoles { get; set; }
     public DbSet<UserSegment> UserSegments { get; set; }
@@ -53,6 +54,10 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasIndex(o => o.IsMain)
             .HasFilter("[IsMain] = 1")
             .IsUnique();
+
+        // Role IsDefault constraint - only one default role per organization
+        // This is handled at the application level, but we can add a filtered unique index
+        // Note: This requires a migration to be created
 
         // User-Organization relationship
         modelBuilder.Entity<User>()
@@ -90,6 +95,14 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasOne(s => s.Organization)
             .WithMany()
             .HasForeignKey(s => s.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // AdoptionUser-Organization relationship
+        modelBuilder.Entity<AdoptionUser>()
+            .HasOne(au => au.Organization)
+            .WithMany()
+            .HasForeignKey(au => au.OrganizationId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
 

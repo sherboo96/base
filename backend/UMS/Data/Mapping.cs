@@ -1,7 +1,26 @@
 
 using UMS.Dtos;
+using AutoMapper;
 
 namespace UMS.Data;
+
+public class UserIdToStringResolver : IValueResolver<UserRoleDto, UserRole, string>
+{
+    public string Resolve(UserRoleDto source, UserRole destination, string destMember, ResolutionContext context)
+    {
+        return source?.UserId.ToString() ?? "0";
+    }
+}
+
+public class UserIdToIntResolver : IValueResolver<UserRole, UserRoleDto, int>
+{
+    public int Resolve(UserRole source, UserRoleDto destination, int destMember, ResolutionContext context)
+    {
+        if (source?.UserId == null)
+            return 0;
+        return int.TryParse(source.UserId, out var userIdInt) ? userIdInt : 0;
+    }
+}
 
 public class Mapping: Profile
 {
@@ -42,6 +61,9 @@ public class Mapping: Profile
         // Location
         CreateMap<Location, LocationDto>().ReverseMap();
 
+        // AdoptionUser
+        CreateMap<AdoptionUser, AdoptionUserDto>().ReverseMap();
+
         // Structure
         CreateMap<Structure, StructureDto>()
             .ForMember(dest => dest.AssignedUsers, opt => opt.MapFrom(src => src.StructureUsers))
@@ -58,7 +80,12 @@ public class Mapping: Profile
             .ReverseMap();
 
         // Join Entities
-        CreateMap<UserRole, UserRoleDto>().ReverseMap();
+        // UserRole: UserId is string (GUID from Identity), UserRoleDto: UserId is int
+        // We need custom mapping to handle this conversion
+        CreateMap<UserRole, UserRoleDto>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom<UserIdToIntResolver>());
+        CreateMap<UserRoleDto, UserRole>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom<UserIdToStringResolver>());
         CreateMap<RolePermission, RolePermissionDto>().ReverseMap();
         CreateMap<RoleSystem, RoleSystemDto>().ReverseMap();
         CreateMap<UserSystem, UserSystemDto>().ReverseMap();

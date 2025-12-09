@@ -209,4 +209,12 @@ export class InstitutionComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  get paginationParams() {
+    return {
+      from: (this.currentPage - 1) * this.pageSize + 1,
+      to: Math.min(this.currentPage * this.pageSize, this.totalItems),
+      total: this.totalItems
+    };
+  }
 }

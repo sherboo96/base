@@ -61,11 +61,14 @@ public class UsersController : ControllerBase
             new[] { "JobTitle", "Organization", "Department" }
         );
 
-        return Ok(new BaseResponse<IEnumerable<User>>
+        // Map User entities to UserResponseDto to exclude sensitive fields
+        var responseData = data.Select(UserResponseDto.FromUser);
+
+        return Ok(new BaseResponse<IEnumerable<UserResponseDto>>
         {
             StatusCode = 200,
             Message = "Users retrieved successfully.",
-            Result = data,
+            Result = responseData,
             Total = total,
             Pagination = new Pagination
             {
@@ -81,8 +84,8 @@ public class UsersController : ControllerBase
     {
         var item = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "Organization", "Department" });
         return item == null
-            ? NotFound(new BaseResponse<User> { StatusCode = 404, Message = "User not found." })
-            : Ok(new BaseResponse<User> { StatusCode = 200, Message = "User retrieved successfully.", Result = item });
+            ? NotFound(new BaseResponse<UserResponseDto> { StatusCode = 404, Message = "User not found." })
+            : Ok(new BaseResponse<UserResponseDto> { StatusCode = 200, Message = "User retrieved successfully.", Result = UserResponseDto.FromUser(item) });
     }
 
     [HttpPost]
@@ -238,7 +241,7 @@ public class UsersController : ControllerBase
             Message = "User created successfully.",
             Result = new
             {
-                User = createdUser,
+                User = UserResponseDto.FromUser(createdUser),
                 TemporaryPassword = dto.LoginMethod == LoginMethod.Credentials ? newUser.TemporaryPassword : null
             }
         };
@@ -311,10 +314,45 @@ public class UsersController : ControllerBase
                 Result = false
             });
         }
+
+        // Update user roles if provided
+        if (dto.RoleIds != null)
+        {
+            // Get existing user roles
+            var existingUserRoles = await _unitOfWork.UserRoles.GetAllAsync(ur => ur.UserId == id);
+            var existingRoleIds = existingUserRoles.Select(ur => ur.RoleId).ToList();
+            var newRoleIds = dto.RoleIds.ToList();
+
+            // Find roles to remove (exist in DB but not in new list)
+            var rolesToRemove = existingUserRoles.Where(ur => !newRoleIds.Contains(ur.RoleId)).ToList();
+            foreach (var userRole in rolesToRemove)
+            {
+                await _unitOfWork.UserRoles.DeleteAsync(userRole);
+            }
+
+            // Find roles to add (in new list but not in DB)
+            var rolesToAdd = newRoleIds.Where(roleId => !existingRoleIds.Contains(roleId)).ToList();
+            foreach (var roleId in rolesToAdd)
+            {
+                var role = await _unitOfWork.Roles.FindAsync(r => r.Id == roleId);
+                if (role != null)
+                {
+                    var userRole = new UserRole
+                    {
+                        UserId = id,
+                        RoleId = roleId
+                    };
+                    await _unitOfWork.UserRoles.AddAsync(userRole);
+                }
+            }
+
+            // Save changes
+            await _unitOfWork.CompleteAsync();
+        }
         
         // Fetch updated user with relationships for response
         var updatedUser = await _unitOfWork.Users.FindAsync(x => x.Id == id, new[] { "JobTitle", "Organization", "Department" });
-        return Ok(new BaseResponse<User> { StatusCode = 200, Message = "User updated successfully.", Result = updatedUser });
+        return Ok(new BaseResponse<UserResponseDto> { StatusCode = 200, Message = "User updated successfully.", Result = UserResponseDto.FromUser(updatedUser) });
     }
 
     [HttpPatch("{id}/Unlock")]
@@ -423,6 +461,75 @@ public class UsersController : ControllerBase
             StatusCode = 200,
             Message = "Permissions retrieved successfully.",
             Result = permissions
+        });
+    }
+
+    [HttpGet("{id}/password")]
+    public async Task<IActionResult> GetUserPassword(string id)
+    {
+        var user = await _unitOfWork.Users.FindAsync(x => x.Id == id);
+        if (user == null || user.IsDeleted)
+            return NotFound(new BaseResponse<string> { StatusCode = 404, Message = "User not found." });
+
+        // Only return password if it's a temporary password (Credentials login method)
+        if (user.LoginMethod == LoginMethod.Credentials && !string.IsNullOrEmpty(user.TemporaryPassword))
+        {
+            return Ok(new BaseResponse<string>
+            {
+                StatusCode = 200,
+                Message = "Password retrieved successfully.",
+                Result = user.TemporaryPassword
+            });
+        }
+
+        return BadRequest(new BaseResponse<string>
+        {
+            StatusCode = 400,
+            Message = "Password is not available for this user's login method.",
+            Result = null
+        });
+    }
+
+    [HttpPost("{id}/reset-password")]
+    public async Task<IActionResult> ResetPassword(string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null || user.IsDeleted)
+            return NotFound(new BaseResponse<object> { StatusCode = 404, Message = "User not found." });
+
+        // Only reset password for Credentials login method
+        if (user.LoginMethod != LoginMethod.Credentials)
+        {
+            return BadRequest(new BaseResponse<object>
+            {
+                StatusCode = 400,
+                Message = "Password reset is only available for Credentials login method.",
+                Result = null
+            });
+        }
+
+        // Generate new temporary password
+        string newPassword = PasswordGenerator.GeneratePassword(12);
+        user.TemporaryPassword = newPassword;
+        user.IsTemporaryPassword = true;
+
+        // Update password in Identity system
+        var hasPassword = await _userManager.HasPasswordAsync(user);
+        if (hasPassword)
+        {
+            await _userManager.RemovePasswordAsync(user);
+        }
+        await _userManager.AddPasswordAsync(user, newPassword);
+
+        // Update user
+        await _userManager.UpdateAsync(user);
+        await _unitOfWork.CompleteAsync();
+
+        return Ok(new BaseResponse<object>
+        {
+            StatusCode = 200,
+            Message = "Password reset successfully.",
+            Result = new { TemporaryPassword = newPassword }
         });
     }
 }

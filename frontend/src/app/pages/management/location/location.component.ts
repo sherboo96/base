@@ -23,6 +23,7 @@ import { DialogService } from '@ngneat/dialog';
 import { LocationFormComponent } from './location-form/location-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { TranslationService } from '../../../services/translation.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-location',
@@ -419,5 +420,51 @@ export class LocationComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  get paginationParams() {
+    return {
+      from: (this.currentPage - 1) * this.pageSize + 1,
+      to: Math.min(this.currentPage * this.pageSize, this.totalItems),
+      total: this.totalItems
+    };
+  }
+
+  getLogoUrl(logoPath: string): string {
+    if (!logoPath) return '';
+    if (logoPath.startsWith('http')) {
+      return logoPath;
+    }
+    const baseUrl = environment.baseUrl.replace('/api', '');
+    return logoPath.startsWith('/') ? `${baseUrl}${logoPath}` : `${baseUrl}/${logoPath}`;
+  }
+
+  previewLogo(logoPath: string): void {
+    const logoUrl = this.getLogoUrl(logoPath);
+    if (!logoUrl) return;
+    
+    // Open logo in new window/tab
+    window.open(logoUrl, '_blank');
+  }
+
+  previewTemplate(templatePath: string): void {
+    if (!templatePath) return;
+    
+    const baseUrl = environment.baseUrl.replace('/api', '');
+    const templateUrl = templatePath.startsWith('/') 
+      ? `${baseUrl}${templatePath}` 
+      : `${baseUrl}/${templatePath}`;
+    
+    // Check if it's a PDF or HTML file
+    const isPdf = templatePath.toLowerCase().endsWith('.pdf');
+    const isHtml = templatePath.toLowerCase().endsWith('.html') || templatePath.toLowerCase().endsWith('.htm');
+    
+    if (isPdf || isHtml) {
+      // Open PDF/HTML in new window
+      window.open(templateUrl, '_blank');
+    } else {
+      // For other file types, try to download or open
+      window.open(templateUrl, '_blank');
+    }
   }
 }

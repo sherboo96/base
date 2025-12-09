@@ -1,317 +1,209 @@
 <div class="p-6 mx-auto max-w-full">
-  <!-- Add app-loading component for global loading -->
-  <app-loading *ngIf="isLoading$ | async"></app-loading>
+    <!-- Add app-loading component for global loading -->
+    <app-loading *ngIf="isLoading$ | async"></app-loading>
 
-  <!-- Dashboard-style Loading Spinner (local component loading) -->
-  <div
-    *ngIf="(isLoading$ | async) && roles.length === 0"
-    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
-    id="custom-loader"
-  >
-    <div class="spinner-container">
-      <div class="spinner"></div>
-      <p class="mt-4 text-accent font-medium">{{ 'role.loadingRoles' | translate }}</p>
-    </div>
-  </div>
-
-  <!-- Page Header -->
-  <div class="mb-6 flex justify-between items-center">
-    <div>
-      <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3">
-        <i class="fas fa-shield-alt text-accent"></i>
-        <span>{{ 'role.title' | translate }}</span>
-      </h1>
-      <p class="text-sm text-gray-600">
-        {{ 'role.subtitle' | translate }}
-      </p>
-    </div>
-  </div>
-
-  <!-- Search Section -->
-  <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-accentDark px-4 py-2">
-      <div class="flex items-center gap-2">
-        <i class="fas fa-search text-white text-sm"></i>
-        <h3 class="text-sm font-semibold text-white">{{ 'common.search' | translate }}</h3>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="md:col-span-3">
-          <label class="block text-sm font-medium text-textDark mb-2">
-            <i class="fas fa-search mr-2 text-accent"></i>{{ 'role.searchPlaceholder' | translate }}
-          </label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <i class="fas fa-search text-gray-400"></i>
-            </div>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (keyup.enter)="onSearch()"
-              [placeholder]="'role.searchPlaceholder' | translate"
-              class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-all duration-200"
-            />
-          </div>
+    <!-- Dashboard-style Loading Spinner (local component loading) -->
+    <div *ngIf="(isLoading$ | async) && roles.length === 0" class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50" id="custom-loader">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <p class="mt-4 text-accent font-medium">{{ 'role.loadingRoles' | translate }}</p>
         </div>
-      </div>
-      <div class="flex justify-end gap-3 mt-4">
-        <button
-          (click)="onSearch()"
-          class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2"
-        >
-          <i class="fas fa-search"></i>
-          <span>{{ 'common.search' | translate }}</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Roles Table Card -->
-  <div
-    class="role-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
-  >
-    <div
-      class="bg-gray-50 py-3 px-4 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between"
-    >
-      <!-- Add Role Button -->
-      <div class="flex items-center justify-end w-full">
-        <button
-          (click)="addNewRole()"
-          class="bg-accent hover:bg-accentDark text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200 text-sm"
-        >
-          <span class="flex items-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            {{ 'role.addRole' | translate }}
-          </span>
-        </button>
-      </div>
     </div>
 
-    <!-- Empty State -->
-    <div
-      *ngIf="roles.length === 0 && !(isLoading$ | async)"
-      class="empty-state py-20 flex flex-col items-center justify-center bg-gray-50"
-    >
-      <div class="bg-white rounded-full p-6 mb-4 shadow-lg">
-        <i class="fas fa-shield-alt text-6xl text-gray-300"></i>
-      </div>
-      <h3 class="text-2xl font-bold text-textDark mb-2">{{ 'role.noRolesFound' | translate }}</h3>
-      <p class="text-sm text-gray-600 text-center max-w-md mb-6">
-        {{ 'role.noRolesMatching' | translate }}
-      </p>
+    <!-- Page Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-textDark mb-1 flex items-center gap-3">
+                <i class="fas fa-shield-alt text-accent"></i>
+                <span>{{ 'role.title' | translate }}</span>
+            </h1>
+            <p class="text-sm text-gray-600">
+                {{ 'role.subtitle' | translate }}
+            </p>
+        </div>
     </div>
 
-    <!-- Loading Placeholder for Table (only when no data is available) -->
-    <div
-      *ngIf="(isLoading$ | async) && roles.length === 0"
-      class="py-16 flex flex-col items-center justify-center"
-    >
-      <div class="spinner-container">
-        <div class="spinner"></div>
-        <p class="mt-4 text-accent font-medium">
-          {{ 'role.loadingRoleData' | translate }}
-        </p>
-      </div>
+    <!-- Search Section -->
+    <div class="mb-4 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+        <div class="bg-accentDark px-4 py-2">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-search text-white text-sm"></i>
+                <h3 class="text-sm font-semibold text-white">{{ 'common.search' | translate }}</h3>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-medium text-textDark mb-2">
+                        <i class="fas fa-search mr-2 text-accent"></i>{{ 'role.searchPlaceholder' | translate }}
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" [placeholder]="'role.searchPlaceholder' | translate" class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-all duration-200" />
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-4">
+                <button (click)="onSearch()" class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm flex items-center gap-2">
+                    <i class="fas fa-search"></i>
+                    <span>{{ 'common.search' | translate }}</span>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Small loading indicator when refreshing with existing data -->
-    <div
-      *ngIf="(isLoading$ | async) && roles.length > 0"
-      class="absolute top-4 right-4 z-10"
-    >
-      <div class="spinner w-5 h-5"></div>
-    </div>
+    <!-- Roles Table Card -->
+    <div class="role-card relative flex flex-col w-full h-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+        <div class="bg-gray-50 py-3 px-4 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between">
+            <!-- Add Role Button -->
+            <div class="flex items-center justify-end w-full">
+                <button (click)="addNewRole()" class="bg-accent hover:bg-accentDark text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200 text-sm">
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'role.addRole' | translate }}
+                    </span>
+                </button>
+            </div>
+        </div>
 
-    <!-- Table -->
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-100">
-          <tr>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-tag mr-2 text-accent"></i>{{ 'role.name' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-globe mr-2 text-accent"></i>{{ 'role.organizationScope' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-toggle-on mr-2 text-accent"></i>{{ 'role.status' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-calendar mr-2 text-accent"></i>{{ 'role.createdOn' | translate }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-4 text-right text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-cog mr-2 text-accent"></i>{{ 'role.actions' | translate }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr
-            *ngFor="let role of roles"
-            class="hover:bg-gray-50 transition-all duration-150"
-          >
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ role.name || 'N/A' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                [ngClass]="{
+        <!-- Empty State -->
+        <div *ngIf="roles.length === 0 && !(isLoading$ | async)" class="empty-state py-20 flex flex-col items-center justify-center bg-gray-50">
+            <div class="bg-white rounded-full p-6 mb-4 shadow-lg">
+                <i class="fas fa-shield-alt text-6xl text-gray-300"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-textDark mb-2">{{ 'role.noRolesFound' | translate }}</h3>
+            <p class="text-sm text-gray-600 text-center max-w-md mb-6">
+                {{ 'role.noRolesMatching' | translate }}
+            </p>
+        </div>
+
+        <!-- Loading Placeholder for Table (only when no data is available) -->
+        <div *ngIf="(isLoading$ | async) && roles.length === 0" class="py-16 flex flex-col items-center justify-center">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p class="mt-4 text-accent font-medium">
+                    {{ 'role.loadingRoleData' | translate }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Small loading indicator when refreshing with existing data -->
+        <div *ngIf="(isLoading$ | async) && roles.length > 0" class="absolute top-4 right-4 z-10">
+            <div class="spinner w-5 h-5"></div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-tag mr-2 text-accent"></i>{{ 'role.name' | translate }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-building mr-2 text-accent"></i>{{ 'role.organization' | translate }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-globe mr-2 text-accent"></i>{{ 'role.organizationScope' | translate }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-toggle-on mr-2 text-accent"></i>{{ 'role.status' | translate }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-calendar mr-2 text-accent"></i>{{ 'role.createdOn' | translate }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-cog mr-2 text-accent"></i>{{ 'role.actions' | translate }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr *ngFor="let role of roles" class="hover:bg-gray-50 transition-all duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ role.name || 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ role.organization?.name || 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span [ngClass]="{
                   'bg-primary/20 text-primary': role.applyToAllOrganizations,
                   'bg-gray-100 text-gray-800': !role.applyToAllOrganizations
-                }"
-                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-              >
-                {{ role.applyToAllOrganizations ? ('role.allOrganizations' | translate) : ('role.ownOrganization' | translate) }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  [checked]="role.isActive"
-                  class="sr-only peer"
-                  disabled
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"
-                ></div>
-              </label>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ role.createdOn ? formatDate(role.createdOn) : '-' }}
-            </td>
-            <td
-              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-            >
-              <div class="flex items-center justify-end gap-2">
-                <button
-                  (click)="managePermissions(role)"
-                  class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'role.managePermissions' | translate"
-                >
-                  <i class="fas fa-shield-alt mr-1.5"></i>
-                  <span>{{ 'role.permissions' | translate }}</span>
-                </button>
-                <button
-                  (click)="editRole(role)"
-                  class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'role.edit' | translate"
-                >
-                  <i class="fas fa-edit mr-1.5"></i>
-                  <span>{{ 'role.edit' | translate }}</span>
-                </button>
-                <button
-                  (click)="deleteRole(role)"
-                  class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'role.delete' | translate"
-                >
-                  <i class="fas fa-trash mr-1.5"></i>
-                  <span>{{ 'role.delete' | translate }}</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+                }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                {{ role.applyToAllOrganizations ? ('role.allOrganizations' | translate) : ('role.ownOrganization' | translate) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" [checked]="role.isActive" class="sr-only peer" disabled />
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                            </label>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ role.createdOn ? formatDate(role.createdOn) : '-' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-2">
+                                <button (click)="managePermissions(role)" class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'role.managePermissions' | translate">
+                                    <i class="fas fa-shield-alt mr-1.5"></i>
+                                    <span>{{ 'role.permissions' | translate }}</span>
+                                </button>
+                                <button (click)="editRole(role)" class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'role.edit' | translate">
+                                    <i class="fas fa-edit mr-1.5"></i>
+                                    <span>{{ 'role.edit' | translate }}</span>
+                                </button>
+                                <button (click)="deleteRole(role)" class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'role.delete' | translate">
+                                    <i class="fas fa-trash mr-1.5"></i>
+                                    <span>{{ 'role.delete' | translate }}</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Pagination -->
-    <div
-      *ngIf="roles.length > 0"
-      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t-2 border-gray-200"
-    >
-      <div class="text-sm font-medium text-textDark mb-2 sm:mb-0">
-        <i class="fas fa-info-circle mr-2 text-accent"></i>
-        {{ 'role.showing' | translate: {from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems} }}
-      </div>
-      <div class="flex items-center space-x-3">
-        <select
-          [(ngModel)]="pageSize"
-          (change)="onPageChange(1)"
-          class="text-sm border-2 border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium"
-        >
-          <option [value]="5">5 {{ 'role.perPage' | translate }}</option>
-          <option [value]="10">10 {{ 'role.perPage' | translate }}</option>
-          <option [value]="20">20 {{ 'role.perPage' | translate }}</option>
-          <option [value]="50">50 {{ 'role.perPage' | translate }}</option>
-        </select>
-        <div class="flex space-x-1">
-          <button
-            class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === 1"
-            (click)="onPageChange(1)"
-            [title]="'common.firstPage' | translate"
-          >
-            <i class="fas fa-angle-double-left"></i>
-          </button>
-          <button
-            class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === 1"
-            (click)="onPageChange(currentPage - 1)"
-            [title]="'common.previousPage' | translate"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="flex space-x-1">
-            <button
-              *ngFor="let page of paginationRange"
-              (click)="onPageChange(page)"
-              class="px-4 py-1.5 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-              [ngClass]="{
+        <!-- Pagination -->
+        <div *ngIf="roles.length > 0" class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t-2 border-gray-200">
+            <div class="text-sm font-medium text-textDark mb-2 sm:mb-0">
+                <i class="fas fa-info-circle mr-2 text-accent"></i>
+                {{ 'role.showing' | translate: {from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalItems), total: totalItems} }}
+            </div>
+            <div class="flex items-center space-x-3">
+                <select [(ngModel)]="pageSize" (change)="onPageChange(1)" class="text-sm border-2 border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium">
+                    <option [value]="5">5 {{ 'role.perPage' | translate }}</option>
+                    <option [value]="10">10 {{ 'role.perPage' | translate }}</option>
+                    <option [value]="20">20 {{ 'role.perPage' | translate }}</option>
+                    <option [value]="50">50 {{ 'role.perPage' | translate }}</option>
+                </select>
+                <div class="flex space-x-1">
+                    <button class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage === 1" (click)="onPageChange(1)" [title]="'common.firstPage' | translate">
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)" [title]="'common.previousPage' | translate">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="flex space-x-1">
+                        <button *ngFor="let page of paginationRange" (click)="onPageChange(page)" class="px-4 py-1.5 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200 shadow-sm hover:shadow-md" [ngClass]="{
                 'bg-accentDark text-white border-accent shadow-md':
                   currentPage === page,
                 'border-gray-300 hover:bg-gray-100 hover:border-gray-400': currentPage !== page
-              }"
-            >
-              {{ page }}
-            </button>
-          </div>
-          <button
-            class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === totalPages"
-            (click)="onPageChange(currentPage + 1)"
-            [title]="'common.nextPage' | translate"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          <button
-            class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === totalPages"
-            (click)="onPageChange(totalPages)"
-            [title]="'common.lastPage' | translate"
-          >
-            <i class="fas fa-angle-double-right"></i>
-          </button>
+              }">
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage === totalPages" (click)="onPageChange(currentPage + 1)" [title]="'common.nextPage' | translate">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage === totalPages" (click)="onPageChange(totalPages)" [title]="'common.lastPage' | translate">
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
