@@ -175,13 +175,15 @@ export class InstitutionComponent implements OnInit, OnDestroy {
   deleteInstitution(institution: Institution): void {
     const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
       data: {
-        type: 'danger',
         title: this.translationService.instant('institution.deleteTitle'),
         message: this.translationService.instant('institution.deleteMessage', { name: institution.name }),
         confirmText: this.translationService.instant('common.delete'),
         cancelText: this.translationService.instant('common.cancel'),
+        type: 'danger',
+        warningMessage: this.translationService.instant('institution.deleteWarning'),
+        showWarning: true,
       },
-      width: '400px',
+      width: '500px',
       enableClose: true,
       closeButton: true,
       resizable: false,

@@ -205,13 +205,15 @@ export class InstructorComponent implements OnInit, OnDestroy {
   deleteInstructor(instructor: Instructor): void {
     const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
       data: {
-        type: 'danger',
         title: this.translationService.instant('instructor.deleteTitle'),
         message: this.translationService.instant('instructor.deleteMessage', { name: instructor.nameEn }),
         confirmText: this.translationService.instant('common.delete'),
         cancelText: this.translationService.instant('common.cancel'),
+        type: 'danger',
+        warningMessage: this.translationService.instant('instructor.deleteWarning'),
+        showWarning: true,
       },
-      width: '400px',
+      width: '500px',
       enableClose: true,
       closeButton: true,
       resizable: false,
