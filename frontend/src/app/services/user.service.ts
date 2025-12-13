@@ -85,6 +85,7 @@ export class UserService {
     positionId?: number;
     organizationId: number;
     departmentId?: number;
+    departmentRole?: string;
     loginMethod?: number;
     temporaryPassword?: string;
     roleIds?: number[];
@@ -102,6 +103,7 @@ export class UserService {
     positionId?: number;
     organizationId: number;
     departmentId?: number;
+    departmentRole?: string;
     loginMethod?: number;
     temporaryPassword?: string;
     emailVerified?: boolean;

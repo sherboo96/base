@@ -25,6 +25,7 @@ public class UserResponseDto
     public Organization? Organization { get; set; }
     public int? DepartmentId { get; set; }
     public Department? Department { get; set; }
+    public string? DepartmentRole { get; set; } // "Head" or "Member"
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedOn { get; set; }
@@ -57,6 +58,7 @@ public class UserResponseDto
             Organization = user.Organization,
             DepartmentId = user.DepartmentId,
             Department = user.Department,
+            DepartmentRole = user.DepartmentRole,
             IsActive = user.IsActive,
             IsDeleted = user.IsDeleted,
             CreatedOn = user.CreatedOn,

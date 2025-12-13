@@ -29,6 +29,8 @@ public class UnitOfWork : IUnitOfWork
         Locations = new BaseRepository<Location, LocationDto>(_context, _mapper);
         Segments = new SegmentRepository(_context, _mapper);
         AdoptionUsers = new BaseRepository<AdoptionUser, AdoptionUserDto>(_context, _mapper);
+        CourseTabs = new BaseRepository<CourseTab, CourseTabDto>(_context, _mapper);
+        Courses = new BaseRepository<Course, CourseDto>(_context, _mapper);
 
         UserRoles = new BaseRepository<UserRole, UserRoleDto>(_context, _mapper);
         RolePermissions = new BaseRepository<RolePermission, RolePermissionDto>(_context, _mapper);
@@ -47,6 +49,8 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<Location, LocationDto> Locations { get; private set; }
     public ISegmentRepository Segments { get; private set; }
     public IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; private set; }
+    public IBaseRepository<CourseTab, CourseTabDto> CourseTabs { get; private set; }
+    public IBaseRepository<Course, CourseDto> Courses { get; private set; }
 
     public IBaseRepository<UserRole, UserRoleDto> UserRoles { get; private set; }
     public IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; private set; }

@@ -23,6 +23,7 @@ public class User : IdentityUser
     public Organization Organization { get; set; }
     public int? DepartmentId { get; set; } // Nullable - required only if organization is main
     public Department? Department { get; set; }
+    public string? DepartmentRole { get; set; } // "Head" or "Member" - indicates if user is head or member of the department
     
     // BaseModel properties (since IdentityUser doesn't inherit from BaseModel)
     public bool IsActive { get; set; } = true;

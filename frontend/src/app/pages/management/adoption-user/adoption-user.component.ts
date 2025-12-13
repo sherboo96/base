@@ -32,7 +32,6 @@ import { TranslationService } from '../../../services/translation.service';
     FormsModule,
     TranslateModule,
     LoadingComponent,
-    AdoptionUserFormComponent,
   ],
   templateUrl: './adoption-user.component.html',
   styleUrl: './adoption-user.component.scss',

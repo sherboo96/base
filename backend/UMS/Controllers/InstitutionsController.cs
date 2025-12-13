@@ -84,6 +84,7 @@ public class InstitutionsController : ControllerBase
 
         existing.Name = dto.Name;
         existing.NameAr = dto.NameAr;
+        existing.CertificatePdf = dto.CertificatePdf;
         existing.UpdatedAt = DateTime.Now;
 
         var updated = await _unitOfWork.Institutions.UpdateAsync(existing);

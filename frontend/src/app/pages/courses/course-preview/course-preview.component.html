@@ -1,0 +1,331 @@
+<div class="min-h-screen bg-gray-50">
+  <app-loading></app-loading>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading && !course" class="flex justify-center items-center min-h-screen">
+    <div class="text-center">
+      <div class="spinner mx-auto mb-4"></div>
+      <p class="text-accent font-medium text-lg">{{ 'course.loadingCourse' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Course Preview -->
+  <div *ngIf="course && !isLoading">
+    <!-- Top Navigation -->
+    <div class="border-b border-gray-200 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <button
+          (click)="goBack()"
+          class="inline-flex items-center text-gray-600 hover:text-accent transition-colors text-sm font-medium"
+        >
+          <i class="fas fa-arrow-left mr-2"></i>
+          <span>{{ 'course.courses' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Main Content (2/3) -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Course Header Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <!-- Course Provider/Organization -->
+            <div class="flex items-center gap-4 mb-4">
+              <div *ngIf="course.organization" class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accentDark flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  {{ course.organization.name?.charAt(0) || 'O' }}
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-gray-900">{{ course.organization.name }}</p>
+                  <p class="text-xs text-gray-500">{{ 'course.courseProvider' | translate }}</p>
+                </div>
+              </div>
+              <div class="ml-auto flex items-center gap-2">
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                  {{ course.code }}
+                </span>
+                <span [class]="getStatusClass(course.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                  {{ getStatusText(course.status) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Course Title -->
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight" [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
+              {{ currentLanguage === 'ar' && course.courseTitleAr ? course.courseTitleAr : course.courseTitle }}
+            </h1>
+
+            <!-- Course Description -->
+            <p class="text-gray-700 text-base leading-relaxed mb-6" [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
+              {{ currentLanguage === 'ar' && course.descriptionAr ? course.descriptionAr : (course.description || ('course.noDescription' | translate)) }}
+            </p>
+
+            <!-- Key Metrics Card -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <i class="fas fa-chalkboard-teacher text-purple-600"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.instructors' | translate }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ course.instructors?.length || 0 }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                  <i class="fas fa-star text-yellow-600"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.kpiWeight' | translate }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ course.kpiWeight || 0 }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <i class="fas fa-clock text-green-600"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.duration' | translate }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ getCourseDuration() }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                  <i class="fas fa-users text-indigo-600"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.seats' | translate }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ course.availableSeats }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Course Tags/Badges -->
+            <div class="flex flex-wrap items-center gap-2">
+             
+              <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                {{ course.language === 1 ? 'العربية' : 'English' }}
+              </span>
+              <span *ngIf="course.certificateAvailable" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                <i class="fas fa-certificate mr-1"></i>{{ 'course.certificate' | translate }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200">
+              <nav class="flex -mb-px overflow-x-auto">
+                <button
+                  (click)="activeTab = 'overview'"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                  [ngClass]="{
+                    'border-accent text-accent': activeTab === 'overview',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'overview'
+                  }"
+                >
+                  <i class="fas fa-info-circle mr-2"></i>
+                  {{ 'course.overview' | translate }}
+                </button>
+                <button
+                  *ngIf="course.instructors && course.instructors.length > 0"
+                  (click)="activeTab = 'instructor'"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                  [ngClass]="{
+                    'border-accent text-accent': activeTab === 'instructor',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'instructor'
+                  }"
+                >
+                  <i class="fas fa-user mr-2"></i>
+                  {{ 'course.instructor' | translate }}
+                </button>
+              </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+              <!-- Overview Tab -->
+              <div *ngIf="activeTab === 'overview'" class="space-y-6">
+                <!-- What you'll learn -->
+                <div *ngIf="course.learningOutcomes && course.learningOutcomes.length > 0">
+                  <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-graduation-cap text-accent"></i>
+                    {{ 'course.whatYouWillLearn' | translate }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div *ngFor="let outcome of course.learningOutcomes" class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <i class="fas fa-check-circle text-green-500 mt-1 flex-shrink-0"></i>
+                      <div [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
+                        <p class="text-gray-800 font-medium text-sm">
+                          {{ currentLanguage === 'ar' && outcome.nameAr ? outcome.nameAr : outcome.name }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Course Contents -->
+                <div *ngIf="course.courseContents && course.courseContents.length > 0" class="mt-6">
+                  <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-list text-accent"></i>
+                    {{ 'course.courseContents' | translate }}
+                  </h3>
+                  <div class="space-y-2">
+                    <div *ngFor="let content of course.courseContents; let i = index" class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span class="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        {{ i + 1 }}
+                      </span>
+                      <div [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
+                        <p class="text-gray-800 font-medium text-sm">
+                          {{ currentLanguage === 'ar' && content.nameAr ? content.nameAr : content.name }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Instructor Tab -->
+              <div *ngIf="activeTab === 'instructor' && course.instructors && course.instructors.length > 0" class="space-y-4">
+                <div *ngFor="let instructor of course.instructors" class="bg-white border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-start gap-4">
+                    <!-- Instructor Image -->
+                    <div class="flex-shrink-0">
+                      <div class="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 shadow-md border-2 border-white relative">
+                        <img 
+                          *ngIf="instructor.profileImage" 
+                          [src]="getInstructorImageUrl(instructor.profileImage)" 
+                          [alt]="currentLanguage === 'ar' && instructor.nameAr ? instructor.nameAr : instructor.nameEn"
+                          class="w-full h-full object-cover"
+                          (error)="onImageError($event)"
+                        />
+                        <div 
+                          class="w-full h-full flex items-center justify-center text-white text-2xl font-bold absolute inset-0"
+                          [style.display]="instructor.profileImage ? 'none' : 'flex'"
+                          #fallbackImage
+                        >
+                          {{ (currentLanguage === 'ar' && instructor.nameAr ? instructor.nameAr : instructor.nameEn)?.charAt(0) || 'I' }}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Instructor Info -->
+                    <div class="flex-1 min-w-0" [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
+                      <h3 class="text-xl font-bold text-gray-900 mt-2">
+                        {{ currentLanguage === 'ar' && instructor.nameAr ? instructor.nameAr : instructor.nameEn }}
+                      </h3>
+                      <div *ngIf="instructor.bio">
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                          {{ instructor.bio }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column - Sidebar (1/3) -->
+        <div class="lg:col-span-1 space-y-6">
+          
+
+          <!-- Course Details Card -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <i class="fas fa-folder text-accent"></i>
+              {{ 'course.courseDetails' | translate }}
+            </h3>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <i class="fas fa-calendar text-gray-500"></i>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.startDate' | translate }}</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ formatDate(course.startDateTime) }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <i class="fas fa-calendar text-gray-500"></i>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.endDate' | translate }}</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ formatDate(course.endDateTime) }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <i class="fas fa-clock text-gray-500"></i>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.time' | translate }}</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ getCourseTime() }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrollment Card -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6 sticky top-8">
+            <div class="text-center mb-6">
+              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-accent to-accentDark flex items-center justify-center shadow-lg">
+                <i class="fas fa-graduation-cap text-white text-2xl"></i>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900 mb-1">{{ 'course.enrollNow' | translate }}</h3>
+              <p class="text-gray-600 text-xs">{{ 'course.enrollDescription' | translate }}</p>
+            </div>
+
+            <!-- Price Display -->
+            <div *ngIf="course.price > 0" class="mb-6 pb-6 border-b border-gray-200 text-center">
+              <div class="flex items-baseline justify-center gap-2">
+                <span class="text-3xl font-bold text-gray-900">{{ course.price }}</span>
+                <span class="text-gray-600">{{ 'course.currency' | translate }}</span>
+              </div>
+            </div>
+
+            <!-- Enroll Button -->
+            <button
+              *ngIf="!isEnrolled && course.status === CourseStatus.Published"
+              (click)="enrollInCourse()"
+              [disabled]="isCheckingEnrollment"
+              class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4"
+            >
+              <i class="fas fa-user-plus"></i>
+              <span>{{ 'course.enroll' | translate }}</span>
+            </button>
+
+            <!-- Already Enrolled -->
+            <div *ngIf="isEnrolled" class="space-y-3 mb-4">
+              <div class="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ 'course.alreadyEnrolled' | translate }}</span>
+              </div>
+              <!-- Enrollment Status Badge -->
+              <div *ngIf="enrollment && enrollment.status" class="w-full px-6 py-2 bg-gray-100 rounded-lg flex items-center justify-center">
+                <span [class]="getEnrollmentStatusBadgeClass(enrollment.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                  {{ getEnrollmentStatusText(enrollment.status) }}
+                </span>
+              </div>
+              <!-- Excuse Button -->
+              <button
+                *ngIf="canExcuse()"
+                (click)="excuseEnrollment()"
+                class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <i class="fas fa-user-times"></i>
+                <span>{{ 'course.excuseEnrollment' | translate }}</span>
+              </button>
+            </div>
+
+            <!-- Course Not Available -->
+            <div *ngIf="course.status !== CourseStatus.Published" class="w-full px-6 py-3 bg-gray-400 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 mb-4">
+              <i class="fas fa-lock"></i>
+              <span>{{ 'course.notAvailable' | translate }}</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

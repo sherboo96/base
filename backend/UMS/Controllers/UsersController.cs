@@ -123,6 +123,7 @@ public class UsersController : ControllerBase
             JobTitleId = dto.JobTitleId,
             OrganizationId = dto.OrganizationId,
             DepartmentId = dto.DepartmentId,
+            DepartmentRole = dto.DepartmentRole,
             LoginMethod = dto.LoginMethod,
             EmailVerified = false,
             IsActive = true,
@@ -284,6 +285,7 @@ public class UsersController : ControllerBase
         existing.JobTitleId = dto.JobTitleId;
         existing.OrganizationId = dto.OrganizationId;
         existing.DepartmentId = dto.DepartmentId;
+        existing.DepartmentRole = dto.DepartmentRole;
         existing.LoginMethod = dto.LoginMethod;
         existing.EmailVerified = dto.EmailVerified;
         existing.UpdatedAt = DateTime.Now;

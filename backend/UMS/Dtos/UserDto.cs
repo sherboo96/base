@@ -14,6 +14,7 @@ public class UserDto
     public JobTitleDto? JobTitle { get; set; }
     public int OrganizationId { get; set; }
     public int? DepartmentId { get; set; }
+    public string? DepartmentRole { get; set; } // "Head" or "Member"
     public DateTime? LastLogin { get; set; }
     public LoginMethod LoginMethod { get; set; } = LoginMethod.ActiveDirectory;
     public string? TemporaryPassword { get; set; }

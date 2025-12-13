@@ -1,10 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { StorageService } from '../../services/storage.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { SideMenuService } from '../../services/side-menu.service';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { NavigationEnd } from '@angular/router';
+import { CourseTabService, CourseTab } from '../../services/course-tab.service';
+import { CourseService, Course, CourseStatus } from '../../services/course.service';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-side-menu',
@@ -19,18 +24,43 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   userPermissions: any[] = [];
   sideMenuPermissions: any[] = [];
   isCollapsed: boolean = false;
+  courseTabs: CourseTab[] = [];
+  publicCourseTabs: CourseTab[] = [];
+  coursesByTab: Map<number, Course[]> = new Map();
+  publicCoursesByTab: Map<number, Course[]> = new Map();
+  isLoadingCourseTabs = false;
+  isLoadingCourses = false;
   private subscription?: Subscription;
+  private routerSubscription?: Subscription;
+  private courseTabChangeSubscription?: Subscription;
 
   constructor(
     private router: Router,
     private storageService: StorageService,
-    private sideMenuService: SideMenuService
+    private sideMenuService: SideMenuService,
+    private courseTabService: CourseTabService,
+    private courseService: CourseService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {
-    this.router.events.subscribe((event: any) => {
-      if (event.url) {
-        this.activeRoute = event.url;
-      }
-    });
+    // Subscribe to router events for active route tracking
+    this.routerSubscription = this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.activeRoute = event.urlAfterRedirects;
+        // Reload course tabs when navigating to dashboard or course-related pages
+        if (event.urlAfterRedirects === '/dashboard' || 
+            event.urlAfterRedirects.startsWith('/courses') || 
+            event.urlAfterRedirects.startsWith('/management/courses')) {
+          this.reloadPermissions();
+          setTimeout(() => {
+            this.loadCourseTabs();
+          }, 100);
+        }
+        
+        // Update active route
+        this.activeRoute = event.urlAfterRedirects;
+      });
 
     // Load user permissions from storage
     const storedPermissions = this.storageService.getItem<any[]>('userPermissions');
@@ -46,16 +76,303 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.subscription = this.sideMenuService.collapsed$.subscribe(
-      (collapsed) => {
-        this.isCollapsed = collapsed;
-      }
+    const subscriptions = new Subscription();
+    
+    subscriptions.add(
+      this.sideMenuService.collapsed$.subscribe(
+        (collapsed) => {
+          this.isCollapsed = collapsed;
+        }
+      )
     );
+    
+    // Subscribe to course tab changes to reload side menu when tabs are modified
+    this.courseTabChangeSubscription = this.courseTabService.courseTabChanged.subscribe(() => {
+      console.log('Course tab changed, reloading side menu...');
+      this.loadCourseTabs();
+    });
+
+    // Subscribe to course changes to reload courses when they are modified
+    subscriptions.add(
+      this.courseService.courseChanged.subscribe(() => {
+        console.log('Course changed, reloading courses...');
+        this.loadCoursesForTabs();
+      })
+    );
+    
+    this.subscription = subscriptions;
+    
+    // Reload permissions from storage to ensure they're available
+    this.reloadPermissions();
+    
+    // Set initial active route
+    this.activeRoute = this.router.url;
+    
+    // Load course tabs after a short delay to ensure permissions are loaded
+    setTimeout(() => {
+      this.loadCourseTabs();
+    }, 100);
+  }
+
+  reloadPermissions(): void {
+    // Reload user permissions from storage
+    const storedPermissions = this.storageService.getItem<any[]>('userPermissions');
+    if (storedPermissions && Array.isArray(storedPermissions)) {
+      this.userPermissions = storedPermissions;
+    } else {
+      this.userPermissions = [];
+    }
+
+    // Reload side menu permissions from storage
+    const storedSideMenu = this.storageService.getItem<any[]>('sideMenuPermissions');
+    if (storedSideMenu && Array.isArray(storedSideMenu)) {
+      this.sideMenuPermissions = storedSideMenu;
+    } else {
+      this.sideMenuPermissions = [];
+    }
+  }
+
+  async loadCourseTabs(): Promise<void> {
+    try {
+      this.isLoadingCourseTabs = true;
+      
+      // Ensure permissions are loaded before checking
+      this.reloadPermissions();
+      
+      const currentUser = this.storageService.getItem<any>('currentUser');
+      if (!currentUser) {
+        this.isLoadingCourseTabs = false;
+        return;
+      }
+
+      // Get user's organization ID
+      const userOrganizationId = currentUser.organizationId || currentUser.organization?.id;
+      
+      // Check if user is SuperAdmin (SuperAdmin bypasses permission checks)
+      const userRoles = this.storageService.getItem<any[]>('userRoles');
+      const isSuperAdmin = userRoles?.some((role: any) => role.name === 'SuperAdmin');
+      
+      // Check permissions first - reload permissions to ensure they're fresh
+      this.reloadPermissions();
+      
+      // Check for permissions - use fallback to COURSE_TABS_VIEW if new permissions not assigned
+      const hasCourseTabsView = this.hasPermission('COURSE_TABS_VIEW');
+      let hasShowInMenuPermission = isSuperAdmin || 
+                                    this.hasPermission('COURSE_TABS_SHOW_IN_MENU') || 
+                                    hasCourseTabsView; // Fallback
+      let hasShowPublicPermission = isSuperAdmin || 
+                                    this.hasPermission('COURSE_TABS_SHOW_PUBLIC') || 
+                                    hasCourseTabsView; // Fallback
+      
+      // If no permissions and not SuperAdmin, check if permissions might not be loaded yet and retry once
+      if (!isSuperAdmin && !hasShowInMenuPermission && !hasShowPublicPermission) {
+        // Wait a bit and check again - permissions might be loading
+        await new Promise(resolve => setTimeout(resolve, 200));
+        this.reloadPermissions();
+        const retryCourseTabsView = this.hasPermission('COURSE_TABS_VIEW');
+        hasShowInMenuPermission = this.hasPermission('COURSE_TABS_SHOW_IN_MENU') || retryCourseTabsView;
+        hasShowPublicPermission = this.hasPermission('COURSE_TABS_SHOW_PUBLIC') || retryCourseTabsView;
+        
+        if (!hasShowInMenuPermission && !hasShowPublicPermission) {
+          console.warn('Course tabs not shown: User lacks COURSE_TABS_SHOW_IN_MENU, COURSE_TABS_SHOW_PUBLIC, and COURSE_TABS_VIEW permissions');
+          console.log('Available permissions:', {
+            userPermissions: this.userPermissions,
+            sideMenuPermissions: this.sideMenuPermissions,
+            userRoles: userRoles
+          });
+          this.courseTabs = [];
+          this.publicCourseTabs = [];
+          this.isLoadingCourseTabs = false;
+          this.cdr.detectChanges();
+          return;
+        }
+      }
+      
+      // Use final permission values
+      const finalShowInMenuPermission = isSuperAdmin || hasShowInMenuPermission;
+      const finalShowPublicPermission = isSuperAdmin || hasShowPublicPermission;
+      
+      console.log('Loading course tabs with permissions:', {
+        isSuperAdmin,
+        hasShowInMenuPermission: finalShowInMenuPermission,
+        hasShowPublicPermission: finalShowPublicPermission,
+        hasCourseTabsView,
+        userPermissions: this.userPermissions?.length || 0,
+        sideMenuPermissions: this.sideMenuPermissions?.length || 0
+      });
+      
+      // Fetch CourseTabs for "COURSES MANAGEMENT" section (ShowInMenu = true)
+      if (finalShowInMenuPermission) {
+        const menuResponse = await firstValueFrom(
+          this.courseTabService.getCourseTabs(1, 1000, undefined, userOrganizationId, true, undefined)
+        );
+
+        if (menuResponse && menuResponse.result && Array.isArray(menuResponse.result)) {
+          // Filter to only show active CourseTabs that are set to show in menu
+          this.courseTabs = menuResponse.result.filter(
+            (tab: CourseTab) => 
+              tab &&
+              tab.isActive !== false && 
+              tab.isDeleted !== true && 
+              tab.showInMenu === true
+          );
+          console.log('Course tabs loaded for menu:', this.courseTabs.length, this.courseTabs);
+          // Trigger change detection to update the side menu
+          this.cdr.detectChanges();
+        } else {
+          console.warn('No course tabs in menu response:', menuResponse);
+          this.courseTabs = [];
+          // Trigger change detection even when clearing
+          this.cdr.detectChanges();
+        }
+      } else {
+        this.courseTabs = [];
+        this.cdr.detectChanges();
+      }
+
+      // Fetch CourseTabs for "COURSES" section (ShowPublic = true)
+      if (finalShowPublicPermission) {
+        const publicResponse = await firstValueFrom(
+          this.courseTabService.getCourseTabs(1, 1000, undefined, userOrganizationId, undefined, true)
+        );
+
+        if (publicResponse && publicResponse.result && Array.isArray(publicResponse.result)) {
+          // Filter to only show active CourseTabs that are set to show public
+          this.publicCourseTabs = publicResponse.result.filter(
+            (tab: CourseTab) => 
+              tab &&
+              tab.isActive !== false && 
+              tab.isDeleted !== true && 
+              tab.showPublic === true
+          );
+          console.log('Public course tabs loaded:', this.publicCourseTabs.length, this.publicCourseTabs);
+          // Trigger change detection to update the side menu
+          this.cdr.detectChanges();
+        } else {
+          console.warn('No course tabs in public response:', publicResponse);
+          this.publicCourseTabs = [];
+          // Trigger change detection even when clearing
+          this.cdr.detectChanges();
+        }
+            } else {
+              this.publicCourseTabs = [];
+            }
+
+            // Load courses for each course tab
+            await this.loadCoursesForTabs();
+          } catch (error) {
+            console.error('Error loading course tabs:', error);
+            this.courseTabs = [];
+            this.publicCourseTabs = [];
+          } finally {
+            this.isLoadingCourseTabs = false;
+            this.isLoadingCourses = false;
+          }
+        }
+
+  async loadCoursesForTabs(): Promise<void> {
+    try {
+      this.isLoadingCourses = true;
+      const currentUser = this.storageService.getItem<any>('currentUser');
+      const userOrganizationId = currentUser?.organizationId || currentUser?.organization?.id;
+
+      // Load courses for management tabs (all statuses)
+      for (const tab of this.courseTabs) {
+        try {
+          const response = await firstValueFrom(
+            this.courseService.getCourses(1, 1000, undefined, userOrganizationId, tab.id)
+          ) as any;
+          if (response && response.result && Array.isArray(response.result)) {
+            this.coursesByTab.set(tab.id, response.result.filter((c: Course) => c.isActive !== false && !c.isDeleted));
+          }
+        } catch (error) {
+          console.error(`Error loading courses for tab ${tab.id}:`, error);
+          this.coursesByTab.set(tab.id, []);
+        }
+      }
+
+      // Load courses for public tabs (only Published status)
+      for (const tab of this.publicCourseTabs) {
+        try {
+          const response = await firstValueFrom(
+            this.courseService.getCourses(1, 1000, undefined, userOrganizationId, tab.id, CourseStatus.Published)
+          ) as any;
+          if (response && response.result && Array.isArray(response.result)) {
+            this.publicCoursesByTab.set(tab.id, response.result.filter((c: Course) => c.isActive !== false && !c.isDeleted));
+          }
+        } catch (error) {
+          console.error(`Error loading public courses for tab ${tab.id}:`, error);
+          this.publicCoursesByTab.set(tab.id, []);
+        }
+      }
+
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error loading courses for tabs:', error);
+    } finally {
+      this.isLoadingCourses = false;
+    }
+  }
+
+  getCoursesForTab(tabId: number): Course[] {
+    return this.coursesByTab.get(tabId) || [];
+  }
+
+  getPublicCoursesForTab(tabId: number): Course[] {
+    return this.publicCoursesByTab.get(tabId) || [];
+  }
+
+  navigateToAddCourse(courseTabId: number): void {
+    this.activeRoute = `/management/courses/${courseTabId}`;
+    this.router.navigate(['/management/courses', courseTabId]);
+  }
+
+  navigateToCourseManagement(courseTabId: number): void {
+    this.activeRoute = `/management/courses/${courseTabId}`;
+    this.router.navigate(['/management/courses', courseTabId]);
+  }
+
+  navigateToCourseDetails(courseId: number | undefined): void {
+    if (courseId) {
+      this.router.navigate(['/management/courses/details', courseId]);
+    }
+  }
+
+  isActiveCourseRoute(courseTabId: number, courseId?: number): boolean {
+    const currentUrl = this.router.url;
+    if (courseId) {
+      // Check if we're on the course details page for this course
+      return currentUrl === `/management/courses/details/${courseId}` ||
+             currentUrl === `/management/courses/${courseTabId}/${courseId}`;
+    }
+    // Check if URL matches the course tab route (with or without trailing slash)
+    return currentUrl === `/management/courses/${courseTabId}` || 
+           currentUrl === `/management/courses/${courseTabId}/` ||
+           (currentUrl.startsWith('/management/courses/') && 
+            !currentUrl.startsWith('/management/courses/details/') &&
+            currentUrl.split('/').length === 4 && 
+            currentUrl.split('/')[3] === courseTabId.toString());
+  }
+
+  isActivePublicCourseRoute(courseTabId: number, courseId?: number): boolean {
+    const courseTab = this.publicCourseTabs.find(t => t.id === courseTabId);
+    if (!courseTab?.routeCode) return false;
+    
+    if (courseId) {
+      return this.router.url === `/courses/${courseTab.routeCode}/${courseId}`;
+    }
+    return this.router.url.startsWith(`/courses/${courseTab.routeCode}`);
   }
 
   ngOnDestroy(): void {
     if (this.subscription) {
       this.subscription.unsubscribe();
+    }
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+    if (this.courseTabChangeSubscription) {
+      this.courseTabChangeSubscription.unsubscribe();
     }
   }
 
@@ -77,13 +394,32 @@ export class SideMenuComponent implements OnInit, OnDestroy {
       return true;
     }
     
-    // First check side menu permissions (more efficient)
-    const sideMenuItem = this.sideMenuPermissions.find((item) => item.code === permissionCode);
-    if (sideMenuItem) {
-      return sideMenuItem.hasAccess;
+    // Ensure permissions arrays are populated
+    if (!this.userPermissions || this.userPermissions.length === 0) {
+      this.reloadPermissions();
     }
+    
+    // First check side menu permissions (more efficient)
+    if (this.sideMenuPermissions && this.sideMenuPermissions.length > 0) {
+      const sideMenuItem = this.sideMenuPermissions.find((item) => item && item.code === permissionCode);
+      if (sideMenuItem) {
+        return sideMenuItem.hasAccess === true;
+      }
+    }
+    
     // Fallback to checking user permissions
-    return this.userPermissions.some((p) => p.code === permissionCode);
+    if (this.userPermissions && this.userPermissions.length > 0) {
+      const hasPermission = this.userPermissions.some((p) => {
+        // Handle both object format {code: "PERMISSION_CODE"} and string format
+        if (typeof p === 'string') {
+          return p === permissionCode;
+        }
+        return p && (p.code === permissionCode || p === permissionCode);
+      });
+      return hasPermission;
+    }
+    
+    return false;
   }
 
   getSideMenuItems(section: string): any[] {
@@ -94,6 +430,7 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   navigateToDashboard() {
     this.activeRoute = '/dashboard';
     this.router.navigate(['/dashboard']);
+    // Course tabs will reload automatically via router event subscription
   }
 
   // Management
@@ -161,6 +498,67 @@ export class SideMenuComponent implements OnInit, OnDestroy {
     this.router.navigate(['/management/adoption-user']);
   }
 
+  navigateToCourseTab() {
+    this.activeRoute = '/management/course-tab';
+    this.router.navigate(['/management/course-tab']);
+  }
+
+  navigateToCourse(courseTab: CourseTab, isManagement: boolean = false): void {
+    // Check if routeCode exists - show helpful message if missing
+    if (!courseTab.routeCode || courseTab.routeCode.trim() === '') {
+      console.error('CourseTab missing routeCode:', courseTab);
+      this.toastr.warning(
+        `Course tab "${courseTab.name}" is missing a route code. Please add a route code in the Course Tab management page.`,
+        'Route Code Required',
+        { timeOut: 5000 }
+      );
+      // Navigate to course tab management page so user can add route code
+      this.router.navigate(['/management/course-tab']);
+      return;
+    }
+
+    if (isManagement) {
+      // Navigate to management course page
+      this.activeRoute = `/management/courses/${courseTab.routeCode}`;
+      this.router.navigate(['/management/courses', courseTab.routeCode]);
+    } else {
+      // Navigate to public course page
+      this.activeRoute = `/courses/${courseTab.routeCode}`;
+      this.router.navigate(['/courses', courseTab.routeCode]);
+    }
+  }
+
+  hasCourseTabs(): boolean {
+    return Array.isArray(this.courseTabs) && this.courseTabs.length > 0;
+  }
+
+  hasPublicCourseTabs(): boolean {
+    return Array.isArray(this.publicCourseTabs) && this.publicCourseTabs.length > 0;
+  }
+
+  getIconClasses(icon: string | undefined): string {
+    if (!icon) return 'material-icons';
+    return icon;
+  }
+
+  getIconName(icon: string | undefined): string {
+    if (!icon) return 'book';
+    // Extract icon name from Material Icons format "material-icons icon_name"
+    if (icon.startsWith('material-icons ')) {
+      return icon.replace('material-icons ', '');
+    }
+    return '';
+  }
+
+  isMaterialIcon(icon: string | undefined): boolean {
+    if (!icon) return true; // Default to material-icons
+    return icon.startsWith('material-icons ');
+  }
+
+  trackByCourseTabId(index: number, courseTab: CourseTab): number {
+    return courseTab?.id || index;
+  }
+
   get copyrightParams() {
     return { year: this.currentYear };
   }
@@ -186,7 +584,18 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   hasCourseConfigurationItems(): boolean {
     return this.hasPermission('ADOPTION_USERS_VIEW') ||
            this.hasPermission('INSTRUCTORS_VIEW') ||
-           this.hasPermission('INSTITUTIONS_VIEW');
+           this.hasPermission('INSTITUTIONS_VIEW') ||
+           this.hasPermission('COURSE_TABS_VIEW');
+  }
+
+  hasCourseTabsShowInMenuPermission(): boolean {
+    // Check specific permission first, then fallback to COURSE_TABS_VIEW
+    return this.hasPermission('COURSE_TABS_SHOW_IN_MENU') || this.hasPermission('COURSE_TABS_VIEW');
+  }
+
+  hasCourseTabsShowPublicPermission(): boolean {
+    // Check specific permission first, then fallback to COURSE_TABS_VIEW
+    return this.hasPermission('COURSE_TABS_SHOW_PUBLIC') || this.hasPermission('COURSE_TABS_VIEW');
   }
 
   hasSystemAdministrationItems(): boolean {

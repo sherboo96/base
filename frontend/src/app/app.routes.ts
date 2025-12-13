@@ -22,6 +22,11 @@ import { InstitutionComponent } from './pages/management/institution/institution
 import { SegmentComponent } from './pages/management/segment/segment.component';
 import { SystemConfigurationComponent } from './pages/management/system-configuration/system-configuration.component';
 import { AdoptionUserComponent } from './pages/management/adoption-user/adoption-user.component';
+import { CourseTabComponent } from './pages/management/course-tab/course-tab.component';
+import { CourseDetailComponent } from './pages/courses/course-detail/course-detail.component';
+import { CourseComponent } from './pages/management/course/course.component';
+import { CourseDetailsComponent } from './pages/management/course/course-details/course-details.component';
+import { CoursePreviewComponent } from './pages/courses/course-preview/course-preview.component';
 
 export const routes: Routes = [
   {
@@ -179,6 +184,75 @@ export const routes: Routes = [
     data: {
       redirectIfLoggedIn: false,
       permission: 'ADOPTION_USERS_VIEW',
+    },
+  },
+  {
+    path: 'management/course-tab',
+    component: CourseTabComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TABS_VIEW',
+    },
+  },
+  {
+    path: 'management/courses',
+    component: CourseComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TABS_VIEW',
+    },
+  },
+  {
+    path: 'management/courses',
+    component: CourseComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TABS_VIEW',
+    },
+  },
+  {
+    path: 'management/courses/:courseTabId',
+    component: CourseComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TABS_VIEW',
+    },
+  },
+  {
+    path: 'management/courses/details/:id',
+    component: CourseDetailsComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TABS_VIEW',
+    },
+  },
+  {
+    path: 'courses/:routeCode',
+    component: CourseComponent,
+    canActivate: [AuthGuard],
+    data: {
+      redirectIfLoggedIn: false,
+    },
+  },
+  {
+    path: 'courses/:routeCode/preview/:id',
+    component: CoursePreviewComponent,
+    canActivate: [AuthGuard],
+    data: {
+      redirectIfLoggedIn: false,
+    },
+  },
+  {
+    path: 'management/courses/:routeCode',
+    component: CourseDetailComponent,
+    canActivate: [AuthGuard],
+    data: {
+      redirectIfLoggedIn: false,
     },
   },
   {

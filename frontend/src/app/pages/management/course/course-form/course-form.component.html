@@ -1,0 +1,677 @@
+<div class="dialog-content">
+  <!-- Header Section -->
+  <div class="dialog-header p-6 pb-4 border-b border-gray-200">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-accent/10 rounded-lg">
+        <i class="fas fa-book text-accent text-xl"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-textDark font-poppins">
+          {{
+            isEdit
+              ? ('course.editCourse' | translate)
+              : ('course.addCourse' | translate)
+          }}
+        </h2>
+        <p class="text-sm text-gray-600 mt-1 font-poppins">
+          {{
+            isEdit
+              ? ('course.editCourseDescription' | translate)
+              : ('course.addCourseDescription' | translate)
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable Form Content -->
+  <div class="form-scroll-container p-6">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Basic Information Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-info-circle text-accent"></i>
+          {{ 'course.basicInformation' | translate }}
+        </h3>
+
+        <!-- Code -->
+        <div class="space-y-2">
+          <label for="code" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.code' | translate }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="code"
+            formControlName="code"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'course.codePlaceholder' | translate"
+          />
+        </div>
+
+        <!-- Course Title -->
+        <div class="space-y-2">
+          <label for="courseTitle" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.courseTitle' | translate }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="courseTitle"
+            formControlName="courseTitle"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'course.courseTitlePlaceholder' | translate"
+          />
+        </div>
+
+        <!-- Course Title Ar -->
+        <div class="space-y-2">
+          <label for="courseTitleAr" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.courseTitleAr' | translate }}
+          </label>
+          <input
+            type="text"
+            id="courseTitleAr"
+            formControlName="courseTitleAr"
+            dir="rtl"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+            [placeholder]="'course.courseTitleArPlaceholder' | translate"
+          />
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+          <label for="description" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.description' | translate }}
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="3"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'course.descriptionPlaceholder' | translate"
+          ></textarea>
+        </div>
+
+        <!-- Description Ar -->
+        <div class="space-y-2">
+          <label for="descriptionAr" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.descriptionAr' | translate }}
+          </label>
+          <textarea
+            id="descriptionAr"
+            formControlName="descriptionAr"
+            dir="rtl"
+            rows="3"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+            [placeholder]="'course.descriptionArPlaceholder' | translate"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Course Configuration Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-cog text-accent"></i>
+          {{ 'course.configuration' | translate }}
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Language -->
+          <div class="space-y-2">
+            <label for="language" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.language' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="language"
+              formControlName="language"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+            >
+              <option [value]="CourseLanguage.English">{{ 'course.languageEnglish' | translate }}</option>
+              <option [value]="CourseLanguage.Arabic">{{ 'course.languageArabic' | translate }}</option>
+            </select>
+          </div>
+
+          <!-- Status -->
+          <div class="space-y-2" *ngIf="showStatusField">
+            <label for="status" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.status' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="status"
+              formControlName="status"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+            >
+              <option [value]="CourseStatus.Draft">{{ 'course.statusDraft' | translate }}</option>
+              <option [value]="CourseStatus.Published">{{ 'course.statusPublished' | translate }}</option>
+              <option [value]="CourseStatus.RegistrationClosed">{{ 'course.statusRegistrationClosed' | translate }}</option>
+              <option [value]="CourseStatus.Active">{{ 'course.statusActive' | translate }}</option>
+              <option [value]="CourseStatus.Completed">{{ 'course.statusCompleted' | translate }}</option>
+              <option [value]="CourseStatus.Canceled">{{ 'course.statusCanceled' | translate }}</option>
+              <option [value]="CourseStatus.Archived">{{ 'course.statusArchived' | translate }}</option>
+            </select>
+          </div>
+
+          <!-- Course Tab -->
+          <div class="space-y-2" *ngIf="showCourseTabField">
+            <label for="courseTabId" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.courseTab' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="courseTabId"
+              formControlName="courseTabId"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+            >
+              <option [value]="null">{{ 'course.selectCourseTab' | translate }}</option>
+              <option *ngFor="let tab of courseTabs" [value]="tab.id">
+                {{ tab.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Organization -->
+          <div class="space-y-2">
+            <label for="organizationId" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.organization' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="organizationId"
+              formControlName="organizationId"
+              [disabled]="organizationDisabled"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option [value]="null">{{ 'course.selectOrganization' | translate }}</option>
+              <option *ngFor="let org of organizations" [value]="org.id">
+                {{ org.name }} ({{ org.code }})
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-map-marker-alt text-accent"></i>
+          {{ 'course.location' | translate }}
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Category -->
+          <div class="space-y-2">
+            <label for="category" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.category' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="category"
+              formControlName="category"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+            >
+              <option [value]="LocationCategory.Onsite">{{ 'course.categoryOnsite' | translate }}</option>
+              <option [value]="LocationCategory.Online">{{ 'course.categoryOnline' | translate }}</option>
+              <option [value]="LocationCategory.OutSite">{{ 'course.categoryOutSite' | translate }}</option>
+              <option [value]="LocationCategory.Abroad">{{ 'course.categoryAbroad' | translate }}</option>
+            </select>
+          </div>
+
+          <!-- Location -->
+          <div class="space-y-2">
+            <label for="locationId" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.location' | translate }}
+            </label>
+            <select
+              id="locationId"
+              formControlName="locationId"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+              [disabled]="!form.get('organizationId')?.value"
+            >
+              <option [value]="null">{{ 'course.selectLocation' | translate }}</option>
+              <option *ngFor="let location of filteredLocations" [value]="location.id">
+                {{ location.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-calendar-alt text-accent"></i>
+          {{ 'course.schedule' | translate }}
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Start Date Time -->
+          <div class="space-y-2">
+            <label for="startDateTime" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.startDateTime' | translate }}
+            </label>
+            <input
+              type="datetime-local"
+              id="startDateTime"
+              formControlName="startDateTime"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            />
+          </div>
+
+          <!-- End Date Time -->
+          <div class="space-y-2">
+            <label for="endDateTime" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.endDateTime' | translate }}
+            </label>
+            <input
+              type="datetime-local"
+              id="endDateTime"
+              formControlName="endDateTime"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Capacity & Pricing Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-dollar-sign text-accent"></i>
+          {{ 'course.capacityPricing' | translate }}
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Available Seats -->
+          <div class="space-y-2">
+            <label for="availableSeats" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.availableSeats' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              id="availableSeats"
+              formControlName="availableSeats"
+              min="0"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            />
+          </div>
+
+          <!-- Price -->
+          <div class="space-y-2">
+            <label for="price" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.price' | translate }}
+            </label>
+            <input
+              type="number"
+              id="price"
+              formControlName="price"
+              min="0"
+              step="0.01"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            />
+          </div>
+
+          <!-- KPI Weight -->
+          <div class="space-y-2">
+            <label for="kpiWeight" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.kpiWeight' | translate }}
+            </label>
+            <input
+              type="number"
+              id="kpiWeight"
+              formControlName="kpiWeight"
+              min="0"
+              step="0.01"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Options Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-check-square text-accent"></i>
+          {{ 'course.options' | translate }}
+        </h3>
+
+        <div class="space-y-3">
+          <!-- Digit Library Availability -->
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              formControlName="digitLibraryAvailability"
+              class="text-accent focus:ring-accent rounded"
+            />
+            <span class="text-sm text-gray-700 font-poppins">
+              {{ 'course.digitLibraryAvailability' | translate }}
+            </span>
+          </label>
+
+          <!-- Certificate Available -->
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              formControlName="certificateAvailable"
+              class="text-accent focus:ring-accent rounded"
+            />
+            <span class="text-sm text-gray-700 font-poppins">
+              {{ 'course.certificateAvailable' | translate }}
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Learning Outcomes Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+            <i class="fas fa-graduation-cap text-accent"></i>
+            {{ 'course.learningOutcomes' | translate }}
+          </h3>
+          <button
+            type="button"
+            (click)="addLearningOutcome()"
+            class="px-3 py-1.5 bg-accent hover:bg-accentDark text-white rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1.5"
+          >
+            <i class="fas fa-plus text-xs"></i>
+            <span>{{ 'course.addLearningOutcome' | translate }}</span>
+          </button>
+        </div>
+
+        <div formArrayName="learningOutcomes" class="space-y-3">
+          <div
+            *ngFor="let outcome of learningOutcomesArray.controls; let i = index"
+            [formGroupName]="i"
+            class="flex items-start gap-2 p-3 border-2 border-gray-200 rounded-lg"
+          >
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+              <input
+                type="text"
+                formControlName="name"
+                [placeholder]="'course.learningOutcomeName' | translate"
+                class="form-control border-2 border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent"
+              />
+              <input
+                type="text"
+                formControlName="nameAr"
+                dir="rtl"
+                [placeholder]="'course.learningOutcomeNameAr' | translate"
+                class="form-control border-2 border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent"
+              />
+            </div>
+            <button
+              type="button"
+              (click)="removeLearningOutcome(i)"
+              class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-200"
+              [title]="'course.removeLearningOutcome' | translate"
+            >
+              <i class="fas fa-trash text-xs"></i>
+            </button>
+          </div>
+          <p *ngIf="learningOutcomesArray.length === 0" class="text-xs text-gray-500 italic">
+            {{ 'course.noLearningOutcomes' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Course Contents Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+            <i class="fas fa-list text-accent"></i>
+            {{ 'course.courseContents' | translate }}
+          </h3>
+          <button
+            type="button"
+            (click)="addCourseContent()"
+            class="px-3 py-1.5 bg-accent hover:bg-accentDark text-white rounded-lg text-xs font-medium transition-colors duration-200 flex items-center gap-1.5"
+          >
+            <i class="fas fa-plus text-xs"></i>
+            <span>{{ 'course.addCourseContent' | translate }}</span>
+          </button>
+        </div>
+
+        <div formArrayName="courseContents" class="space-y-3">
+          <div
+            *ngFor="let content of courseContentsArray.controls; let i = index"
+            [formGroupName]="i"
+            class="flex items-start gap-2 p-3 border-2 border-gray-200 rounded-lg"
+          >
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+              <input
+                type="text"
+                formControlName="name"
+                [placeholder]="'course.courseContentName' | translate"
+                class="form-control border-2 border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent"
+              />
+              <input
+                type="text"
+                formControlName="nameAr"
+                dir="rtl"
+                [placeholder]="'course.courseContentNameAr' | translate"
+                class="form-control border-2 border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent"
+              />
+            </div>
+            <button
+              type="button"
+              (click)="removeCourseContent(i)"
+              class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-200"
+              [title]="'course.removeCourseContent' | translate"
+            >
+              <i class="fas fa-trash text-xs"></i>
+            </button>
+          </div>
+          <p *ngIf="courseContentsArray.length === 0" class="text-xs text-gray-500 italic">
+            {{ 'course.noCourseContents' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Target Users Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6" *ngIf="isTargetUserSectionVisible">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-users text-accent"></i>
+          {{ 'course.targetUsers' | translate }}
+        </h3>
+
+        <!-- Target User Type -->
+        <div class="space-y-2">
+          <label for="targetUserType" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.targetUserType' | translate }}
+          </label>
+          <select
+            id="targetUserType"
+            formControlName="targetUserType"
+            (change)="onTargetUserTypeChange()"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+          >
+            <option [value]="null">{{ 'course.selectTargetUserType' | translate }}</option>
+            <!-- Options for Main Organization -->
+            <ng-container *ngIf="isMainOrganization">
+              <option [value]="TargetUserType.ForOurOrganization">{{ 'course.targetUserTypeForOurOrganization' | translate }}</option>
+              <option [value]="TargetUserType.All">{{ 'course.targetUserTypeAll' | translate }}</option>
+              <option [value]="TargetUserType.SpecificDepartments">{{ 'course.targetUserTypeSpecificDepartments' | translate }}</option>
+              <option [value]="TargetUserType.SpecificOrganizations">{{ 'course.targetUserTypeSpecificOrganizations' | translate }}</option>
+              <option [value]="TargetUserType.SpecificSegments">{{ 'course.targetUserTypeSpecificSegments' | translate }}</option>
+            </ng-container>
+            <!-- Options for Non-Main Organization -->
+            <ng-container *ngIf="!isMainOrganization">
+              <option [value]="TargetUserType.AllUsersOfOrganization">{{ 'course.targetUserTypeAllUsersOfOrganization' | translate }}</option>
+              <option [value]="TargetUserType.SpecificOrganizationSegment">{{ 'course.targetUserTypeSpecificOrganizationSegment' | translate }}</option>
+            </ng-container>
+          </select>
+        </div>
+
+        <!-- Department Selection (when SpecificDepartments is selected) -->
+        <div class="space-y-2" *ngIf="showDepartmentSelection">
+          <label class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.selectDepartments' | translate }}
+          </label>
+          
+          <!-- Department Role Selection -->
+          <div class="mb-3">
+            <label for="targetDepartmentRole" class="block text-sm font-medium text-textDark font-poppins mb-2">
+              {{ 'course.departmentRole' | translate }}
+            </label>
+            <select
+              id="targetDepartmentRole"
+              formControlName="targetDepartmentRole"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+            >
+              <option [value]="null">{{ 'course.selectDepartmentRole' | translate }}</option>
+              <option value="Head">{{ 'course.departmentRoleHead' | translate }}</option>
+              <option value="Member">{{ 'course.departmentRoleMember' | translate }}</option>
+              <option value="Both">{{ 'course.departmentRoleBoth' | translate }}</option>
+            </select>
+          </div>
+          
+          <div class="max-h-48 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 space-y-2">
+            <label
+              *ngFor="let department of departments"
+              class="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+            >
+              <input
+                type="checkbox"
+                [value]="department.id"
+                [checked]="form.get('targetDepartmentIds')?.value?.includes(department.id)"
+                (change)="toggleDepartment(department.id, $event)"
+                class="text-accent focus:ring-accent rounded"
+              />
+              <span class="text-sm text-gray-700">{{ department.nameEn || department.nameAr }}</span>
+            </label>
+            <p *ngIf="departments.length === 0" class="text-xs text-gray-500 italic">
+              {{ 'course.noDepartmentsAvailable' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Organization Selection (when SpecificOrganizations is selected) -->
+        <div class="space-y-2" *ngIf="showOrganizationSelection">
+          <label class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.selectOrganizations' | translate }}
+          </label>
+          <div class="max-h-48 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 space-y-2">
+            <label
+              *ngFor="let org of organizations"
+              class="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+            >
+              <input
+                type="checkbox"
+                [value]="org.id"
+                [checked]="form.get('targetOrganizationIds')?.value?.includes(org.id)"
+                (change)="toggleOrganization(org.id, $event)"
+                class="text-accent focus:ring-accent rounded"
+              />
+              <span class="text-sm text-gray-700">{{ org.name }} ({{ org.code }})</span>
+            </label>
+            <p *ngIf="organizations.length === 0" class="text-xs text-gray-500 italic">
+              {{ 'course.noOrganizationsAvailable' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Segment Selection (when SpecificSegments is selected) -->
+        <div class="space-y-2" *ngIf="showSegmentSelection">
+          <label class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.selectSegments' | translate }}
+          </label>
+          <div class="max-h-48 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 space-y-2">
+            <label
+              *ngFor="let segment of segments"
+              class="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+            >
+              <input
+                type="checkbox"
+                [value]="segment.id"
+                [checked]="form.get('targetSegmentIds')?.value?.includes(segment.id)"
+                (change)="toggleSegment(segment.id, $event)"
+                class="text-accent focus:ring-accent rounded"
+              />
+              <span class="text-sm text-gray-700">{{ segment.name || segment.nameAr }}</span>
+            </label>
+            <p *ngIf="segments.length === 0" class="text-xs text-gray-500 italic">
+              {{ 'course.noSegmentsAvailable' | translate }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructors Section -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-chalkboard-teacher text-accent"></i>
+          {{ 'course.instructors' | translate }}
+        </h3>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'course.selectInstructors' | translate }}
+          </label>
+          <div class="max-h-48 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 space-y-2">
+            <label
+              *ngFor="let instructor of instructors"
+              class="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+            >
+              <input
+                type="checkbox"
+                [value]="instructor.id"
+                [checked]="form.get('instructorIds')?.value?.includes(instructor.id)"
+                (change)="toggleInstructor(instructor.id, $event)"
+                class="text-accent focus:ring-accent rounded"
+              />
+              <span class="text-sm text-gray-700">{{ instructor.nameEn }}</span>
+            </label>
+            <p *ngIf="instructors.length === 0" class="text-xs text-gray-500 italic">
+              {{ 'course.noInstructorsAvailable' | translate }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Actions -->
+  <div class="dialog-actions flex justify-end space-x-3 p-6 pt-4 border-t border-gray-200">
+    <button
+      type="button"
+      (click)="onCancel()"
+      class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200 font-poppins"
+    >
+      {{ 'common.cancel' | translate }}
+    </button>
+    <button
+      type="button"
+      (click)="onSubmit()"
+      [disabled]="form.invalid || isSubmitting"
+      class="px-4 py-2 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-poppins"
+    >
+      <span *ngIf="!isSubmitting">{{ 'common.save' | translate }}</span>
+      <span *ngIf="isSubmitting" class="flex items-center">
+        <svg
+          class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        {{ 'common.saving' | translate }}...
+      </span>
+    </button>
+  </div>
+</div>

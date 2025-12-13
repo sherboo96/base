@@ -86,6 +86,9 @@
                             <i class="fas fa-language mr-1.5 text-accent text-xs"></i>{{'institution.nameAr'|translate}}
                         </th>
                         <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
+                            <i class="fas fa-file-pdf mr-1.5 text-accent text-xs"></i>{{'institution.certificatePdf'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                             <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{'common.status'|translate}}
                         </th>
                         <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
@@ -103,6 +106,18 @@
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900" dir="rtl">
                             {{institution.nameAr||'-'}}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <button
+                                *ngIf="institution.certificatePdf"
+                                (click)="viewCertificate(institution.certificatePdf)"
+                                class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-all duration-200 text-xs"
+                                [title]="'institution.viewCertificate'|translate"
+                            >
+                                <i class="fas fa-file-pdf"></i>
+                                <span>{{'institution.viewCertificate'|translate}}</span>
+                            </button>
+                            <span *ngIf="!institution.certificatePdf" class="text-xs text-gray-400">-</span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span [class]="getStatusClass(institution.isActive)" class="px-2 py-0.5 text-xs font-semibold rounded-full">

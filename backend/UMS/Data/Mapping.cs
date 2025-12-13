@@ -64,6 +64,26 @@ public class Mapping: Profile
         // AdoptionUser
         CreateMap<AdoptionUser, AdoptionUserDto>().ReverseMap();
 
+        // CourseTab
+        CreateMap<CourseTab, CourseTabDto>().ReverseMap();
+
+        // Course
+        CreateMap<Course, CourseDto>()
+            .ForMember(dest => dest.LearningOutcomes, opt => opt.MapFrom(src => src.LearningOutcomes))
+            .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
+            .ForMember(dest => dest.InstructorIds, opt => opt.MapFrom(src => src.CourseInstructors.Select(ci => ci.InstructorId)))
+            .ForMember(dest => dest.Instructors, opt => opt.MapFrom(src => src.CourseInstructors.Select(ci => ci.Instructor)))
+            .ReverseMap()
+            .ForMember(dest => dest.LearningOutcomes, opt => opt.Ignore())
+            .ForMember(dest => dest.CourseContents, opt => opt.Ignore())
+            .ForMember(dest => dest.CourseInstructors, opt => opt.Ignore());
+
+        // CourseLearningOutcome
+        CreateMap<CourseLearningOutcome, CourseLearningOutcomeDto>().ReverseMap();
+
+        // CourseContent
+        CreateMap<CourseContent, CourseContentDto>().ReverseMap();
+
         // Structure
         CreateMap<Structure, StructureDto>()
             .ForMember(dest => dest.AssignedUsers, opt => opt.MapFrom(src => src.StructureUsers))

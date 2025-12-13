@@ -31,8 +31,8 @@ public class AttachmentsController : ControllerBase
             });
         }
 
-        // Validate file type (images only)
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        // Validate file type (images and PDFs)
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf" };
         var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
         
         if (!allowedExtensions.Contains(fileExtension))
@@ -40,19 +40,20 @@ public class AttachmentsController : ControllerBase
             return BadRequest(new BaseResponse<string> 
             { 
                 StatusCode = 400, 
-                Message = "Invalid file type. Only image files are allowed.", 
+                Message = "Invalid file type. Only image files and PDFs are allowed.", 
                 Result = null 
             });
         }
 
-        // Validate file size (max 5MB)
-        const long maxFileSize = 5 * 1024 * 1024; // 5MB
+        // Validate file size (max 10MB for PDFs, 5MB for images)
+        long maxFileSize = fileExtension == ".pdf" ? 10 * 1024 * 1024 : 5 * 1024 * 1024; // 10MB for PDF, 5MB for images
+        string maxSizeMessage = fileExtension == ".pdf" ? "10MB" : "5MB";
         if (file.Length > maxFileSize)
         {
             return BadRequest(new BaseResponse<string> 
             { 
                 StatusCode = 400, 
-                Message = "File size exceeds the maximum allowed size of 5MB.", 
+                Message = $"File size exceeds the maximum allowed size of {maxSizeMessage}.", 
                 Result = null 
             });
         }

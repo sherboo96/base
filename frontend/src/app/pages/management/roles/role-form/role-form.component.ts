@@ -140,21 +140,15 @@ export class RoleFormComponent implements OnInit {
   ) {
     this.roleForm = this.fb.group({
       name: ['', Validators.required],
-      applyToAllOrganizations: [false],
+      applyToAllOrganizations: ['false'],
       organizationId: [null],
       isDefault: [false],
     });
 
-    // Check if editing
+    // Check if editing - will populate after organizations are loaded
     if (this.dialogRef.data?.role) {
       this.isEdit = true;
       this.roleId = this.dialogRef.data.role.id;
-      this.roleForm.patchValue({
-        name: this.dialogRef.data.role.name || '',
-        applyToAllOrganizations: this.dialogRef.data.role.applyToAllOrganizations ?? false,
-        organizationId: this.dialogRef.data.role.organizationId || null,
-        isDefault: this.dialogRef.data.role.isDefault ?? false,
-      });
     }
   }
 
@@ -167,6 +161,42 @@ export class RoleFormComponent implements OnInit {
       next: (response) => {
         if (response.statusCode === 200) {
           this.organizations = response.result || [];
+          
+          // Populate form after organizations are loaded (for edit mode)
+          if (this.isEdit && this.dialogRef.data?.role) {
+            const role = this.dialogRef.data.role;
+            
+            // Use setTimeout to ensure form is ready and organizations dropdown is populated
+            setTimeout(() => {
+              // Get organization ID from role (could be direct property or nested in organization object)
+              let orgId: number | null = null;
+              if (role.organizationId !== undefined && role.organizationId !== null) {
+                orgId = role.organizationId;
+              } else if (role.organization && role.organization.id) {
+                orgId = role.organization.id;
+              }
+              
+              // Convert boolean to string for radio buttons
+              const applyToAll = role.applyToAllOrganizations === true || role.applyToAllOrganizations === 'true';
+              
+              const formValues: any = {
+                name: role.name || '',
+                applyToAllOrganizations: applyToAll ? 'true' : 'false',
+                isDefault: role.isDefault ?? false,
+              };
+              
+              // Set organizationId (null if not set)
+              formValues.organizationId = orgId;
+              
+              // Patch form values
+              this.roleForm.patchValue(formValues, { emitEvent: false });
+              
+              // Force change detection to update UI
+              setTimeout(() => {
+                this.roleForm.updateValueAndValidity({ emitEvent: false });
+              }, 50);
+            }, 100);
+          }
         }
       },
       error: (error) => {

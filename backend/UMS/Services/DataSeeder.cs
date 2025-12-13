@@ -226,6 +226,14 @@ public class DataSeeder
             new Permission { Name = "Update Institutions", Code = "INSTITUTIONS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Delete Institutions", Code = "INSTITUTIONS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
+            // Course Tab Management Permissions
+            new Permission { Name = "View Course Tabs", Code = "COURSE_TABS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Course Tabs", Code = "COURSE_TABS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Course Tabs", Code = "COURSE_TABS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Course Tabs", Code = "COURSE_TABS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Show Course Tabs in Menu", Code = "COURSE_TABS_SHOW_IN_MENU", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Show Course Tabs for Public", Code = "COURSE_TABS_SHOW_PUBLIC", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
             // System Administration Permissions
             new Permission { Name = "System Administration", Code = "SYSTEM_ADMIN", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "View System Configuration", Code = "SYSTEM_CONFIG_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },

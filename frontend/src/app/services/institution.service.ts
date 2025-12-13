@@ -7,6 +7,7 @@ export interface Institution {
   id: number;
   name: string;
   nameAr: string;
+  certificatePdf?: string;
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;
@@ -47,6 +48,7 @@ export class InstitutionService {
   createInstitution(institution: {
     name: string;
     nameAr: string;
+    certificatePdf?: string;
   }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/Institutions`, institution);
   }
@@ -54,6 +56,7 @@ export class InstitutionService {
   updateInstitution(id: number, institution: {
     name: string;
     nameAr: string;
+    certificatePdf?: string;
   }): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/Institutions/${id}`, institution);
   }

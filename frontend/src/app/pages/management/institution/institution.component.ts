@@ -16,6 +16,7 @@ import { DialogService } from '@ngneat/dialog';
 import { InstitutionFormComponent } from './institution-form/institution-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { TranslationService } from '../../../services/translation.service';
+import { AttachmentService } from '../../../services/attachment.service';
 
 @Component({
   selector: 'app-institution',
@@ -39,7 +40,8 @@ export class InstitutionComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     public loadingService: LoadingService,
     private dialogService: DialogService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private attachmentService: AttachmentService
   ) {}
 
   ngOnInit(): void {
@@ -114,6 +116,13 @@ export class InstitutionComponent implements OnInit, OnDestroy {
   onSearch(): void {
     this.currentPage = 1;
     this.fetchInstitutions();
+  }
+
+  viewCertificate(certificatePdf: string): void {
+    if (certificatePdf) {
+      const url = this.attachmentService.getFileUrl(certificatePdf);
+      window.open(url, '_blank');
+    }
   }
 
   formatDate(dateString: string): string {

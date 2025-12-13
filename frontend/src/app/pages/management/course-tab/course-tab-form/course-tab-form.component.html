@@ -1,0 +1,302 @@
+<div class="dialog-content">
+  <!-- Header Section -->
+  <div class="dialog-header p-6 pb-4 border-b border-gray-200">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-accent/10 rounded-lg">
+        <i class="fas fa-folder text-accent text-xl"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-textDark font-poppins">
+          {{
+            isEdit
+              ? ('courseTab.editCourseTab' | translate)
+              : ('courseTab.addCourseTab' | translate)
+          }}
+        </h2>
+        <p class="text-sm text-gray-600 mt-1 font-poppins">
+          {{
+            isEdit
+              ? ('courseTab.editCourseTabDescription' | translate)
+              : ('courseTab.addCourseTabDescription' | translate)
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable Form Content -->
+  <div class="form-scroll-container p-6">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Name -->
+      <div class="space-y-2">
+        <label for="name" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTab.name' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-font text-gray-400"></i>
+          </div>
+          <input
+            type="text"
+            id="name"
+            formControlName="name"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'courseTab.namePlaceholder' | translate"
+          />
+        </div>
+        <div
+          *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
+          class="flex items-center text-sm text-red-600"
+        >
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ 'courseTab.nameRequired' | translate }}
+        </div>
+      </div>
+
+      <!-- Name (Arabic) -->
+      <div class="space-y-2">
+        <label for="nameAr" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTab.nameAr' | translate }}
+        </label>
+        <input
+          type="text"
+          id="nameAr"
+          formControlName="nameAr"
+          dir="rtl"
+          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+          [placeholder]="'courseTab.nameArPlaceholder' | translate"
+        />
+      </div>
+
+      <!-- Route Code -->
+      <div class="space-y-2">
+        <label for="routeCode" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTab.routeCode' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-route text-gray-400"></i>
+          </div>
+          <input
+            type="text"
+            id="routeCode"
+            formControlName="routeCode"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'courseTab.routeCodePlaceholder' | translate"
+          />
+        </div>
+        <div
+          *ngIf="form.get('routeCode')?.invalid && form.get('routeCode')?.touched"
+          class="flex items-center text-sm text-red-600"
+        >
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ 'courseTab.routeCodeRequired' | translate }}
+        </div>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.routeCodeDescription' | translate }}
+        </p>
+      </div>
+
+      <!-- Excuse Time Hours -->
+      <div class="space-y-2">
+        <label for="excuseTimeHours" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTab.excuseTimeHours' | translate }}
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-clock text-gray-400"></i>
+          </div>
+          <input
+            type="number"
+            id="excuseTimeHours"
+            formControlName="excuseTimeHours"
+            min="0"
+            step="1"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'courseTab.excuseTimeHoursPlaceholder' | translate"
+          />
+        </div>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.excuseTimeHoursDescription' | translate }}
+        </p>
+      </div>
+
+      <!-- Icon -->
+      <div class="space-y-2">
+        <label for="icon" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTab.icon' | translate }}
+        </label>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-64 overflow-y-auto border-2 border-gray-300 rounded-lg p-3">
+          <label
+            *ngFor="let iconOption of availableIcons"
+            [for]="'icon-' + iconOption.value"
+            class="flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:border-accent"
+            [ngClass]="{
+              'border-accent bg-accent/10': form.get('icon')?.value === iconOption.value,
+              'border-gray-200': form.get('icon')?.value !== iconOption.value
+            }"
+          >
+            <input
+              type="radio"
+              [id]="'icon-' + iconOption.value"
+              formControlName="icon"
+              [value]="iconOption.value"
+              class="sr-only"
+            />
+            <div class="flex items-center justify-center w-6 h-6 flex-shrink-0">
+              <i *ngIf="iconOption.isMaterialIcon" class="material-icons text-lg text-gray-700">{{ iconOption.preview }}</i>
+              <i *ngIf="!iconOption.isMaterialIcon" [ngClass]="iconOption.preview" class="text-lg text-gray-700"></i>
+            </div>
+            <span class="text-xs text-gray-700 truncate">{{ iconOption.label }}</span>
+          </label>
+        </div>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.iconDescription' | translate }}
+        </p>
+      </div>
+
+      <!-- Organization -->
+      <div class="space-y-2">
+        <label
+          for="organizationId"
+          class="block text-sm font-medium text-textDark font-poppins"
+        >
+          {{ 'courseTab.organization' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-building text-gray-400"></i>
+          </div>
+          <select
+            id="organizationId"
+            formControlName="organizationId"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+          >
+            <option [value]="null">
+              {{ 'courseTab.selectOrganization' | translate }}
+            </option>
+            <option *ngFor="let org of organizations" [value]="org.id">
+              {{ org.name }} ({{ org.code }})
+            </option>
+          </select>
+          <div
+            class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-chevron-down text-gray-400"></i>
+          </div>
+        </div>
+        <div
+          *ngIf="form.get('organizationId')?.invalid && form.get('organizationId')?.touched"
+          class="flex items-center text-sm text-red-600"
+        >
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ 'courseTab.organizationRequired' | translate }}
+        </div>
+      </div>
+
+      <!-- Show In Menu -->
+      <div class="space-y-2">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="showInMenu"
+            class="text-accent focus:ring-accent rounded"
+          />
+          <span class="text-sm text-gray-700 font-poppins">
+            {{ 'courseTab.showInMenu' | translate }}
+          </span>
+        </label>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.showInMenuDescription' | translate }}
+        </p>
+      </div>
+
+      <!-- Show Public -->
+      <div class="space-y-2">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="showPublic"
+            class="text-accent focus:ring-accent rounded"
+          />
+          <span class="text-sm text-gray-700 font-poppins">
+            {{ 'courseTab.showPublic' | translate }}
+          </span>
+        </label>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.showPublicDescription' | translate }}
+        </p>
+      </div>
+
+      <!-- Show For Other Organizations (only for main organization) -->
+      <div class="space-y-2" *ngIf="isMainOrganization">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="showForOtherOrganizations"
+            class="text-accent focus:ring-accent rounded"
+          />
+          <span class="text-sm text-gray-700 font-poppins">
+            {{ 'courseTab.showForOtherOrganizations' | translate }}
+          </span>
+        </label>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.showForOtherOrganizationsDescription' | translate }}
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <!-- Actions -->
+  <div class="dialog-actions flex justify-end space-x-3 p-6 pt-4 border-t border-gray-200">
+    <button
+      type="button"
+      (click)="onCancel()"
+      class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200 font-poppins"
+    >
+      {{ 'common.cancel' | translate }}
+    </button>
+    <button
+      type="button"
+      (click)="onSubmit()"
+      [disabled]="form.invalid || isSubmitting"
+      class="px-4 py-2 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-poppins"
+    >
+      <span *ngIf="!isSubmitting">{{ 'common.save' | translate }}</span>
+      <span *ngIf="isSubmitting" class="flex items-center">
+        <svg
+          class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        {{ 'common.saving' | translate }}...
+      </span>
+    </button>
+  </div>
+</div>

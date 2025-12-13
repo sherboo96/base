@@ -18,6 +18,8 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<Location, LocationDto> Locations { get; }
     ISegmentRepository Segments { get; }
     IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; }
+    IBaseRepository<CourseTab, CourseTabDto> CourseTabs { get; }
+    IBaseRepository<Course, CourseDto> Courses { get; }
 
     IBaseRepository<UserRole, UserRoleDto> UserRoles { get; }
     IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; }

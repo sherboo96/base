@@ -23,6 +23,12 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Location> Locations { get; set; }
     public DbSet<Segment> Segments { get; set; }
     public DbSet<AdoptionUser> AdoptionUsers { get; set; }
+    public DbSet<CourseTab> CourseTabs { get; set; }
+    public DbSet<Course> Courses { get; set; }
+    public DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; set; }
+    public DbSet<CourseContent> CourseContents { get; set; }
+    public DbSet<CourseInstructor> CourseInstructors { get; set; }
+    public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
 
     public new DbSet<UserRole> UserRoles { get; set; }
     public DbSet<UserSegment> UserSegments { get; set; }
@@ -105,6 +111,98 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasForeignKey(au => au.OrganizationId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
+
+        // CourseTab-Organization relationship
+        modelBuilder.Entity<CourseTab>()
+            .HasOne(ct => ct.Organization)
+            .WithMany()
+            .HasForeignKey(ct => ct.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // Course relationships
+        modelBuilder.Entity<Course>()
+            .HasOne(c => c.CourseTab)
+            .WithMany()
+            .HasForeignKey(c => c.CourseTabId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        modelBuilder.Entity<Course>()
+            .HasOne(c => c.Organization)
+            .WithMany()
+            .HasForeignKey(c => c.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        modelBuilder.Entity<Course>()
+            .HasOne(c => c.Location)
+            .WithMany()
+            .HasForeignKey(c => c.LocationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure decimal precision for Course
+        modelBuilder.Entity<Course>()
+            .Property(c => c.Price)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Course>()
+            .Property(c => c.KpiWeight)
+            .HasPrecision(18, 2);
+
+        // CourseLearningOutcome relationship
+        modelBuilder.Entity<CourseLearningOutcome>()
+            .HasOne(clo => clo.Course)
+            .WithMany(c => c.LearningOutcomes)
+            .HasForeignKey(clo => clo.CourseId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // CourseContent relationship
+        modelBuilder.Entity<CourseContent>()
+            .HasOne(cc => cc.Course)
+            .WithMany(c => c.CourseContents)
+            .HasForeignKey(cc => cc.CourseId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // CourseInstructor many-to-many relationship
+        modelBuilder.Entity<CourseInstructor>()
+            .HasKey(ci => new { ci.CourseId, ci.InstructorId });
+
+        modelBuilder.Entity<CourseInstructor>()
+            .HasOne(ci => ci.Course)
+            .WithMany(c => c.CourseInstructors)
+            .HasForeignKey(ci => ci.CourseId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        modelBuilder.Entity<CourseInstructor>()
+            .HasOne(ci => ci.Instructor)
+            .WithMany()
+            .HasForeignKey(ci => ci.InstructorId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // CourseEnrollment relationships
+        modelBuilder.Entity<CourseEnrollment>()
+            .HasOne(ce => ce.Course)
+            .WithMany()
+            .HasForeignKey(ce => ce.CourseId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        modelBuilder.Entity<CourseEnrollment>()
+            .HasOne(ce => ce.User)
+            .WithMany()
+            .HasForeignKey(ce => ce.UserId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // Unique constraint: one enrollment per user per course
+        modelBuilder.Entity<CourseEnrollment>()
+            .HasIndex(ce => new { ce.CourseId, ce.UserId })
+            .IsUnique();
 
         // UserSegment composite key and relationships
         modelBuilder.Entity<UserSegment>()

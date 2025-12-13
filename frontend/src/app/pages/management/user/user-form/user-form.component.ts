@@ -86,6 +86,7 @@ export class UserFormComponent implements OnInit {
       jobTitleId: [''], // Will be conditionally required based on organization.isMain
       organizationId: ['', Validators.required],
       departmentId: [''], // Will be conditionally required based on organization.isMain
+      departmentRole: [''], // "Head" or "Member"
       loginMethod: ['', Validators.required],
       roleIds: [[]], // Multiple roles
     });
@@ -184,6 +185,7 @@ export class UserFormComponent implements OnInit {
       adUsername: user.adUsername || '',
       organizationId: orgId || '',
       departmentId: deptId || '',
+      departmentRole: user.departmentRole || '',
       jobTitleId: user.jobTitleId || user.jobTitle?.id || '',
       loginMethod: user.loginMethod || 2, // Default to ActiveDirectory
       temporaryPassword: user.temporaryPassword || '',
@@ -343,8 +345,8 @@ export class UserFormComponent implements OnInit {
         jobTitleControl?.clearValidators();
         this.departments = [];
         this.positions = [];
-        // Clear department and job title selections
-        this.form.patchValue({ departmentId: '', jobTitleId: '' });
+        // Clear department, department role, and job title selections
+        this.form.patchValue({ departmentId: '', departmentRole: '', jobTitleId: '' });
       }
       
       departmentControl?.updateValueAndValidity();
@@ -359,7 +361,7 @@ export class UserFormComponent implements OnInit {
       this.departments = [];
       this.positions = [];
       this.loginMethods = [];
-      this.form.patchValue({ departmentId: '', jobTitleId: '', loginMethod: '' });
+      this.form.patchValue({ departmentId: '', departmentRole: '', jobTitleId: '', loginMethod: '' });
       this.selectedLoginMethod = 0;
       
       // Clear validators
@@ -404,14 +406,14 @@ export class UserFormComponent implements OnInit {
     
     // Only allow department changes if organization is main
     if (!isMain) {
-      this.form.patchValue({ departmentId: '', jobTitleId: '' });
+      this.form.patchValue({ departmentId: '', departmentRole: '', jobTitleId: '' });
       this.positions = [];
       this.cdr.detectChanges();
       return;
     }
     
-    // Reset job title selection when department changes
-    this.form.patchValue({ jobTitleId: '' });
+    // Reset job title and department role selection when department changes
+    this.form.patchValue({ jobTitleId: '', departmentRole: '' });
     
     if (departmentId) {
       // Load job titles filtered by selected department using backend API
@@ -453,13 +455,15 @@ export class UserFormComponent implements OnInit {
       roleIds: rawValue.roleIds && Array.isArray(rawValue.roleIds) ? rawValue.roleIds : [],
     };
     
-    // Only include departmentId and jobTitleId if organization is main
+    // Only include departmentId, departmentRole, and jobTitleId if organization is main
     if (isMain) {
       userData.departmentId = rawValue.departmentId ? parseInt(rawValue.departmentId) : null;
+      userData.departmentRole = rawValue.departmentRole || null;
       userData.jobTitleId = rawValue.jobTitleId ? parseInt(rawValue.jobTitleId) : null;
     } else {
-      // Non-main organization: don't send departmentId or jobTitleId
+      // Non-main organization: don't send departmentId, departmentRole, or jobTitleId
       userData.departmentId = null;
+      userData.departmentRole = null;
       userData.jobTitleId = null;
     }
     
