@@ -1,0 +1,429 @@
+<div class="min-h-screen py-8 px-4 relative" [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+  <!-- Language Switcher -->
+  <div class="fixed top-4 z-50" [ngClass]="currentLang === 'ar' ? 'left-4' : 'right-4'">
+    <app-language-switcher></app-language-switcher>
+  </div>
+  
+  <div class="max-w-7xl mx-auto">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="min-h-[60vh] flex items-center justify-center">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent mb-4"></div>
+        <p class="text-gray-600 font-poppins">{{ 'eventRegistration.loading' | translate }}</p>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      *ngIf="errorMessage && !isLoading"
+      class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6"
+      [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+    >
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0">
+          <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-red-800 mb-2 font-poppins">
+            {{ 'eventRegistration.errorTitle' | translate }}
+          </h3>
+          <p class="text-red-700 font-poppins">
+            {{ errorMessage | translate }}
+          </p>
+          <div class="mt-4">
+            <button
+              type="button"
+              (click)="loadEvent()"
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-poppins font-medium"
+            >
+              {{ 'eventRegistration.retry' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Message - Show first when success -->
+    <div
+      *ngIf="isSuccess && !isLoading && !errorMessage"
+      class="min-h-[60vh] flex items-center justify-center"
+      [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+    >
+      <div class="bg-white rounded-xl shadow-md p-8 md:p-12 text-center w-full max-w-2xl mx-auto">
+        <div class="mb-6 flex justify-center">
+          <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+            <svg
+              class="h-12 w-12 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+        </div>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-poppins text-center">
+          {{ 'eventRegistration.successTitle' | translate }}
+        </h2>
+        <p class="text-lg text-gray-700 mb-8 font-poppins text-center">
+          {{ 'eventRegistration.successMessage' | translate }}
+        </p>
+        <div class="flex justify-center">
+          <button
+            type="button"
+            (click)="reloadPage()"
+            class="px-8 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors font-poppins font-medium shadow-md hover:shadow-lg"
+          >
+            {{ 'eventRegistration.goToEvent' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Header -->
+    <div *ngIf="event && !isSuccess && !isLoading && !errorMessage" class="mb-8" [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <!-- Event Poster -->
+        <div *ngIf="event.poster" class="w-full overflow-hidden">
+          <img
+            [src]="getPosterUrl()"
+            [alt]="event.name"
+            class="w-full h-auto object-contain"
+          />
+        </div>
+
+        <!-- Event Info -->
+        <div class="p-6 md:p-8">
+          <h1 
+            class="text-3xl md:text-4xl font-semibold text-gray-900 mb-4 font-poppins"
+            [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+          >
+            {{ getEventName() }}
+          </h1>
+
+          <div *ngIf="getEventDescription()" class="prose max-w-none mb-4" [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+            <p class="text-gray-700 leading-relaxed font-poppins">
+              {{ getEventDescription() }}
+            </p>
+          </div>
+
+          <!-- Location -->
+          <div *ngIf="event.location" class="mt-4 mb-4">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-map-marker-alt text-accent mt-1"></i>
+              <div [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+                <p class="text-gray-700 font-medium font-poppins">
+                  {{ getLocationName() }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div *ngIf="event.date" class="mt-4 mb-4">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-calendar text-accent mt-1"></i>
+              <div [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+                <p class="text-gray-700 font-medium font-poppins">
+                  {{ formatDate(event.date) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speakers -->
+          <div *ngIf="event.speakers && event.speakers.length > 0" class="mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3 font-poppins">
+              {{ 'event.speakers' | translate }}
+            </h3>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div
+                *ngFor="let speaker of event.speakers"
+                class="bg-gray-50 rounded-lg p-4"
+              >
+                <h4 
+                  class="font-medium text-gray-900 mb-1 font-poppins"
+                  [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+                >
+                  {{ getSpeakerName(speaker) }}
+                </h4>
+                <p 
+                  *ngIf="getSpeakerBio(speaker)"
+                  class="text-sm text-gray-600 mb-2 font-poppins"
+                  [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+                >
+                  {{ getSpeakerBio(speaker) }}
+                </p>
+                <p *ngIf="speaker.from" class="text-sm text-gray-500 font-poppins">
+                  {{ speaker.from }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registration Form -->
+    <div *ngIf="!isSuccess && !isLoading && !errorMessage && event" class="bg-white rounded-xl shadow-md p-6 md:p-8" [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6 font-poppins">
+        <span *ngIf="currentLang === 'ar'">التسجيل في {{ getEventName() }}</span>
+        <span *ngIf="currentLang === 'en'">{{ 'eventRegistration.registerFor' | translate }} {{ getEventName() }}</span>
+      </h2>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Name -->
+        <div class="space-y-2">
+          <label
+            for="name"
+            class="block text-sm font-medium text-gray-700 font-poppins"
+            [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'"
+          >
+            {{ 'eventRegistration.name' | translate }} <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              [placeholder]="'eventRegistration.namePlaceholder' | translate"
+              [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+              [style.text-align]="currentLang === 'ar' ? 'right' : 'left'"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins placeholder-gray-400"
+              [class.border-red-500]="form.get('name')?.invalid && form.get('name')?.touched"
+            />
+          </div>
+          <div
+            *ngIf="form.get('name')?.invalid && form.get('name')?.touched"
+            class="flex items-start text-sm text-red-600 gap-1"
+            [ngClass]="currentLang === 'ar' ? 'flex-row-reverse justify-end' : ''"
+            [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+          >
+            <i class="fas fa-exclamation-circle mt-0.5" [ngClass]="currentLang === 'ar' ? 'ml-1' : 'mr-1'"></i>
+            <div [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'">
+              <span *ngIf="form.get('name')?.errors?.['required']" class="block">
+                {{ 'common.thisFieldRequired' | translate }}
+              </span>
+              <span *ngIf="form.get('name')?.errors?.['minlength']" class="block">
+                {{ 'eventRegistration.nameMinLength' | translate }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Name (Arabic) -->
+        <div class="space-y-2">
+          <label
+            for="nameAr"
+            class="block text-sm font-medium text-gray-700 font-poppins text-right"
+          >
+            {{ 'eventRegistration.nameAr' | translate }}
+          </label>
+          <div class="relative">
+            <input
+              id="nameAr"
+              type="text"
+              formControlName="nameAr"
+              [placeholder]="'eventRegistration.nameArPlaceholder' | translate"
+              dir="rtl"
+              style="text-align: right; direction: rtl;"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins placeholder-gray-400"
+            />
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="space-y-2">
+          <label
+            for="phone"
+            class="block text-sm font-medium text-gray-700 font-poppins"
+            [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'"
+          >
+            {{ 'eventRegistration.phone' | translate }} <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input
+              id="phone"
+              type="tel"
+              formControlName="phone"
+              [placeholder]="'eventRegistration.phonePlaceholder' | translate"
+              [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+              [style.text-align]="currentLang === 'ar' ? 'right' : 'left'"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins placeholder-gray-400"
+              [class.border-red-500]="form.get('phone')?.invalid && form.get('phone')?.touched"
+            />
+          </div>
+          <div
+            *ngIf="form.get('phone')?.invalid && form.get('phone')?.touched"
+            class="flex items-start text-sm text-red-600 gap-1"
+            [ngClass]="currentLang === 'ar' ? 'flex-row-reverse justify-end' : ''"
+            [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+          >
+            <i class="fas fa-exclamation-circle mt-0.5" [ngClass]="currentLang === 'ar' ? 'ml-1' : 'mr-1'"></i>
+            <div [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'">
+              <span *ngIf="form.get('phone')?.errors?.['required']" class="block">
+                {{ 'common.thisFieldRequired' | translate }}
+              </span>
+              <span *ngIf="form.get('phone')?.errors?.['pattern']" class="block">
+                {{ 'eventRegistration.phoneInvalid' | translate }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="space-y-2">
+          <label
+            for="email"
+            class="block text-sm font-medium text-gray-700 font-poppins"
+            [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'"
+          >
+            {{ 'eventRegistration.email' | translate }} <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              [placeholder]="'eventRegistration.emailPlaceholder' | translate"
+              [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+              [style.text-align]="currentLang === 'ar' ? 'right' : 'left'"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins placeholder-gray-400"
+              [class.border-red-500]="form.get('email')?.invalid && form.get('email')?.touched"
+            />
+          </div>
+          <div
+            *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
+            class="flex items-start text-sm text-red-600 gap-1"
+            [ngClass]="currentLang === 'ar' ? 'flex-row-reverse justify-end' : ''"
+            [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+          >
+            <i class="fas fa-exclamation-circle mt-0.5" [ngClass]="currentLang === 'ar' ? 'ml-1' : 'mr-1'"></i>
+            <div [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'">
+              <span *ngIf="form.get('email')?.errors?.['required']" class="block">
+                {{ 'common.thisFieldRequired' | translate }}
+              </span>
+              <span *ngIf="form.get('email')?.errors?.['email']" class="block">
+                {{ 'eventRegistration.emailInvalid' | translate }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Organization -->
+        <div class="space-y-2 md:col-span-2">
+          <label
+            for="eventOrganizationId"
+            class="block text-sm font-medium text-gray-700 font-poppins"
+            [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'"
+          >
+            {{ 'eventRegistration.organization' | translate }} <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <select
+              id="eventOrganizationId"
+              formControlName="eventOrganizationId"
+              [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+              [style.text-align]="currentLang === 'ar' ? 'right' : 'left'"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white font-poppins cursor-pointer"
+              [ngClass]="currentLang === 'ar' ? 'pl-10 pr-4' : 'pl-4 pr-10'"
+              [class.border-red-500]="form.get('eventOrganizationId')?.invalid && form.get('eventOrganizationId')?.touched"
+            >
+              <option [value]="null">{{ 'eventRegistration.selectOrganization' | translate }}</option>
+              <option
+                *ngFor="let org of eventOrganizations"
+                [value]="org.id"
+              >
+                {{ getOrganizationName(org) }}
+              </option>
+              <option value="other">{{ 'eventRegistration.other' | translate }}</option>
+            </select>
+            <!-- Dropdown arrow - Left side for Arabic, Right side for English -->
+            <div 
+              *ngIf="currentLang === 'ar'"
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10"
+            >
+              <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+            </div>
+            <div 
+              *ngIf="currentLang === 'en'"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none z-10"
+            >
+              <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+            </div>
+          </div>
+          <div
+            *ngIf="form.get('eventOrganizationId')?.invalid && form.get('eventOrganizationId')?.touched && !showOtherOrganization"
+            class="flex items-start text-sm text-red-600 gap-1"
+            [ngClass]="currentLang === 'ar' ? 'flex-row-reverse justify-end' : ''"
+            [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+          >
+            <i class="fas fa-exclamation-circle mt-0.5" [ngClass]="currentLang === 'ar' ? 'ml-1' : 'mr-1'"></i>
+            <div [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'">
+              <span *ngIf="form.get('eventOrganizationId')?.errors?.['required']" class="block">
+                {{ 'common.thisFieldRequired' | translate }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Other Organization Input -->
+          <div *ngIf="showOtherOrganization" class="mt-3">
+            <label
+              for="otherOrganization"
+              class="block text-sm font-medium text-gray-700 font-poppins mb-2"
+              [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'"
+            >
+              {{ 'eventRegistration.otherOrganizationName' | translate }} <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                id="otherOrganization"
+                type="text"
+                formControlName="otherOrganization"
+                [placeholder]="'eventRegistration.enterOrganizationName' | translate"
+                [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+                [style.text-align]="currentLang === 'ar' ? 'right' : 'left'"
+                class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins placeholder-gray-400"
+                [class.border-red-500]="form.get('otherOrganization')?.invalid && form.get('otherOrganization')?.touched"
+              />
+            </div>
+            <div
+              *ngIf="form.get('otherOrganization')?.invalid && form.get('otherOrganization')?.touched"
+              class="flex items-start text-sm text-red-600 gap-1 mt-1"
+              [ngClass]="currentLang === 'ar' ? 'flex-row-reverse justify-end' : ''"
+              [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+            >
+              <i class="fas fa-exclamation-circle mt-0.5" [ngClass]="currentLang === 'ar' ? 'ml-1' : 'mr-1'"></i>
+              <div [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'">
+                <span *ngIf="form.get('otherOrganization')?.errors?.['required']" class="block">
+                  {{ 'common.thisFieldRequired' | translate }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex items-center gap-4 pt-4" [ngClass]="currentLang === 'ar' ? 'justify-start' : 'justify-end'">
+          <button
+            type="submit"
+            [disabled]="isSubmitting || form.invalid"
+            class="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors font-poppins font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+          >
+            <span *ngIf="!isSubmitting">{{ 'eventRegistration.register' | translate }}</span>
+            <span *ngIf="isSubmitting">{{ 'eventRegistration.registering' | translate }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+

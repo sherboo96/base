@@ -31,6 +31,13 @@ public class UnitOfWork : IUnitOfWork
         AdoptionUsers = new BaseRepository<AdoptionUser, AdoptionUserDto>(_context, _mapper);
         CourseTabs = new BaseRepository<CourseTab, CourseTabDto>(_context, _mapper);
         Courses = new BaseRepository<Course, CourseDto>(_context, _mapper);
+        CourseTabApprovals = new BaseRepository<CourseTabApproval, CourseTabApprovalDto>(_context, _mapper);
+        CourseEnrollmentApprovals = new BaseRepository<CourseEnrollmentApproval, CourseEnrollmentApprovalDto>(_context, _mapper);
+        Events = new BaseRepository<Event, EventDto>(_context, _mapper);
+        EventSpeakers = new BaseRepository<EventSpeaker, EventSpeakerDto>(_context, _mapper);
+        EventOrganizations = new BaseRepository<EventOrganization, EventOrganizationDto>(_context, _mapper);
+        EventRegistrations = new BaseRepository<EventRegistration, EventRegistrationDto>(_context, _mapper);
+        EventAttendees = new BaseRepository<EventAttendee, EventAttendeeDto>(_context, _mapper);
 
         UserRoles = new BaseRepository<UserRole, UserRoleDto>(_context, _mapper);
         RolePermissions = new BaseRepository<RolePermission, RolePermissionDto>(_context, _mapper);
@@ -51,6 +58,13 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; private set; }
     public IBaseRepository<CourseTab, CourseTabDto> CourseTabs { get; private set; }
     public IBaseRepository<Course, CourseDto> Courses { get; private set; }
+    public IBaseRepository<CourseTabApproval, CourseTabApprovalDto> CourseTabApprovals { get; private set; }
+    public IBaseRepository<CourseEnrollmentApproval, CourseEnrollmentApprovalDto> CourseEnrollmentApprovals { get; private set; }
+    public IBaseRepository<Event, EventDto> Events { get; private set; }
+    public IBaseRepository<EventSpeaker, EventSpeakerDto> EventSpeakers { get; private set; }
+    public IBaseRepository<EventOrganization, EventOrganizationDto> EventOrganizations { get; private set; }
+    public IBaseRepository<EventRegistration, EventRegistrationDto> EventRegistrations { get; private set; }
+    public IBaseRepository<EventAttendee, EventAttendeeDto> EventAttendees { get; private set; }
 
     public IBaseRepository<UserRole, UserRoleDto> UserRoles { get; private set; }
     public IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; private set; }

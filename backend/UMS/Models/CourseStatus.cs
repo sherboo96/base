@@ -8,5 +8,6 @@ public enum CourseStatus
     Active = 4,
     Completed = 5,
     Canceled = 6,
-    Archived = 7
+    Archived = 7,
+    Rescheduled = 8
 }

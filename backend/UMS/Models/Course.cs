@@ -50,7 +50,8 @@ public class Course : BaseModel
     // Target User Configuration
     public TargetUserType? TargetUserType { get; set; }
     public string? TargetDepartmentIds { get; set; } // JSON array of department IDs, e.g., "[1,2,3]"
-    public string? TargetDepartmentRole { get; set; } // "Head", "Member", or "Both"
+    public string? TargetDepartmentRole { get; set; } // "Head", "Member", or "Both" - DEPRECATED: Use TargetDepartmentRoles instead
+    public string? TargetDepartmentRoles { get; set; } // JSON object mapping department IDs to roles, e.g., "{\"1\":\"Head\",\"2\":\"Member\",\"3\":\"Both\"}"
     public string? TargetOrganizationIds { get; set; } // JSON array of organization IDs, e.g., "[1,2,3]"
     public string? TargetSegmentIds { get; set; } // JSON array of segment IDs, e.g., "[1,2,3]"
 
@@ -62,4 +63,10 @@ public class Course : BaseModel
 
     [JsonIgnore]
     public ICollection<CourseInstructor> CourseInstructors { get; set; } = new List<CourseInstructor>();
+
+    [JsonIgnore]
+    public ICollection<CourseAdoptionUser> CourseAdoptionUsers { get; set; } = new List<CourseAdoptionUser>();
+
+    [JsonIgnore]
+    public ICollection<CourseContact> CourseContacts { get; set; } = new List<CourseContact>();
 }

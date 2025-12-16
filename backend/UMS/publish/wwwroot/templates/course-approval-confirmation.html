@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Course Approval</title>
+</head>
+
+<body style='margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, Helvetica, sans-serif;'>
+
+    <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f6f8;padding:20px 0;'>
+        <tr>
+            <td align='center'>
+
+                <table width='600' cellpadding='0' cellspacing='0' style='background:#ffffff;border-radius:8px;overflow:hidden;
+              box-shadow:0 2px 8px rgba(0,0,0,0.08);'>
+
+                    <!-- Header -->
+                    <tr>
+                        <td style='background:#0F4C75;
+             padding:24px;color:#ffffff;text-align:center;'>
+                            <h2 style='margin:0;font-size:22px;'>Course Approval Confirmation</h2>
+                            <p style='margin:6px 0 0;font-size:14px;'>{{ORGANIZATION_NAME}}</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style='padding:28px;color:#333;font-size:14px;line-height:1.7;'>
+
+                            <p><strong>Dear {{FULL_NAME}},</strong></p>
+
+                            <p>
+                                We are pleased to inform you that your registration for the following course
+                                has been <strong>approved</strong>.
+                            </p>
+
+                            <table width='100%' cellpadding='0' cellspacing='0'
+                                style='margin:20px 0;border:1px solid #e5e7eb;border-radius:6px;'>
+                                <tr>
+                                    <td style='padding:16px;background:#f9fafb;'>
+
+                                        <h3 style='margin:0 0 10px;font-size:16px;color:#0F4C75;'>Course Details</h3>
+
+                                        <p style='margin:8px 0;'><strong>Course Name:</strong> {{COURSE_NAME}}</p>
+                                        <p style='margin:8px 0;'><strong>Description:</strong> {{COURSE_DESCRIPTION}}
+                                        </p>
+                                        <p style='margin:8px 0;'><strong>Start Date:</strong> {{START_DATE}}</p>
+                                        <p style='margin:8px 0;'><strong>End Date:</strong> {{END_DATE}}</p>
+                                        <p style='margin:8px 0;'><strong>Location:</strong> {{COURSE_LOCATION}}</p>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Add to Calendar Button -->
+                            <table width='100%' cellpadding='0' cellspacing='0' style='margin:24px 0;'>
+                                <tr>
+                                    <td align='center'>
+                                        <table cellpadding='0' cellspacing='0' border='0'>
+                                            <tr>
+                                                <td align='center'
+                                                    style='border-radius:6px;background:linear-gradient(135deg,#0F4C75,#0B5367);'>
+                                                    <a href='{{CALENDAR_LINK}}' target='_blank'
+                                                        style='font-size:15px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;text-decoration:none;border-radius:6px;padding:12px 32px;border:0;display:inline-block;font-weight:600;'>
+                                                        📅 Add to Calendar
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <p style='margin:8px 0 0;font-size:12px;color:#6b7280;'>
+                                            Click to add this course to your Google Calendar, Outlook, or Apple Calendar
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p>
+                                Please make sure you bring your badge (printed or digital) and attend the course on
+                                time.
+                            </p>
+
+                            <p>
+                                For inquiries or support:<br />
+                                <a href='mailto:{{SUPPORT_EMAIL}}' style='color:#0F4C75;text-decoration:underline;'>
+                                    {{SUPPORT_EMAIL}}
+                                </a>
+                            </p>
+
+                            <p style='margin-top:24px;'>
+                                With best regards,<br />
+                                <strong>{{ORGANIZATION_NAME}}</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style='background:#f9fafb;padding:14px;text-align:center;
+           font-size:12px;color:#6b7280;'>
+                            © {{YEAR}} {{ORGANIZATION_NAME}}. All rights reserved.
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

@@ -67,7 +67,16 @@ public class AuthenticationsController : ControllerBase
         }
 
             if (user is null)
-            return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "User not found.", Result = false });
+            {
+                // Security measure: Return generic error message to prevent user enumeration
+                // Don't reveal whether the user exists or not
+                return Unauthorized(new BaseResponse<bool> 
+                { 
+                    StatusCode = 401, 
+                    Message = "Invalid credentials.", 
+                    Result = false 
+                });
+            }
 
         // Check if the login method is enabled in system configuration
         var isLoginMethodEnabled = await _configService.IsLoginMethodEnabledAsync(user.LoginMethod);
@@ -111,7 +120,7 @@ public class AuthenticationsController : ControllerBase
 
             isValidCredentials = _ldapAuthenticator.ValidateCredentials(request.Username, request.Password);
         }
-        else if (user.LoginMethod == LoginMethod.KMNID) // OTP Verification
+        else if (user.LoginMethod == LoginMethod.OTPVerification) // OTP Verification
         {
             // OTP Verification - request.Password contains the OTP code
             if (string.IsNullOrWhiteSpace(user.Email))
@@ -199,11 +208,29 @@ public class AuthenticationsController : ControllerBase
 
         if (user is null)
         {
-            return NotFound(new BaseResponse<object>
+            // Security measure: Return fake data to prevent user enumeration
+            // Always return Credentials login method for non-existent users
+            var isCredentialsEnabled = await _configService.IsLoginMethodEnabledAsync(LoginMethod.Credentials);
+            
+            // Generate a random fake email to prevent user enumeration
+            var random = new Random();
+            var randomNumber = random.Next(100000, 999999);
+            var fakeEmail = $"user{randomNumber}@gmail.com";
+            
+            return Ok(new BaseResponse<object>
             {
-                StatusCode = 404,
-                Message = "User not found.",
-                Result = null
+                StatusCode = 200,
+                Message = "Login method retrieved successfully.",
+                Result = new
+                {
+                    loginMethod = new LoginMethodDto
+                    {
+                        id = (int)LoginMethod.Credentials,
+                        name = LoginMethod.Credentials.ToString()
+                    },
+                    isEnabled = isCredentialsEnabled,
+                    email = fakeEmail // Return random fake email for non-existent users
+                }
             });
         }
 
@@ -249,7 +276,7 @@ public class AuthenticationsController : ControllerBase
         }
 
         // Check if user has OTP login method
-        if (user.LoginMethod != LoginMethod.KMNID)
+        if (user.LoginMethod != LoginMethod.OTPVerification)
         {
             return BadRequest(new BaseResponse<bool> 
             { 
@@ -260,7 +287,7 @@ public class AuthenticationsController : ControllerBase
         }
 
         // Check if OTP login method is enabled
-        var isOtpEnabled = await _configService.IsLoginMethodEnabledAsync(LoginMethod.KMNID);
+        var isOtpEnabled = await _configService.IsLoginMethodEnabledAsync(LoginMethod.OTPVerification);
         if (!isOtpEnabled)
         {
             return BadRequest(new BaseResponse<bool> 
@@ -377,7 +404,9 @@ public class AuthenticationsController : ControllerBase
                 updatedBy = user.UpdatedBy,
                 userName = user.UserName ?? "",
                 email = user.Email ?? "",
-                emailConfirmed = user.EmailConfirmed
+                emailConfirmed = user.EmailConfirmed,
+                departmentId = user.DepartmentId,
+                departmentRole = user.DepartmentRole
             },
             roles = userRoles.Select(ur => new LoginRoleDto
             {
@@ -488,35 +517,77 @@ public class AuthenticationsController : ControllerBase
                 });
             }
 
-            // Create new user with OTP Verification as default login method
-            // User will be inactive until OTP is verified
+            // Determine login method: use organization's default login method
+            var loginMethod = organization.DefaultLoginMethod;
+            
+            // Validate that the default login method is in the allowed login methods
+            if (!string.IsNullOrWhiteSpace(organization.AllowedLoginMethods))
+            {
+                try
+                {
+                    var allowedMethods = System.Text.Json.JsonSerializer.Deserialize<List<int>>(organization.AllowedLoginMethods);
+                    if (allowedMethods != null && !allowedMethods.Contains((int)loginMethod))
+                    {
+                        // If default method is not allowed, use the first allowed method or fallback to OTPVerification
+                        loginMethod = allowedMethods.Any() 
+                            ? (LoginMethod)allowedMethods.First() 
+                            : LoginMethod.OTPVerification;
+                    }
+                }
+                catch
+                {
+                    // If parsing fails, use the default login method as-is
+                }
+            }
+            
+            // Create new user with organization's default login method
+            // User will be inactive until email is verified via OTP (for all login methods)
             var newUser = new User
             {
                 UserName = request.Username,
                 Email = request.Email,
                 FullName = request.FullName,
+                FullNameAr = request.FullNameAr, // Store Arabic name if provided
                 ADUsername = string.Empty, // Not used for OTP verification, but required field
                 CivilNo = request.CivilNo, // Optional civil number
-                LoginMethod = LoginMethod.KMNID, // OTP Verification
+                LoginMethod = loginMethod, // Use organization's default login method
                 OrganizationId = organization.Id,
-                IsActive = false, // User will be activated after OTP verification
+                IsActive = false, // Inactive until email is verified via OTP (for all login methods)
                 IsDeleted = false,
-                EmailVerified = false, // Will be verified after OTP confirmation
+                EmailVerified = false, // Not verified until OTP is confirmed (for all login methods)
                 CreatedOn = DateTime.UtcNow,
                 CreatedBy = "Registration System",
                 FailedLoginAttempts = 0,
                 IsLocked = false
             };
-            
-            // Note: FullNameAr is not currently stored in User model
-            // If needed, it can be added to the User model in a future migration
 
             // Create user using UserManager (this handles Identity requirements)
-            // For OTP verification, we don't need a password, but Identity requires one
-            // We'll create a temporary random password that will never be used for OTP users
-            // Password must meet Identity requirements: uppercase, lowercase, number, special char, min 6 chars
-            var tempPassword = "TempPass123!@#" + Guid.NewGuid().ToString("N").Substring(0, 10);
-            var result = await _userManager.CreateAsync(newUser, tempPassword);
+            // Handle different login methods
+            IdentityResult result;
+            
+            if (loginMethod == LoginMethod.Credentials)
+            {
+                // For Credentials method, generate a temporary password
+                var tempPassword = PasswordGenerator.GeneratePassword(12);
+                newUser.TemporaryPassword = tempPassword;
+                newUser.IsTemporaryPassword = true;
+                result = await _userManager.CreateAsync(newUser, tempPassword);
+            }
+            else if (loginMethod == LoginMethod.ActiveDirectory)
+            {
+                // For Active Directory, no password needed (will use AD authentication)
+                // But Identity requires a password, so we'll create a temporary one that won't be used
+                var tempPassword = "TempPass123!@#" + Guid.NewGuid().ToString("N").Substring(0, 10);
+                result = await _userManager.CreateAsync(newUser, tempPassword);
+            }
+            else // OTPVerification (OTP Verification)
+            {
+                // For OTP verification, we don't need a password, but Identity requires one
+                // We'll create a temporary random password that will never be used for OTP users
+                // Password must meet Identity requirements: uppercase, lowercase, number, special char, min 6 chars
+                var tempPassword = "TempPass123!@#" + Guid.NewGuid().ToString("N").Substring(0, 10);
+                result = await _userManager.CreateAsync(newUser, tempPassword);
+            }
 
             if (!result.Succeeded)
             {
@@ -574,7 +645,8 @@ public class AuthenticationsController : ControllerBase
                 await _unitOfWork.CompleteAsync();
             }
 
-            // Generate and send OTP for email verification
+            // Generate and send OTP for email verification (for all login methods)
+            string successMessage;
             try
             {
                 var userEmail = createdUser.Email ?? request.Email;
@@ -582,17 +654,32 @@ public class AuthenticationsController : ControllerBase
                 {
                     await _otpService.GenerateAndStoreOtpAsync(createdUser.Id, userEmail, createdUser.FullName);
                 }
+                
+                // Success message based on login method
+                if (loginMethod == LoginMethod.OTPVerification)
+                {
+                    successMessage = "Registration successful. An OTP has been sent to your email for verification. Please verify your email to activate your account.";
+                }
+                else if (loginMethod == LoginMethod.Credentials)
+                {
+                    successMessage = "Registration successful. An OTP has been sent to your email for verification. Please verify your email to activate your account. After verification, you can log in using your credentials.";
+                }
+                else // ActiveDirectory
+                {
+                    successMessage = "Registration successful. An OTP has been sent to your email for verification. Please verify your email to activate your account. After verification, you can log in using your Active Directory credentials.";
+                }
             }
             catch (Exception ex)
             {
                 // Log error but don't fail registration - user can request OTP later
                 Console.WriteLine($"Warning: Failed to send OTP email during registration: {ex.Message}");
+                successMessage = "Registration successful. However, we couldn't send the verification OTP. Please request a new OTP to activate your account.";
             }
 
             return Ok(new BaseResponse<bool>
             {
                 StatusCode = 200,
-                Message = "Registration successful. An OTP has been sent to your email for verification. Please verify your email to activate your account.",
+                Message = successMessage,
                 Result = true
             });
         }
@@ -905,4 +992,187 @@ public class AuthenticationsController : ControllerBase
             Result = response
         });
     }
+
+    [HttpGet("profile-completion-required")]
+    [Authorize]
+    public async Task<IActionResult> IsProfileCompletionRequired()
+    {
+        // Get current user ID from JWT token
+        var userIdClaim = User.FindFirst("UserId")?.Value 
+                         ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Unauthorized(new BaseResponse<bool>
+            {
+                StatusCode = 401,
+                Message = "User ID not found in token.",
+                Result = false
+            });
+        }
+
+        var user = await _userManager.FindByIdAsync(userIdClaim);
+        if (user == null)
+        {
+            return NotFound(new BaseResponse<bool>
+            {
+                StatusCode = 404,
+                Message = "User not found.",
+                Result = false
+            });
+        }
+
+        // Get user's organization
+        var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == user.OrganizationId);
+        if (organization == null)
+        {
+            return NotFound(new BaseResponse<bool>
+            {
+                StatusCode = 404,
+                Message = "Organization not found.",
+                Result = false
+            });
+        }
+
+        // Check if user is in main organization and missing required fields
+        bool requiresCompletion = false;
+        if (organization.IsMain)
+        {
+            // Check if user is missing department, job title, or full names
+            requiresCompletion = user.DepartmentId == null || 
+                                user.JobTitleId == null || 
+                                string.IsNullOrWhiteSpace(user.FullName) ||
+                                string.IsNullOrWhiteSpace(user.FullNameAr);
+        }
+
+        return Ok(new BaseResponse<bool>
+        {
+            StatusCode = 200,
+            Message = "Profile completion status retrieved successfully.",
+            Result = requiresCompletion
+        });
+    }
+
+    [HttpPost("complete-profile")]
+    [Authorize]
+    public async Task<IActionResult> CompleteProfile([FromBody] CompleteProfileRequest request)
+    {
+        // Get current user ID from JWT token
+        var userIdClaim = User.FindFirst("UserId")?.Value 
+                         ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Unauthorized(new BaseResponse<bool>
+            {
+                StatusCode = 401,
+                Message = "User ID not found in token.",
+                Result = false
+            });
+        }
+
+        var user = await _userManager.FindByIdAsync(userIdClaim);
+        if (user == null)
+        {
+            return NotFound(new BaseResponse<bool>
+            {
+                StatusCode = 404,
+                Message = "User not found.",
+                Result = false
+            });
+        }
+
+        // Get user's organization
+        var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == user.OrganizationId);
+        if (organization == null || !organization.IsMain)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Profile completion is only required for main organization users.",
+                Result = false
+            });
+        }
+
+        // Validate required fields
+        if (!request.DepartmentId.HasValue || !request.JobTitleId.HasValue)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Department and Job Title are required.",
+                Result = false
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.FullNameAr))
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Full Name (English and Arabic) are required.",
+                Result = false
+            });
+        }
+
+        // Verify department and job title exist
+        var department = await _unitOfWork.Departments.FindAsync(d => d.Id == request.DepartmentId.Value && d.OrganizationId == user.OrganizationId);
+        if (department == null)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Department not found.",
+                Result = false
+            });
+        }
+
+        var jobTitle = await _unitOfWork.JobTitles.FindAsync(j => j.Id == request.JobTitleId.Value);
+        if (jobTitle == null)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Job Title not found.",
+                Result = false
+            });
+        }
+
+        // Update user profile
+        user.DepartmentId = request.DepartmentId.Value;
+        user.JobTitleId = request.JobTitleId.Value;
+        user.FullName = request.FullName.Trim();
+        user.FullNameAr = request.FullNameAr.Trim();
+        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = userIdClaim;
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+            return StatusCode(500, new BaseResponse<bool>
+            {
+                StatusCode = 500,
+                Message = $"Failed to update profile: {errors}",
+                Result = false
+            });
+        }
+
+        return Ok(new BaseResponse<bool>
+        {
+            StatusCode = 200,
+            Message = "Profile completed successfully.",
+            Result = true
+        });
+    }
+}
+
+public class CompleteProfileRequest
+{
+    public int? DepartmentId { get; set; }
+    public int? JobTitleId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string FullNameAr { get; set; } = string.Empty;
 }

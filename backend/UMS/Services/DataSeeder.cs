@@ -124,6 +124,7 @@ public class DataSeeder
             Domain = "moo.gov.kw",
             IsMain = true,
             IsActive = true,
+            DefaultLoginMethod = LoginMethod.OTPVerification, // Default to OTP verification for main organization
             CreatedBy = "System",
             CreatedOn = DateTime.UtcNow
         };
@@ -234,11 +235,45 @@ public class DataSeeder
             new Permission { Name = "Show Course Tabs in Menu", Code = "COURSE_TABS_SHOW_IN_MENU", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Show Course Tabs for Public", Code = "COURSE_TABS_SHOW_PUBLIC", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
+            // Course Tab Approval Management Permissions
+            new Permission { Name = "View Course Tab Approvals", Code = "COURSE_TAB_APPROVALS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Course Tab Approvals", Code = "COURSE_TAB_APPROVALS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Course Tab Approvals", Code = "COURSE_TAB_APPROVALS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Course Tab Approvals", Code = "COURSE_TAB_APPROVALS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            
+            // Course Enrollment Approval Permissions
+            new Permission { Name = "View Enrollment Approvals", Code = "ENROLLMENT_APPROVALS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Approve Enrollment Step", Code = "ENROLLMENT_APPROVALS_APPROVE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Reject Enrollment Step", Code = "ENROLLMENT_APPROVALS_REJECT", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
             // System Administration Permissions
             new Permission { Name = "System Administration", Code = "SYSTEM_ADMIN", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "View System Configuration", Code = "SYSTEM_CONFIG_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Create System Configuration", Code = "SYSTEM_CONFIG_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Update System Configuration", Code = "SYSTEM_CONFIG_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
+            // Logs Management Permissions
+            new Permission { Name = "View Logs", Code = "LOGS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Logs", Code = "LOGS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Toggle Logging", Code = "LOGS_TOGGLE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
+            // Event Management Permissions
+            new Permission { Name = "View Events", Code = "EVENTS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Events", Code = "EVENTS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Events", Code = "EVENTS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Events", Code = "EVENTS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            
+            // Event Organization Management Permissions
+            new Permission { Name = "View Event Organizations", Code = "EVENT_ORGANIZATIONS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Event Organizations", Code = "EVENT_ORGANIZATIONS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Event Organizations", Code = "EVENT_ORGANIZATIONS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Event Organizations", Code = "EVENT_ORGANIZATIONS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            
+            // Event Speaker Management Permissions
+            new Permission { Name = "View Event Speakers", Code = "EVENT_SPEAKERS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Event Speakers", Code = "EVENT_SPEAKERS_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Event Speakers", Code = "EVENT_SPEAKERS_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Event Speakers", Code = "EVENT_SPEAKERS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
         };
 
         foreach (var permission in permissions)
@@ -285,7 +320,14 @@ public class DataSeeder
     {
         _logger.LogInformation("Seeding SuperAdmin user...");
 
-        var existingUser = await _userManager.FindByEmailAsync("superadmin@system.local");
+        // Check by username first (more reliable)
+        var existingUser = await _userManager.FindByNameAsync("superadmin");
+        if (existingUser == null)
+        {
+            // Also check by email as fallback
+            existingUser = await _userManager.FindByEmailAsync("superadmin@system.local");
+        }
+
         if (existingUser != null)
         {
             _logger.LogInformation("SuperAdmin user already exists.");

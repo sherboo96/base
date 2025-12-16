@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using UMS.Models.Shared;
 
 namespace UMS.Models;
@@ -20,5 +21,9 @@ public class CourseEnrollment : BaseModel
     public DateTime EnrollmentAt { get; set; } = DateTime.Now;
     public bool FinalApproval { get; set; } = false; // True when approved or rejected
     public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Pending; // Pending, Approve, Reject, Excuse
+    public bool ConfirmationEmailSent { get; set; } = false; // True when confirmation email has been sent
+    
+    [JsonIgnore]
+    public ICollection<CourseEnrollmentApproval> ApprovalSteps { get; set; } = new List<CourseEnrollmentApproval>();
 }
 

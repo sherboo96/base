@@ -5,7 +5,7 @@ namespace UMS.Models;
 
 public enum LoginMethod
 {
-    KMNID = 1,
+    OTPVerification = 1,
     ActiveDirectory = 2,
     Credentials = 3
 }

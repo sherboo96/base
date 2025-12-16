@@ -1,0 +1,296 @@
+<div class="p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-accent/10 rounded-lg">
+                <i class="fas fa-calendar-alt text-accent text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-textDark font-poppins">
+                    {{ isEdit ? ('event.editEvent' | translate) : ('event.addEvent' | translate) }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-1 font-poppins">
+                    {{
+                        isEdit
+                            ? ('event.editEventDescription' | translate)
+                            : ('event.addEventDescription' | translate)
+                    }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Name -->
+        <div class="space-y-2">
+            <label for="name" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.name'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-font text-gray-400"></i>
+                </div>
+                <input
+                    id="name"
+                    type="text"
+                    formControlName="name"
+                    class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                    [class.border-red-500]="form.get('name')?.invalid && form.get('name')?.touched"
+                    [placeholder]="'event.namePlaceholder' | translate"
+                />
+            </div>
+            <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- Name (Arabic) -->
+        <div class="space-y-2">
+            <label for="nameAr" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.nameAr'|translate}}
+            </label>
+            <input
+                id="nameAr"
+                type="text"
+                formControlName="nameAr"
+                dir="rtl"
+                class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                [placeholder]="'event.nameArPlaceholder' | translate"
+            />
+        </div>
+
+        <!-- Code -->
+        <div class="space-y-2">
+            <label for="code" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.code'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-code text-gray-400"></i>
+                </div>
+                <input
+                    id="code"
+                    type="text"
+                    formControlName="code"
+                    class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                    [class.border-red-500]="form.get('code')?.invalid && form.get('code')?.touched"
+                    [placeholder]="'event.codePlaceholder' | translate"
+                />
+            </div>
+            <div *ngIf="form.get('code')?.invalid && form.get('code')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- Date -->
+        <div class="space-y-2">
+            <label for="date" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.date'|translate}}
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-calendar text-gray-400"></i>
+                </div>
+                <input
+                    id="date"
+                    type="date"
+                    formControlName="date"
+                    class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                />
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+            <label for="description" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.description'|translate}}
+            </label>
+            <textarea
+                id="description"
+                formControlName="description"
+                rows="3"
+                class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                [placeholder]="'event.descriptionPlaceholder' | translate"
+            ></textarea>
+        </div>
+
+        <!-- Description (Arabic) -->
+        <div class="space-y-2">
+            <label for="descriptionAr" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.descriptionAr'|translate}}
+            </label>
+            <textarea
+                id="descriptionAr"
+                formControlName="descriptionAr"
+                dir="rtl"
+                rows="3"
+                class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                [placeholder]="'event.descriptionArPlaceholder' | translate"
+            ></textarea>
+        </div>
+
+        <!-- Poster -->
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-textDark font-poppins">
+                {{'event.poster'|translate}}
+            </label>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <div
+                        *ngIf="imagePreview"
+                        class="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-300"
+                    >
+                        <img
+                            [src]="imagePreview"
+                            alt="Poster preview"
+                            class="w-full h-full object-cover"
+                        />
+                    </div>
+                    <div
+                        *ngIf="!imagePreview"
+                        class="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50"
+                    >
+                        <i class="fas fa-image text-gray-400 text-3xl"></i>
+                    </div>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        (change)="onFileSelected($event)"
+                        class="hidden"
+                        id="posterInput"
+                    />
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label
+                        for="posterInput"
+                        class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accentDark transition-colors cursor-pointer text-sm font-medium text-center font-poppins"
+                    >
+                        <i class="fas fa-upload mr-2"></i>{{ 'event.uploadPoster' | translate }}
+                    </label>
+                    <button
+                        *ngIf="imagePreview"
+                        type="button"
+                        (click)="removeImage()"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    >
+                        <i class="fas fa-trash mr-2"></i>{{ 'event.removePoster' | translate }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Badge -->
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-textDark font-poppins">
+                {{'event.badge'|translate}}
+            </label>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <div
+                        *ngIf="badgePreview"
+                        class="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-300"
+                    >
+                        <img
+                            [src]="badgePreview"
+                            alt="Badge preview"
+                            class="w-full h-full object-cover"
+                        />
+                    </div>
+                    <div
+                        *ngIf="!badgePreview"
+                        class="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50"
+                    >
+                        <i class="fas fa-id-card text-gray-400 text-3xl"></i>
+                    </div>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        (change)="onBadgeSelected($event)"
+                        class="hidden"
+                        id="badgeInput"
+                    />
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label
+                        for="badgeInput"
+                        class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accentDark transition-colors cursor-pointer text-sm font-medium text-center font-poppins"
+                    >
+                        <i class="fas fa-upload mr-2"></i>{{ 'event.uploadBadge' | translate }}
+                    </label>
+                    <button
+                        *ngIf="badgePreview"
+                        type="button"
+                        (click)="removeBadge()"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    >
+                        <i class="fas fa-trash mr-2"></i>{{ 'event.removeBadge' | translate }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div class="space-y-2">
+            <label for="locationId" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'event.location'|translate}}
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                </div>
+                <select
+                    id="locationId"
+                    formControlName="locationId"
+                    class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white font-poppins"
+                >
+                    <option [value]="null">{{ 'event.selectLocation' | translate }}</option>
+                    <option *ngFor="let location of locations" [value]="location.id">
+                        {{ getLocationName(location) }}
+                    </option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Published -->
+        <div class="flex items-center gap-2">
+            <input
+                type="checkbox"
+                id="published"
+                formControlName="published"
+                class="w-4 h-4 text-accent border-gray-300 rounded focus:ring-accent"
+            />
+            <label for="published" class="text-sm font-medium text-gray-700 font-poppins">
+                {{'event.published'|translate}}
+            </label>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <button
+                type="button"
+                (click)="onCancel()"
+                class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+            >
+                {{ 'common.cancel' | translate }}
+            </button>
+            <button
+                type="submit"
+                [disabled]="isSubmitting || form.invalid"
+                class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
+            >
+                <span *ngIf="!isSubmitting">
+                    {{ isEdit ? ('common.update' | translate) : ('common.save' | translate) }}
+                </span>
+                <span *ngIf="isSubmitting">
+                    {{ isEdit ? ('common.updating' | translate) : ('common.saving' | translate) }}
+                </span>
+            </button>
+        </div>
+    </form>
+</div>
+

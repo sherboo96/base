@@ -193,9 +193,9 @@ public class UsersController : ControllerBase
                 });
             }
         }
-        else if (dto.LoginMethod == LoginMethod.KMNID)
+        else if (dto.LoginMethod == LoginMethod.OTPVerification)
         {
-            // For OTP/KMNID, email verification will be required
+            // For OTP Verification, email verification will be required
             newUser.EmailVerified = false;
             
             // Create user without password (will use OTP authentication)

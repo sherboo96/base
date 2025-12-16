@@ -1,0 +1,252 @@
+import Foundation
+
+class APIService {
+    static let shared = APIService()
+    
+    private let baseURL = Config.apiURL
+    private var token: String? {
+        return UserDefaults.standard.string(forKey: "auth_token")
+    }
+    
+    private init() {}
+    
+    private func createRequest(url: URL, method: String, body: Data? = nil) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        if let body = body {
+            request.httpBody = body
+        }
+        
+        return request
+    }
+    
+    func login(username: String, password: String, system: Int = 1) async throws -> LoginResponse {
+        let url = URL(string: "\(baseURL)/Authentications/login")!
+        let requestBody = LoginRequest(username: username, password: password, system: system)
+        let body = try JSONEncoder().encode(requestBody)
+        
+        let request = createRequest(url: url, method: "POST", body: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        // Handle non-200 status codes
+        if httpResponse.statusCode != 200 {
+            // Try to decode error response
+            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.httpError(httpResponse.statusCode)
+            }
+        }
+        
+        // Decode response
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<LoginResponse>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.serverError(baseResponse.message)
+        }
+        
+        // Store token and user info
+        UserDefaults.standard.set(result.token, forKey: "auth_token")
+        
+        // Store user info for quick access
+        if let userData = try? JSONEncoder().encode(result.user) {
+            UserDefaults.standard.set(userData, forKey: "user_info")
+        }
+        
+        return result
+    }
+    
+    func getActiveEvents() async throws -> [Event] {
+        let url = URL(string: "\(baseURL)/Events?published=true&page=1&pageSize=100")!
+        let request = createRequest(url: url, method: "GET")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.httpError(httpResponse.statusCode)
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<[Event]>.self, from: data)
+        
+        return baseResponse.result ?? []
+    }
+    
+    func getEventRegistrations(eventId: Int) async throws -> [EventRegistration] {
+        let url = URL(string: "\(baseURL)/EventRegistrations?eventId=\(eventId)&page=1&pageSize=1000")!
+        let request = createRequest(url: url, method: "GET")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.httpError(httpResponse.statusCode)
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<[EventRegistration]>.self, from: data)
+        
+        // Filter only approved registrations
+        return (baseResponse.result ?? []).filter { $0.status == .approved }
+    }
+    
+    func checkIn(barcode: String) async throws -> EventAttendee {
+        let url = URL(string: "\(baseURL)/EventAttendees/checkin")!
+        let requestBody = CheckInRequest(barcode: barcode)
+        let body = try JSONEncoder().encode(requestBody)
+        
+        let request = createRequest(url: url, method: "POST", body: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Check-in failed")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventAttendee>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
+    func checkOut(barcode: String) async throws -> EventAttendee {
+        let url = URL(string: "\(baseURL)/EventAttendees/checkout")!
+        let requestBody = CheckOutRequest(barcode: barcode)
+        let body = try JSONEncoder().encode(requestBody)
+        
+        let request = createRequest(url: url, method: "POST", body: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Check-out failed")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventAttendee>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
+    func logout() {
+        UserDefaults.standard.removeObject(forKey: "auth_token")
+        UserDefaults.standard.removeObject(forKey: "user_info")
+    }
+    
+    var isAuthenticated: Bool {
+        return token != nil
+    }
+    
+    // Validate token by making a test API call
+    func validateToken() async -> Bool {
+        guard let token = token else {
+            return false
+        }
+        
+        // Try to fetch events as a validation check
+        do {
+            let url = URL(string: "\(baseURL)/Events?published=true&page=1&pageSize=1")!
+            let request = createRequest(url: url, method: "GET")
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+            
+            // If we get 401, token is invalid/expired
+            if httpResponse.statusCode == 401 {
+                logout()
+                return false
+            }
+            
+            // If we get 200, token is valid
+            return httpResponse.statusCode == 200
+        } catch {
+            // If there's an error, assume token is invalid
+            logout()
+            return false
+        }
+    }
+}
+
+enum APIError: Error, LocalizedError {
+    case invalidResponse
+    case httpError(Int)
+    case serverError(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse:
+            return "Invalid response from server"
+        case .httpError(let code):
+            return "HTTP Error: \(code)"
+        case .serverError(let message):
+            return message
+        }
+    }
+}
+

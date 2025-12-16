@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule,
   FormArray,
 } from '@angular/forms';
-import { CourseService, Course, CourseStatus, CourseLanguage, LocationCategory, CourseLearningOutcome, CourseContent, TargetUserType } from '../../../../services/course.service';
+import { CourseService, Course, CourseStatus, CourseLanguage, LocationCategory, CourseLearningOutcome, CourseContent, TargetUserType, AdoptionType, CourseAdoptionUser, CourseContact } from '../../../../services/course.service';
 import { CourseTabService } from '../../../../services/course-tab.service';
 import { LocationService, LocationCategory as LocCategory } from '../../../../services/location.service';
 import { InstructorService } from '../../../../services/instructor.service';
@@ -102,11 +102,13 @@ export class CourseFormComponent implements OnInit {
   CourseLanguage = CourseLanguage;
   LocationCategory = LocationCategory;
   TargetUserType = TargetUserType;
+  AdoptionType = AdoptionType;
   filteredLocations: any[] = [];
   showStatusField = false;
   showCourseTabField = false;
   organizationDisabled = false;
   selectedOrganization: any = null;
+  isMainOrg: boolean = false; // Explicit property to track if organization is main
 
   constructor(
     private fb: FormBuilder,
@@ -147,7 +149,8 @@ export class CourseFormComponent implements OnInit {
       instructorIds: [[]],
       targetUserType: [null],
       targetDepartmentIds: [[]],
-      targetDepartmentRole: [null],
+      targetDepartmentRole: [null], // DEPRECATED: Keep for backward compatibility
+      targetDepartmentRoles: [{}], // Dictionary: { departmentId: role }
       targetOrganizationIds: [[]],
       targetSegmentIds: [[]],
     });
@@ -180,6 +183,23 @@ export class CourseFormComponent implements OnInit {
       if (this.isEdit && this.dialogRef.data?.course?.organizationId) {
         const orgId = this.dialogRef.data.course.organizationId;
         this.selectedOrganization = this.organizations.find(org => org.id === orgId);
+        // Also check if organization is in course data
+        if (!this.selectedOrganization && this.dialogRef.data?.course?.organization) {
+          this.selectedOrganization = this.dialogRef.data.course.organization;
+        }
+        // Update isMainOrg property
+        if (this.selectedOrganization) {
+          this.isMainOrg = this.selectedOrganization.isMain === true;
+        }
+      }
+      // Also check if organizationId is already set in form (for add mode with pre-selected org)
+      const currentOrgId = this.form.get('organizationId')?.value;
+      if (currentOrgId && !this.selectedOrganization) {
+        this.selectedOrganization = this.organizations.find(org => org.id === currentOrgId);
+        // Update isMainOrg property
+        if (this.selectedOrganization) {
+          this.isMainOrg = this.selectedOrganization.isMain === true;
+        }
       }
     }
   }
@@ -188,6 +208,24 @@ export class CourseFormComponent implements OnInit {
     this.loadCourseTabs();
     this.loadOrganizations();
     this.loadInstructors();
+    
+    // Set selectedOrganization if organizationId is already set (e.g., from dialog data or form initialization)
+    const currentOrgId = this.form.get('organizationId')?.value;
+    if (currentOrgId && !this.selectedOrganization) {
+      // Try to find from dialog data organizations first (most reliable)
+      if (this.dialogRef.data?.organizations && this.dialogRef.data.organizations.length > 0) {
+        this.selectedOrganization = this.dialogRef.data.organizations.find((org: any) => org.id === currentOrgId);
+      }
+      // If not found, try organizations array
+      if (!this.selectedOrganization && this.organizations.length > 0) {
+        this.selectedOrganization = this.organizations.find(org => org.id === currentOrgId);
+      }
+      if (this.selectedOrganization) {
+        this.isMainOrg = this.selectedOrganization.isMain === true; // Update explicit property
+        this.cdr.markForCheck();
+        this.cdr.detectChanges();
+      }
+    }
     
     // Watch category changes to filter locations
     this.form.get('category')?.valueChanges.subscribe(category => {
@@ -199,23 +237,53 @@ export class CourseFormComponent implements OnInit {
       if (orgId) {
         this.loadLocations(orgId);
         
-        // Find organization - wait for organizations to load if not yet loaded
-        if (this.organizations.length === 0) {
-          // If organizations not loaded yet, wait a bit and try again
-          setTimeout(() => {
-            this.selectedOrganization = this.organizations.find(org => org.id === orgId);
-            if (this.selectedOrganization) {
-              this.loadOrganizationData(orgId, this.selectedOrganization);
-            }
-          }, 100);
-        } else {
-          this.selectedOrganization = this.organizations.find(org => org.id === orgId);
-          this.loadOrganizationData(orgId, this.selectedOrganization);
+        // Find organization from multiple sources - try synchronously first
+        let foundOrg = null;
+        
+        // First try dialog data organizations (most reliable source)
+        if (this.dialogRef.data?.organizations && this.dialogRef.data.organizations.length > 0) {
+          foundOrg = this.dialogRef.data.organizations.find((org: any) => org.id === orgId);
         }
         
-        this.cdr.detectChanges();
+        // If not found, try organizations array
+        if (!foundOrg && this.organizations.length > 0) {
+          foundOrg = this.organizations.find(org => org.id === orgId);
+        }
+        
+        // If found, set immediately and load data
+        if (foundOrg) {
+          this.selectedOrganization = foundOrg;
+          this.isMainOrg = foundOrg.isMain === true; // Update explicit property
+          this.loadOrganizationData(orgId, this.selectedOrganization);
+          // Force change detection to update the template immediately
+          // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+          setTimeout(() => {
+            this.cdr.markForCheck();
+            this.cdr.detectChanges();
+          }, 0);
+        } else if (this.organizations.length === 0) {
+          // If organizations not loaded yet, wait a bit and try again
+          setTimeout(() => {
+            let retryFoundOrg = null;
+            if (this.organizations.length > 0) {
+              retryFoundOrg = this.organizations.find(org => org.id === orgId);
+            }
+            if (!retryFoundOrg && this.dialogRef.data?.organizations) {
+              retryFoundOrg = this.dialogRef.data.organizations.find((org: any) => org.id === orgId);
+            }
+            if (retryFoundOrg) {
+              this.selectedOrganization = retryFoundOrg;
+              this.isMainOrg = retryFoundOrg.isMain === true; // Update explicit property
+              this.loadOrganizationData(orgId, this.selectedOrganization);
+              this.cdr.markForCheck();
+              this.cdr.detectChanges();
+            }
+          }, 100);
+        }
       } else {
         this.selectedOrganization = null;
+        this.isMainOrg = false; // Reset when no organization selected
+        this.cdr.markForCheck();
         this.cdr.detectChanges();
       }
     });
@@ -252,7 +320,8 @@ export class CourseFormComponent implements OnInit {
         ? (typeof course.targetUserType === 'string' ? parseInt(course.targetUserType, 10) : course.targetUserType)
         : null,
       targetDepartmentIds: course.targetDepartmentIds || [],
-      targetDepartmentRole: course.targetDepartmentRole || null,
+      targetDepartmentRole: course.targetDepartmentRole || null, // DEPRECATED: Keep for backward compatibility
+      targetDepartmentRoles: course.targetDepartmentRoles || {},
       targetOrganizationIds: course.targetOrganizationIds || [],
       targetSegmentIds: course.targetSegmentIds || [],
     });
@@ -260,6 +329,14 @@ export class CourseFormComponent implements OnInit {
     // Set selected organization for conditional display (if organizations are already loaded)
     if (this.organizations.length > 0) {
       this.selectedOrganization = this.organizations.find(org => org.id === course.organizationId);
+    }
+    // Also check if organization is in course data
+    if (!this.selectedOrganization && course.organization) {
+      this.selectedOrganization = course.organization;
+    }
+    // Update isMainOrg property
+    if (this.selectedOrganization) {
+      this.isMainOrg = this.selectedOrganization.isMain === true;
     }
     // Otherwise, selectedOrganization will be set when organizations load in loadOrganizations()
 
@@ -310,9 +387,10 @@ export class CourseFormComponent implements OnInit {
       // For non-main organizations, load segments for the selected organization
       this.loadSegments(orgId);
       // Clear main-organization-specific fields
-      this.form.patchValue({
+        this.form.patchValue({
         targetDepartmentIds: [],
-        targetDepartmentRole: null,
+        targetDepartmentRole: null, // DEPRECATED
+        targetDepartmentRoles: {},
         targetOrganizationIds: [],
       });
     }
@@ -370,6 +448,19 @@ export class CourseFormComponent implements OnInit {
           const currentOrgId = this.form.get('organizationId')?.value;
           if (currentOrgId) {
             this.selectedOrganization = this.organizations.find(org => org.id === currentOrgId);
+            // Also check if organization is in course data (for edit mode)
+            if (!this.selectedOrganization && this.isEdit && this.dialogRef.data?.course?.organization) {
+              const courseOrg = this.dialogRef.data.course.organization;
+              if (courseOrg.id === currentOrgId) {
+                this.selectedOrganization = courseOrg;
+              }
+            }
+            // Update isMainOrg property
+            if (this.selectedOrganization) {
+              this.isMainOrg = this.selectedOrganization.isMain === true;
+            } else {
+              this.isMainOrg = false;
+            }
             if (this.selectedOrganization?.isMain) {
               this.loadDepartments(this.selectedOrganization.id);
               this.loadSegments(this.selectedOrganization.id);
@@ -382,16 +473,17 @@ export class CourseFormComponent implements OnInit {
           
           // If only one organization and not in edit mode, auto-select and disable
           if (!this.isEdit && this.organizations.length === 1 && !currentOrgId) {
-            this.form.patchValue({ organizationId: this.organizations[0].id });
-            this.selectedOrganization = this.organizations[0];
-            this.organizationDisabled = true;
-            // Load locations for this organization
-            this.loadLocations(this.organizations[0].id);
-            if (this.organizations[0].isMain) {
-              this.loadDepartments(this.organizations[0].id);
-              this.loadSegments(this.organizations[0].id);
-            }
-            this.cdr.detectChanges();
+        this.form.patchValue({ organizationId: this.organizations[0].id });
+        this.selectedOrganization = this.organizations[0];
+        this.isMainOrg = this.organizations[0].isMain === true; // Update explicit property
+        this.organizationDisabled = true;
+        // Load locations for this organization
+        this.loadLocations(this.organizations[0].id);
+        if (this.organizations[0].isMain) {
+          this.loadDepartments(this.organizations[0].id);
+          this.loadSegments(this.organizations[0].id);
+        }
+        this.cdr.detectChanges();
           } else if (!this.isEdit && !currentOrgId) {
             // Try to get organization from current user
             const currentUser = this.storageService.getItem<any>('currentUser');
@@ -401,6 +493,7 @@ export class CourseFormComponent implements OnInit {
               if (userOrg) {
                 this.form.patchValue({ organizationId: userOrganizationId });
                 this.selectedOrganization = userOrg;
+                this.isMainOrg = userOrg.isMain === true; // Update explicit property
                 if (this.organizations.length === 1) {
                   this.organizationDisabled = true;
                 }
@@ -428,10 +521,24 @@ export class CourseFormComponent implements OnInit {
       const currentOrgId = this.form.get('organizationId')?.value;
       if (currentOrgId) {
         this.selectedOrganization = this.organizations.find(org => org.id === currentOrgId);
+        // Also check if organization is in course data (for edit mode)
+        if (!this.selectedOrganization && this.isEdit && this.dialogRef.data?.course?.organization) {
+          const courseOrg = this.dialogRef.data.course.organization;
+          if (courseOrg.id === currentOrgId) {
+            this.selectedOrganization = courseOrg;
+          }
+        }
+        // Update isMainOrg property
+        if (this.selectedOrganization) {
+          this.isMainOrg = this.selectedOrganization.isMain === true;
+        } else {
+          this.isMainOrg = false;
+        }
         this.cdr.detectChanges();
       } else if (!this.isEdit && this.organizations.length === 1) {
         this.form.patchValue({ organizationId: this.organizations[0].id });
         this.selectedOrganization = this.organizations[0];
+        this.isMainOrg = this.organizations[0].isMain === true; // Update explicit property
         this.organizationDisabled = true;
         this.loadLocations(this.organizations[0].id);
         if (this.organizations[0].isMain) {
@@ -529,17 +636,45 @@ export class CourseFormComponent implements OnInit {
   
   toggleDepartment(departmentId: number, event: any): void {
     const departmentIds = this.form.get('targetDepartmentIds')?.value || [];
+    const departmentRoles = this.form.get('targetDepartmentRoles')?.value || {};
+    
     if (event.target.checked) {
       if (!departmentIds.includes(departmentId)) {
         departmentIds.push(departmentId);
+        // Initialize role to null if not set
+        if (!departmentRoles[departmentId]) {
+          departmentRoles[departmentId] = null;
+        }
       }
     } else {
       const index = departmentIds.indexOf(departmentId);
       if (index > -1) {
         departmentIds.splice(index, 1);
       }
+      // Remove role when department is unchecked
+      delete departmentRoles[departmentId];
     }
-    this.form.patchValue({ targetDepartmentIds: departmentIds });
+    this.form.patchValue({ 
+      targetDepartmentIds: departmentIds,
+      targetDepartmentRoles: { ...departmentRoles }
+    });
+  }
+  
+  setDepartmentRole(departmentId: number, role: string | null): void {
+    const departmentRoles = this.form.get('targetDepartmentRoles')?.value || {};
+    if (role) {
+      departmentRoles[departmentId] = role;
+    } else {
+      delete departmentRoles[departmentId];
+    }
+    this.form.patchValue({ 
+      targetDepartmentRoles: { ...departmentRoles }
+    });
+  }
+  
+  getDepartmentRole(departmentId: number): string | null {
+    const departmentRoles = this.form.get('targetDepartmentRoles')?.value || {};
+    return departmentRoles[departmentId] || null;
   }
   
   toggleOrganization(organizationId: number, event: any): void {
@@ -591,12 +726,32 @@ export class CourseFormComponent implements OnInit {
       return;
     }
     
-    // Ensure selectedOrganization is set - try to find it from organizations array
-    if (!this.selectedOrganization) {
+    // Ensure selectedOrganization is set - try multiple sources
+    if (!this.selectedOrganization || this.selectedOrganization.id !== orgId) {
+      // First try organizations array
       if (this.organizations.length > 0) {
         this.selectedOrganization = this.organizations.find(org => org.id === orgId);
+      }
+      // If not found, try dialog data organizations
+      if (!this.selectedOrganization && this.dialogRef.data?.organizations) {
+        this.selectedOrganization = this.dialogRef.data.organizations.find((org: any) => org.id === orgId);
+      }
+      // If still not found and in edit mode, try course organization
+      if (!this.selectedOrganization && this.isEdit && this.dialogRef.data?.course?.organization) {
+        const courseOrg = this.dialogRef.data.course.organization;
+        if (courseOrg.id === orgId) {
+          this.selectedOrganization = courseOrg;
+        }
+      }
+      // Update isMainOrg property
+      if (this.selectedOrganization) {
+        this.isMainOrg = this.selectedOrganization.isMain === true;
       } else {
-        // If organizations not loaded yet, wait for them to load
+        this.isMainOrg = false;
+      }
+      
+      // If still not found, wait for organizations to load
+      if (!this.selectedOrganization) {
         const checkInterval = setInterval(() => {
           if (this.organizations.length > 0) {
             clearInterval(checkInterval);
@@ -623,7 +778,8 @@ export class CourseFormComponent implements OnInit {
     // Clear dependent fields when type changes
     this.form.patchValue({
       targetDepartmentIds: [],
-      targetDepartmentRole: null,
+      targetDepartmentRole: null, // DEPRECATED
+      targetDepartmentRoles: {},
       targetOrganizationIds: [],
       targetSegmentIds: [],
     });
@@ -644,6 +800,9 @@ export class CourseFormComponent implements OnInit {
     }
     
     if (!this.selectedOrganization) return;
+    
+    // Update isMainOrg property
+    this.isMainOrg = this.selectedOrganization.isMain === true;
     
     const isMain = this.selectedOrganization.isMain;
     
@@ -677,28 +836,58 @@ export class CourseFormComponent implements OnInit {
   }
   
   get isMainOrganization(): boolean {
-    // Check if selectedOrganization is set and is main
+    // First check if selectedOrganization is set and is main
     if (this.selectedOrganization?.isMain === true) {
       return true;
     }
-    // Fallback: check form's organizationId and find organization
+    
+    // Fallback: check form's organizationId and find organization from multiple sources
     const orgId = this.form.get('organizationId')?.value;
-    if (orgId && this.organizations.length > 0) {
-      const org = this.organizations.find(o => o.id === orgId);
-      return org?.isMain === true;
+    if (orgId) {
+      let foundOrg = null;
+      
+      // First try dialog data organizations (most reliable source, available immediately)
+      if (this.dialogRef.data?.organizations && this.dialogRef.data.organizations.length > 0) {
+        foundOrg = this.dialogRef.data.organizations.find((o: any) => o.id === orgId);
+      }
+      
+      // If not found, try organizations array
+      if (!foundOrg && this.organizations.length > 0) {
+        foundOrg = this.organizations.find(o => o.id === orgId);
+      }
+      
+      // If still not found and we're in edit mode, try course organization
+      if (!foundOrg && this.isEdit && this.dialogRef.data?.course?.organization) {
+        const courseOrg = this.dialogRef.data.course.organization;
+        if (courseOrg.id === orgId) {
+          foundOrg = courseOrg;
+        }
+      }
+      
+      // If found, update selectedOrganization and return isMain status
+      if (foundOrg) {
+        const needsUpdate = !this.selectedOrganization || this.selectedOrganization.id !== orgId;
+        if (needsUpdate) {
+          this.selectedOrganization = foundOrg;
+          this.isMainOrg = foundOrg.isMain === true; // Update explicit property
+        }
+        return foundOrg.isMain === true;
+      }
     }
+    
     return false;
   }
   
+  
   get showDepartmentSelection(): boolean {
-    if (!this.isMainOrganization) return false;
+    if (!this.isMainOrg) return false;
     const targetUserType = this.form.get('targetUserType')?.value;
     const typeValue = typeof targetUserType === 'string' ? parseInt(targetUserType, 10) : targetUserType;
     return typeValue === TargetUserType.SpecificDepartments;
   }
   
   get showOrganizationSelection(): boolean {
-    if (!this.isMainOrganization) return false;
+    if (!this.isMainOrg) return false;
     const targetUserType = this.form.get('targetUserType')?.value;
     const typeValue = typeof targetUserType === 'string' ? parseInt(targetUserType, 10) : targetUserType;
     return typeValue === TargetUserType.SpecificOrganizations;
@@ -708,7 +897,7 @@ export class CourseFormComponent implements OnInit {
     const targetUserType = this.form.get('targetUserType')?.value;
     if (targetUserType === null || targetUserType === undefined) return false;
     const typeValue = typeof targetUserType === 'string' ? parseInt(targetUserType, 10) : targetUserType;
-    if (this.isMainOrganization) {
+    if (this.isMainOrg) {
       return typeValue === TargetUserType.SpecificSegments;
     } else {
       return typeValue === TargetUserType.SpecificOrganizationSegment;
@@ -752,7 +941,7 @@ export class CourseFormComponent implements OnInit {
       name: content.name || '',
       nameAr: content.nameAr || ''
     }));
-    
+
     // Handle target user fields
     const isMain = this.isMainOrganization;
     
@@ -768,7 +957,8 @@ export class CourseFormComponent implements OnInit {
     if (!isMain) {
       // For non-main organizations, clear main-organization-specific fields
       formData.targetDepartmentIds = [];
-      formData.targetDepartmentRole = null;
+      formData.targetDepartmentRole = null; // DEPRECATED
+      formData.targetDepartmentRoles = null;
       formData.targetOrganizationIds = [];
       // Keep targetSegmentIds for non-main organizations (SpecificOrganizationSegment)
       if (!formData.targetSegmentIds || formData.targetSegmentIds.length === 0) {
@@ -785,9 +975,20 @@ export class CourseFormComponent implements OnInit {
       if (!formData.targetSegmentIds || formData.targetSegmentIds.length === 0) {
         formData.targetSegmentIds = null;
       }
-      if (!formData.targetDepartmentRole) {
-        formData.targetDepartmentRole = null;
+      // Clean up targetDepartmentRoles - remove null values and empty object
+      if (formData.targetDepartmentRoles) {
+        const cleanedRoles: { [key: number]: string } = {};
+        Object.keys(formData.targetDepartmentRoles).forEach(key => {
+          const deptId = parseInt(key, 10);
+          const role = formData.targetDepartmentRoles[deptId];
+          if (role && formData.targetDepartmentIds?.includes(deptId)) {
+            cleanedRoles[deptId] = role;
+          }
+        });
+        formData.targetDepartmentRoles = Object.keys(cleanedRoles).length > 0 ? cleanedRoles : null;
       }
+      // Keep targetDepartmentRole for backward compatibility (set to null)
+      formData.targetDepartmentRole = null;
     }
 
     if (this.isEdit) {

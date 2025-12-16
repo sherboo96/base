@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CourseService, Course, CourseStatus } from '../../../services/course.service';
+import { CourseService, Course, CourseStatus, AdoptionType } from '../../../services/course.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingService } from '../../../services/loading.service';
@@ -9,6 +9,7 @@ import { LoadingComponent } from '../../../components/loading/loading.component'
 import { TranslationService } from '../../../services/translation.service';
 import { EnrollmentService, CourseEnrollment, EnrollmentStatus } from '../../../services/enrollment.service';
 import { AttachmentService } from '../../../services/attachment.service';
+import { AdoptionUserService, AdoptionUser } from '../../../services/adoption-user.service';
 
 @Component({
   selector: 'app-course-preview',
@@ -30,8 +31,11 @@ export class CoursePreviewComponent implements OnInit {
   EnrollmentStatus = EnrollmentStatus;
   CourseStatus = CourseStatus;
   Math = Math;
-  activeTab: 'overview' | 'instructor' = 'overview';
+  activeTab: 'overview' | 'instructor' | 'adoptionUsers' | 'courseContacts' = 'overview';
   currentLanguage: 'en' | 'ar' = 'en';
+  approvedEnrollmentsCount = 0;
+  AdoptionType = AdoptionType;
+  adoptionUsers: AdoptionUser[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -41,7 +45,9 @@ export class CoursePreviewComponent implements OnInit {
     public loadingService: LoadingService,
     private translationService: TranslationService,
     private enrollmentService: EnrollmentService,
-    private attachmentService: AttachmentService
+    private attachmentService: AttachmentService,
+    private adoptionUserService: AdoptionUserService,
+    private cdr: ChangeDetectorRef
   ) {
     // Get current language
     this.currentLanguage = this.translationService.getCurrentLanguage() as 'en' | 'ar';
@@ -73,6 +79,12 @@ export class CoursePreviewComponent implements OnInit {
         // Only check enrollment if course is published
         if (this.course?.status === CourseStatus.Published) {
           this.checkEnrollmentStatus();
+          this.loadApprovedEnrollmentsCount();
+        }
+        
+        // Load adoption users if course has adoption users
+        if (this.course?.adoptionUsers && this.course.adoptionUsers.length > 0) {
+          this.loadAdoptionUsers();
         }
       },
       error: (error: any) => {
@@ -140,8 +152,39 @@ export class CoursePreviewComponent implements OnInit {
     return currentTime < excuseDeadline;
   }
 
+  loadApprovedEnrollmentsCount(): void {
+    if (!this.course?.id) return;
+    
+    this.enrollmentService.getEnrollmentsByCourse(this.course.id, 1, 1000).subscribe({
+      next: (response: any) => {
+        let result: CourseEnrollment[] = [];
+        if (response && typeof response === 'object') {
+          result = response.result || response.Result || [];
+        }
+        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => e.status === EnrollmentStatus.Approve).length;
+      },
+      error: (error: any) => {
+        // Silently fail for seats calculation
+        console.error('Error loading enrollments for seats:', error);
+      }
+    });
+  }
+
+  getAvailableSeats(): number {
+    if (!this.course) return 0;
+    const totalSeats = this.course.availableSeats || 0;
+    return Math.max(0, totalSeats - this.approvedEnrollmentsCount);
+  }
+
   enrollInCourse(): void {
     if (!this.course?.id) return;
+    
+    // Check available seats before enrolling
+    const availableSeats = this.getAvailableSeats();
+    if (availableSeats < 1) {
+      this.toastr.error(this.translationService.instant('course.noSeatsAvailable'));
+      return;
+    }
     
     this.loadingService.show();
     this.enrollmentService.enrollInCourse(this.course.id).subscribe({
@@ -149,6 +192,8 @@ export class CoursePreviewComponent implements OnInit {
         this.toastr.success(this.translationService.instant('course.enrollSuccess'));
         this.loadingService.hide();
         this.isEnrolled = true;
+        this.checkEnrollmentStatus();
+        this.loadApprovedEnrollmentsCount(); // Refresh count after enrollment
       },
       error: (error: any) => {
         this.toastr.error(
@@ -285,6 +330,65 @@ export class CoursePreviewComponent implements OnInit {
       default:
         return this.translationService.instant('course.pending');
     }
+  }
+
+  loadAdoptionUsers(): void {
+    if (!this.course?.id || !this.course?.adoptionUsers) {
+      this.adoptionUsers = [];
+      return;
+    }
+    const adoptionUserIds = this.course.adoptionUsers.map(au => au.adoptionUserId);
+    this.adoptionUserService.getAdoptionUsers(1, 1000).subscribe({
+      next: (response: any) => {
+        this.adoptionUsers = (response.result || []).filter((au: any) => adoptionUserIds.includes(au.id));
+        this.cdr.detectChanges();
+      },
+      error: (error: any) => {
+        console.error('Error loading adoption users:', error);
+        this.adoptionUsers = [];
+      },
+    });
+  }
+
+  getAdoptionTypeLabel(type: AdoptionType): string {
+    switch (type) {
+      case AdoptionType.GatePass:
+        return this.translationService.instant('course.adoptionTypeGatePass');
+      case AdoptionType.OnlineMeeting:
+        return this.translationService.instant('course.adoptionTypeOnlineMeeting');
+      case AdoptionType.Other:
+        return this.translationService.instant('course.adoptionTypeOther');
+      default:
+        return '';
+    }
+  }
+
+  switchTab(tab: 'overview' | 'instructor' | 'adoptionUsers' | 'courseContacts'): void {
+    this.activeTab = tab;
+    if (tab === 'adoptionUsers' && this.adoptionUsers.length === 0 && this.course?.adoptionUsers) {
+      this.loadAdoptionUsers();
+    }
+  }
+
+  getAdoptionUserName(adoptionUser: any): string {
+    if (adoptionUser.adoptionUser?.name) {
+      return adoptionUser.adoptionUser.name;
+    }
+    const found = this.adoptionUsers.find(au => au.id === adoptionUser.adoptionUserId);
+    return found?.name || '-';
+  }
+
+  getAdoptionUserEmail(adoptionUser: any): string {
+    if (adoptionUser.adoptionUser?.email) {
+      return adoptionUser.adoptionUser.email;
+    }
+    const found = this.adoptionUsers.find(au => au.id === adoptionUser.adoptionUserId);
+    return found?.email || '';
+  }
+
+  getAdoptionUserInitial(adoptionUser: any): string {
+    const name = this.getAdoptionUserName(adoptionUser);
+    return name !== '-' ? name.charAt(0) : 'A';
   }
 }
 

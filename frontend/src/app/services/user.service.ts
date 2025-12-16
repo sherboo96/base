@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { StorageService } from './storage.service';
 
 export interface User {
   id: number;
@@ -67,7 +68,10 @@ export interface ADUserResponse {
 export class UserService {
   private baseUrl = environment.baseUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private storageService: StorageService
+  ) {}
 
   getUsers(page: number, pageSize: number): Observable<UserResponse> {
     return this.http.get<UserResponse>(
@@ -187,8 +191,26 @@ export class UserService {
     );
   }
 
-  getUserById(id: number): Observable<any> {
+  getUserById(id: string | number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/Users/${id}`);
+  }
+
+  getCurrentUser(): Observable<any> {
+    // Get current user ID from storage
+    const currentUser = this.storageService.getItem<any>('currentUser');
+    if (currentUser?.id) {
+      return this.getUserById(currentUser.id);
+    }
+    // Fallback: return empty observable
+    return of({ statusCode: 404, message: 'User not found', result: null });
+  }
+
+  getDepartments(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Departments?page=1&pageSize=1000`);
+  }
+
+  getJobTitles(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/JobTitles?page=1&pageSize=1000`);
   }
 
   // User Roles

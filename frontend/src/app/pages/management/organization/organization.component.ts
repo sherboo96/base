@@ -350,4 +350,32 @@ export class OrganizationComponent implements OnInit, OnDestroy {
       total: this.totalItems
     };
   }
+
+  getLoginMethodLabel(loginMethod?: number): string {
+    if (!loginMethod) return '-';
+    switch (loginMethod) {
+      case 1:
+        return 'OTP Verification';
+      case 2:
+        return 'Active Directory';
+      case 3:
+        return 'Credentials';
+      default:
+        return '-';
+    }
+  }
+
+  getLoginMethodBadgeClass(loginMethod?: number): string {
+    if (!loginMethod) return 'bg-gray-100 text-gray-800';
+    switch (loginMethod) {
+      case 1: // OTP Verification
+        return 'bg-blue-100 text-blue-800';
+      case 2: // Active Directory
+        return 'bg-purple-100 text-purple-800';
+      case 3: // Credentials
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
 }

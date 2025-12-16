@@ -110,7 +110,7 @@ public class SystemConfigurationService
         {
             LoginMethod.Credentials => "LoginMethod.Credentials.Enabled",
             LoginMethod.ActiveDirectory => "LoginMethod.ActiveDirectory.Enabled",
-            LoginMethod.KMNID => "LoginMethod.OTP.Enabled", // KMNID is OTP Verification
+            LoginMethod.OTPVerification => "LoginMethod.OTP.Enabled", // OTP Verification
             _ => null
         };
 

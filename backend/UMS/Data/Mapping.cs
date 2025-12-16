@@ -109,5 +109,27 @@ public class Mapping: Profile
         CreateMap<RolePermission, RolePermissionDto>().ReverseMap();
         CreateMap<RoleSystem, RoleSystemDto>().ReverseMap();
         CreateMap<UserSystem, UserSystemDto>().ReverseMap();
+
+        // Event
+        CreateMap<Event, EventDto>()
+            .ForMember(dest => dest.SpeakerIds, opt => opt.MapFrom(src => src.Speakers.Select(s => s.Id)))
+            .ForMember(dest => dest.Speakers, opt => opt.MapFrom(src => src.Speakers))
+            .ReverseMap()
+            .ForMember(dest => dest.Speakers, opt => opt.Ignore());
+
+        // EventSpeaker
+        CreateMap<EventSpeaker, EventSpeakerDto>().ReverseMap();
+
+        // EventOrganization
+        CreateMap<EventOrganization, EventOrganizationDto>().ReverseMap();
+
+        // EventRegistration
+        CreateMap<EventRegistration, EventRegistrationDto>()
+            .ForMember(dest => dest.Attendees, opt => opt.MapFrom(src => src.Attendees))
+            .ReverseMap()
+            .ForMember(dest => dest.Attendees, opt => opt.Ignore());
+
+        // EventAttendee
+        CreateMap<EventAttendee, EventAttendeeDto>().ReverseMap();
     }
 }

@@ -17,12 +17,13 @@ export class AuthGuard implements CanActivate {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): boolean {
-    const isLoggedIn = this.authService.isAuthenticated(); // Replace with your logic to check login status
+    const isLoggedIn = this.authService.isAuthenticated();
     const redirectIfLoggedIn = route.data['redirectIfLoggedIn'];
 
     if (isLoggedIn) {
       if (redirectIfLoggedIn) {
-        this.router.navigate(['/dashboard']); // Redirect logged-in users to the dashboard
+        // Redirect logged-in users away from login page
+        this.router.navigate(['/dashboard'], { replaceUrl: true });
         return false;
       }
       return true; // Allow access to protected routes
@@ -30,7 +31,8 @@ export class AuthGuard implements CanActivate {
       if (redirectIfLoggedIn) {
         return true; // Allow access to the login page if not logged in
       }
-      this.router.navigate(['/login']); // Redirect to login if not logged in
+      // Redirect to login if not logged in, using replaceUrl to prevent back navigation
+      this.router.navigate(['/login'], { replaceUrl: true });
       return false;
     }
   }

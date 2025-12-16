@@ -1,0 +1,189 @@
+<div class="profile-completion-wrapper flex items-center justify-center min-h-screen py-8 px-4 bg-gray-50 relative" style="z-index: 1;">
+    <app-loading></app-loading>
+    
+    <div class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden relative" style="z-index: 1; background-color: rgba(255, 255, 255, 0.95);">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-accent to-accentDark px-6 py-6 text-white">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+          <i class="fas fa-user-edit text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold font-poppins">{{ 'profileCompletion.title' | translate }}</h1>
+          <p class="text-sm text-white/90 mt-1">{{ 'profileCompletion.subtitle' | translate }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warning Message -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-6 mt-6">
+      <div class="flex items-start">
+        <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-1"></i>
+        <div>
+          <p class="text-sm text-yellow-800 font-poppins font-medium">
+            {{ 'profileCompletion.warningMessage' | translate }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+      <!-- Full Name (English) -->
+      <div class="form-group">
+        <label for="fullName" class="form-label" [ngClass]="{
+          'text-red-600': hasError('fullName'),
+          'text-gray-700': !hasError('fullName')
+        }">
+          {{ 'profileCompletion.fullName' | translate }} <span class="text-red-500">*</span>
+        </label>
+        <div class="input-wrapper">
+          <div class="input-icon-left">
+            <i class="fas fa-user" [ngClass]="{
+              'text-red-500': hasError('fullName'),
+              'text-gray-400': !hasError('fullName')
+            }"></i>
+          </div>
+          <input 
+            type="text" 
+            id="fullName" 
+            formControlName="fullName" 
+            class="form-input" 
+            [ngClass]="{
+              'input-error': hasError('fullName'),
+              'input-success': profileForm.get('fullName')?.valid && profileForm.get('fullName')?.touched
+            }"
+            [placeholder]="'profileCompletion.fullNamePlaceholder' | translate"
+          />
+        </div>
+        <div *ngIf="hasError('fullName')" class="error-message">
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ getErrorMessage('fullName') }}
+        </div>
+      </div>
+
+      <!-- Full Name (Arabic) -->
+      <div class="form-group">
+        <label for="fullNameAr" class="form-label" [ngClass]="{
+          'text-red-600': hasError('fullNameAr'),
+          'text-gray-700': !hasError('fullNameAr')
+        }">
+          {{ 'profileCompletion.fullNameAr' | translate }} <span class="text-red-500">*</span>
+        </label>
+        <div class="input-wrapper">
+          <div class="input-icon-left">
+            <i class="fas fa-user" [ngClass]="{
+              'text-red-500': hasError('fullNameAr'),
+              'text-gray-400': !hasError('fullNameAr')
+            }"></i>
+          </div>
+          <input 
+            type="text" 
+            id="fullNameAr" 
+            formControlName="fullNameAr" 
+            class="form-input" 
+            dir="rtl"
+            [ngClass]="{
+              'input-error': hasError('fullNameAr'),
+              'input-success': profileForm.get('fullNameAr')?.valid && profileForm.get('fullNameAr')?.touched
+            }"
+            [placeholder]="'profileCompletion.fullNameArPlaceholder' | translate"
+          />
+        </div>
+        <div *ngIf="hasError('fullNameAr')" class="error-message">
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ getErrorMessage('fullNameAr') }}
+        </div>
+      </div>
+
+      <!-- Department -->
+      <div class="form-group">
+        <label for="departmentId" class="form-label" [ngClass]="{
+          'text-red-600': hasError('departmentId'),
+          'text-gray-700': !hasError('departmentId')
+        }">
+          {{ 'profileCompletion.department' | translate }} <span class="text-red-500">*</span>
+        </label>
+        <div class="input-wrapper">
+          <div class="input-icon-left">
+            <i class="fas fa-building" [ngClass]="{
+              'text-red-500': hasError('departmentId'),
+              'text-gray-400': !hasError('departmentId')
+            }"></i>
+          </div>
+          <select 
+            id="departmentId" 
+            formControlName="departmentId" 
+            class="form-input"
+            [ngClass]="{
+              'input-error': hasError('departmentId'),
+              'input-success': profileForm.get('departmentId')?.valid && profileForm.get('departmentId')?.touched
+            }"
+          >
+            <option value="">{{ 'profileCompletion.selectDepartment' | translate }}</option>
+            <option *ngFor="let dept of departments" [value]="dept.id" [attr.data-id]="dept.id">
+              {{ dept.nameEn || dept.name }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="hasError('departmentId')" class="error-message">
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ getErrorMessage('departmentId') }}
+        </div>
+      </div>
+
+      <!-- Job Title -->
+      <div class="form-group">
+        <label for="jobTitleId" class="form-label" [ngClass]="{
+          'text-red-600': hasError('jobTitleId'),
+          'text-gray-700': !hasError('jobTitleId')
+        }">
+          {{ 'profileCompletion.jobTitle' | translate }} <span class="text-red-500">*</span>
+        </label>
+        <div class="input-wrapper">
+          <div class="input-icon-left">
+            <i class="fas fa-briefcase" [ngClass]="{
+              'text-red-500': hasError('jobTitleId'),
+              'text-gray-400': !hasError('jobTitleId')
+            }"></i>
+          </div>
+          <select 
+            id="jobTitleId" 
+            formControlName="jobTitleId" 
+            class="form-input"
+            [ngClass]="{
+              'input-error': hasError('jobTitleId'),
+              'input-success': profileForm.get('jobTitleId')?.valid && profileForm.get('jobTitleId')?.touched
+            }"
+          >
+            <option value="">{{ 'profileCompletion.selectJobTitle' | translate }}</option>
+            <option *ngFor="let jobTitle of jobTitles" [value]="jobTitle.id" [attr.data-id]="jobTitle.id">
+              {{ jobTitle.nameEn || jobTitle.name }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="hasError('jobTitleId')" class="error-message">
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ getErrorMessage('jobTitleId') }}
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="flex justify-end pt-4">
+        <button 
+          type="submit" 
+          [disabled]="profileForm.invalid" 
+          [ngClass]="{
+            'opacity-70 cursor-not-allowed': profileForm.invalid,
+            'hover:bg-accentDark': profileForm.valid
+          }"
+          class="w-full md:w-auto px-8 py-3 bg-accent text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/30 transform hover:-translate-y-0.5 flex justify-center items-center font-poppins font-semibold"
+        >
+          <i class="fas fa-check-circle mr-2"></i>
+          {{ 'profileCompletion.submit' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

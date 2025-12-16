@@ -53,7 +53,7 @@
   /* Enhanced Global Scrollbar Styling - Cannot use Tailwind for pseudo-elements */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #c9ae81 #f9fafb;
+    scrollbar-color: #095663 #f9fafb;
   }
 
   *::-webkit-scrollbar {

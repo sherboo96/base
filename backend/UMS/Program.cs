@@ -77,6 +77,11 @@ builder.Services.AddScoped<OrganizationAccessService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(Mapping)));
 
+// Configure Database Logging
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.AddProvider(new DatabaseLoggerProvider(builder.Services.BuildServiceProvider()));
+
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

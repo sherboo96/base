@@ -1,0 +1,188 @@
+<div class="dialog-content">
+  <!-- Header Section -->
+  <div class="dialog-header p-6 pb-4 border-b border-gray-200">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-accent/10 rounded-lg">
+        <i class="material-icons text-accent text-xl">verified</i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-textDark font-poppins">
+          {{
+            isEdit
+              ? ('courseTabApproval.editApproval' | translate)
+              : ('courseTabApproval.addApproval' | translate)
+          }}
+        </h2>
+        <p class="text-sm text-gray-600 mt-1 font-poppins">
+          {{
+            isEdit
+              ? ('courseTabApproval.editApprovalDescription' | translate)
+              : ('courseTabApproval.addApprovalDescription' | translate)
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable Form Content -->
+  <div class="form-scroll-container p-6">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Course Tab -->
+      <div class="space-y-2">
+        <label for="courseTabId" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTabApproval.courseTab' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-folder text-gray-400"></i>
+          </div>
+          <select
+            id="courseTabId"
+            formControlName="courseTabId"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins appearance-none bg-white"
+            [disabled]="isEdit"
+          >
+            <option [value]="null">{{ 'courseTabApproval.selectCourseTab' | translate }}</option>
+            <option *ngFor="let tab of courseTabs" [value]="tab.id">
+              {{ tab.name }}
+            </option>
+          </select>
+          <div
+            class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+          >
+            <i class="fas fa-chevron-down text-gray-400"></i>
+          </div>
+        </div>
+        <div
+          *ngIf="form.get('courseTabId')?.invalid && form.get('courseTabId')?.touched"
+          class="flex items-center text-sm text-red-600"
+        >
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          {{ 'courseTabApproval.courseTabRequired' | translate }}
+        </div>
+      </div>
+
+      <!-- Approval Order -->
+      <div class="space-y-2">
+        <label for="approvalOrder" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTabApproval.approvalOrder' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-sort-numeric-up text-gray-400"></i>
+          </div>
+          <input
+            type="number"
+            id="approvalOrder"
+            formControlName="approvalOrder"
+            min="1"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'courseTabApproval.approvalOrderPlaceholder' | translate"
+          />
+        </div>
+        <div
+          *ngIf="form.get('approvalOrder')?.invalid && form.get('approvalOrder')?.touched"
+          class="flex items-center text-sm text-red-600"
+        >
+          <i class="fas fa-exclamation-circle mr-1"></i>
+          <span *ngIf="form.get('approvalOrder')?.errors?.['required']">
+            {{ 'courseTabApproval.approvalOrderRequired' | translate }}
+          </span>
+          <span *ngIf="form.get('approvalOrder')?.errors?.['min']">
+            {{ 'courseTabApproval.approvalOrderMin' | translate }}
+          </span>
+        </div>
+        <p class="text-xs text-gray-500">
+          {{ 'courseTabApproval.approvalOrderHint' | translate }}
+        </p>
+        <p class="text-xs text-gray-500">
+          {{ 'courseTabApproval.approvalOrderNote' | translate }}
+        </p>
+      </div>
+
+      <!-- Is Head Approval -->
+      <div class="space-y-2">
+        <label class="flex items-center space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="isHeadApproval"
+            class="w-5 h-5 text-accent border-gray-300 rounded focus:ring-accent"
+          />
+          <span class="text-sm font-medium text-textDark font-poppins">
+            {{ 'courseTabApproval.isHeadApproval' | translate }}
+          </span>
+        </label>
+        <p class="text-xs text-gray-500 ml-8">
+          {{ 'courseTabApproval.isHeadApprovalHint' | translate }}
+        </p>
+        <p class="text-xs text-gray-500 ml-8">
+          {{ 'courseTabApproval.isHeadApprovalNote' | translate }}
+        </p>
+      </div>
+
+      <!-- Role -->
+      <div class="space-y-2">
+        <label for="roleId" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'courseTabApproval.role' | translate }}
+        </label>
+        <div class="relative">
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <i class="fas fa-user-shield text-gray-400"></i>
+          </div>
+          <select
+            id="roleId"
+            formControlName="roleId"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins appearance-none bg-white"
+            [disabled]="form.get('isHeadApproval')?.value"
+          >
+            <option [value]="null">{{ 'courseTabApproval.selectRole' | translate }}</option>
+            <option *ngFor="let role of roles" [value]="role.id">
+              {{ role.name }}
+            </option>
+          </select>
+          <div
+            class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+          >
+            <i class="fas fa-chevron-down text-gray-400"></i>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500">
+          {{ 'courseTabApproval.roleHint' | translate }}
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <!-- Actions -->
+  <div class="dialog-actions p-6 pt-4 border-t border-gray-200 flex justify-end gap-3">
+    <button
+      type="button"
+      (click)="cancel()"
+      class="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 font-medium text-sm font-poppins"
+    >
+      {{ 'common.cancel' | translate }}
+    </button>
+    <button
+      type="button"
+      (click)="onSubmit()"
+      [disabled]="isSubmitting || form.invalid"
+      class="px-6 py-2.5 bg-accent hover:bg-accentDark text-white rounded-lg transition-all duration-200 font-medium text-sm font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span *ngIf="!isSubmitting">
+        {{ isEdit ? ('common.update' | translate) : ('common.create' | translate) }}
+      </span>
+      <span *ngIf="isSubmitting">
+        {{ isEdit ? ('common.updating' | translate) : ('common.creating' | translate) }}
+      </span>
+    </button>
+  </div>
+</div>
+

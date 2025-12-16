@@ -8,7 +8,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(240, 240, 240);
+  background: rgb(9, 86, 99);
   border-radius: 10px;
 }
 
@@ -26,6 +26,6 @@ html.rtl .side-menu-container li a.border-l-4 {
 
 html[dir="rtl"] .side-menu-container li a.border-accentOld,
 html.rtl .side-menu-container li a.border-accentOld {
-  border-right-color: rgb(201, 174, 129) !important;
+  border-right-color: rgb(9, 86, 99) !important;
   border-left: 0 !important;
 }

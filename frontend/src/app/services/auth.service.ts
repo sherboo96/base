@@ -92,13 +92,28 @@ export class AuthService {
     );
   }
 
+  // Check if profile completion is required
+  isProfileCompletionRequired(): Observable<any> {
+    return this.http.get(`${environment.baseUrl}/Authentications/profile-completion-required`);
+  }
+
   logout(): void {
+    // Clear all encrypted storage items
     this.storageService.removeItem('token');
     this.storageService.removeItem('currentUser');
     this.storageService.removeItem('userPermissions');
     this.storageService.removeItem('sideMenuPermissions');
     this.storageService.removeItem('userRoles');
+    
+    // Clear non-encrypted localStorage items (like username, rememberMe)
+    localStorage.removeItem('username');
+    localStorage.removeItem('rememberMe');
+    
+    // Update BehaviorSubject
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']); // Redirect to login page
+    
+    // Use window.location.href for a full page reload to ensure clean state
+    // This ensures all components are reinitialized and guards are re-evaluated
+    window.location.href = '/login';
   }
 }

@@ -65,7 +65,8 @@ public class LocationsController : ControllerBase
              x.Name.ToLower().Contains(searchLower) ||
              (x.NameAr != null && x.NameAr.ToLower().Contains(searchLower)) ||
              (x.Floor != null && x.Floor.ToLower().Contains(searchLower)) ||
-             (x.Building != null && x.Building.ToLower().Contains(searchLower))) &&
+             (x.Building != null && x.Building.ToLower().Contains(searchLower)) ||
+             (x.Url != null && x.Url.ToLower().Contains(searchLower))) &&
             (!effectiveOrgFilter.HasValue || x.OrganizationId == effectiveOrgFilter.Value) &&
             (!hasCategoryFilter || !categoryFilter.HasValue || x.Category == categoryFilter.Value);
 
@@ -131,6 +132,7 @@ public class LocationsController : ControllerBase
         existing.OrganizationId = dto.OrganizationId;
         existing.Logo = dto.Logo;
         existing.Template = dto.Template;
+        existing.Url = dto.Url;
         existing.UpdatedAt = DateTime.Now;
 
         var updated = await _unitOfWork.Locations.UpdateAsync(existing);

@@ -11,6 +11,7 @@ public class Organization: BaseModel
     public string Domain { get; set; } // e.g., moo.gov.kw
     public bool IsMain { get; set; } = false; // Only one organization can be main
     public string? AllowedLoginMethods { get; set; } // JSON array of LoginMethod enum values, e.g., "[2,3]" for ActiveDirectory and Credentials
+    public LoginMethod DefaultLoginMethod { get; set; } = LoginMethod.OTPVerification; // Default login method for new user registrations
 
     [JsonIgnore]
     public ICollection<Department> Departments { get; set; }

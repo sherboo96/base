@@ -29,6 +29,8 @@ public class LoginUserDto
     public bool emailConfirmed { get; set; }
     public bool isTemporaryPassword { get; set; }
     public bool emailVerified { get; set; }
+    public int? departmentId { get; set; }
+    public string? departmentRole { get; set; }
 }
 
 public class LoginRoleDto

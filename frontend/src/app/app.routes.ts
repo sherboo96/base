@@ -23,10 +23,17 @@ import { SegmentComponent } from './pages/management/segment/segment.component';
 import { SystemConfigurationComponent } from './pages/management/system-configuration/system-configuration.component';
 import { AdoptionUserComponent } from './pages/management/adoption-user/adoption-user.component';
 import { CourseTabComponent } from './pages/management/course-tab/course-tab.component';
+import { LogsComponent } from './pages/management/logs/logs.component';
 import { CourseDetailComponent } from './pages/courses/course-detail/course-detail.component';
+import { ProfileCompletionComponent } from './pages/profile-completion/profile-completion.component';
+import { ProfileCompletionGuard } from './guards/profile-completion.guard';
 import { CourseComponent } from './pages/management/course/course.component';
 import { CourseDetailsComponent } from './pages/management/course/course-details/course-details.component';
 import { CoursePreviewComponent } from './pages/courses/course-preview/course-preview.component';
+import { EventRegistrationComponent } from './pages/events/event-registration/event-registration.component';
+import { EventComponent } from './pages/management/event/event.component';
+import { EventOrganizationComponent } from './pages/management/event-organization/event-organization.component';
+import { EventSpeakerComponent } from './pages/management/event-speaker/event-speaker.component';
 
 export const routes: Routes = [
   {
@@ -42,19 +49,33 @@ export const routes: Routes = [
   },
   { path: 'unauthorized', component: UnauthorizedComponent }, // Unauthorized screen
   {
+    path: 'events/:code',
+    component: EventRegistrationComponent,
+    data: { hideNavigation: true }, // Hide side-menu and navbar for public routes
+    // No AuthGuard - public route
+  },
+  {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'DASHBOARD_VIEW',
+    },
+  },
+  {
+    path: 'requests',
+    component: RequestComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard],
+    data: {
+      redirectIfLoggedIn: false,
     },
   },
 
   {
     path: 'management/organization',
     component: OrganizationComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'ORGANIZATIONS_VIEW',
@@ -63,7 +84,7 @@ export const routes: Routes = [
   {
     path: 'management/department',
     component: DepartmentComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'DEPARTMENTS_VIEW',
@@ -72,7 +93,7 @@ export const routes: Routes = [
   {
     path: 'management/segment',
     component: SegmentComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'SEGMENTS_VIEW',
@@ -81,7 +102,7 @@ export const routes: Routes = [
   {
     path: 'management/positions',
     component: PositionComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'JOB_TITLES_VIEW',
@@ -90,7 +111,7 @@ export const routes: Routes = [
   {
     path: 'management/job-titles',
     component: JobTitleComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'JOB_TITLES_VIEW',
@@ -99,7 +120,7 @@ export const routes: Routes = [
   {
     path: 'management/location',
     component: LocationComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'LOCATIONS_VIEW',
@@ -108,7 +129,7 @@ export const routes: Routes = [
   {
     path: 'management/instructor',
     component: InstructorComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'INSTRUCTORS_VIEW',
@@ -117,7 +138,7 @@ export const routes: Routes = [
   {
     path: 'management/institution',
     component: InstitutionComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'INSTITUTIONS_VIEW',
@@ -126,7 +147,7 @@ export const routes: Routes = [
   {
     path: 'management/users',
     component: UserComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'USERS_VIEW',
@@ -135,7 +156,7 @@ export const routes: Routes = [
   {
     path: 'management/permissions',
     component: PermissionsComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'PERMISSIONS_VIEW',
@@ -144,7 +165,7 @@ export const routes: Routes = [
   {
     path: 'management/rolePermissions',
     component: RolePermissionsComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'ROLE_PERMISSIONS_VIEW',
@@ -153,7 +174,7 @@ export const routes: Routes = [
   {
     path: 'management/roles',
     component: RolesComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'ROLES_VIEW',
@@ -162,7 +183,7 @@ export const routes: Routes = [
   {
     path: 'management/userRoles',
     component: UserRolesComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'USER_ROLES_VIEW',
@@ -171,25 +192,79 @@ export const routes: Routes = [
   {
     path: 'management/system-configuration',
     component: SystemConfigurationComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'SYSTEM_CONFIG_VIEW',
     },
   },
   {
+    path: 'management/logs',
+    component: LogsComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'LOGS_VIEW',
+    },
+  },
+  {
     path: 'management/adoption-user',
     component: AdoptionUserComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'ADOPTION_USERS_VIEW',
     },
   },
   {
+    path: 'management/events',
+    component: EventComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'EVENTS_VIEW',
+    },
+  },
+  {
+    path: 'management/event-organizations',
+    component: EventOrganizationComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'EVENT_ORGANIZATIONS_VIEW',
+    },
+  },
+  {
+    path: 'management/event-speakers',
+    component: EventSpeakerComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'EVENT_SPEAKERS_VIEW',
+    },
+  },
+  {
     path: 'management/course-tab',
     component: CourseTabComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TABS_VIEW',
+    },
+  },
+  {
+    path: 'management/course-tab-approvals',
+    loadComponent: () => import('./pages/management/course-tab-approval/course-tab-approval.component').then(m => m.CourseTabApprovalComponent),
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'COURSE_TAB_APPROVALS_VIEW',
+    },
+  },
+  {
+    path: 'management/courses',
+    component: CourseComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'COURSE_TABS_VIEW',
@@ -198,16 +273,7 @@ export const routes: Routes = [
   {
     path: 'management/courses',
     component: CourseComponent,
-    canActivate: [AuthGuard, PermissionGuard],
-    data: {
-      redirectIfLoggedIn: false,
-      permission: 'COURSE_TABS_VIEW',
-    },
-  },
-  {
-    path: 'management/courses',
-    component: CourseComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'COURSE_TABS_VIEW',
@@ -216,7 +282,7 @@ export const routes: Routes = [
   {
     path: 'management/courses/:courseTabId',
     component: CourseComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'COURSE_TABS_VIEW',
@@ -225,7 +291,7 @@ export const routes: Routes = [
   {
     path: 'management/courses/details/:id',
     component: CourseDetailsComponent,
-    canActivate: [AuthGuard, PermissionGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,
       permission: 'COURSE_TABS_VIEW',
@@ -234,7 +300,7 @@ export const routes: Routes = [
   {
     path: 'courses/:routeCode',
     component: CourseComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard],
     data: {
       redirectIfLoggedIn: false,
     },
@@ -242,7 +308,7 @@ export const routes: Routes = [
   {
     path: 'courses/:routeCode/preview/:id',
     component: CoursePreviewComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard],
     data: {
       redirectIfLoggedIn: false,
     },
@@ -250,15 +316,24 @@ export const routes: Routes = [
   {
     path: 'management/courses/:routeCode',
     component: CourseDetailComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard],
     data: {
       redirectIfLoggedIn: false,
     },
   },
   {
+    path: 'profile-completion',
+    component: ProfileCompletionComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+    },
+    // Note: ProfileCompletionGuard is NOT added here to allow access to this page
+  },
+  {
     path: 'profile',
     component: ProfileComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, ProfileCompletionGuard],
     data: {
       redirectIfLoggedIn: false,
     },

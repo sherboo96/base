@@ -20,6 +20,13 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; }
     IBaseRepository<CourseTab, CourseTabDto> CourseTabs { get; }
     IBaseRepository<Course, CourseDto> Courses { get; }
+    IBaseRepository<CourseTabApproval, CourseTabApprovalDto> CourseTabApprovals { get; }
+    IBaseRepository<CourseEnrollmentApproval, CourseEnrollmentApprovalDto> CourseEnrollmentApprovals { get; }
+    IBaseRepository<Event, EventDto> Events { get; }
+    IBaseRepository<EventSpeaker, EventSpeakerDto> EventSpeakers { get; }
+    IBaseRepository<EventOrganization, EventOrganizationDto> EventOrganizations { get; }
+    IBaseRepository<EventRegistration, EventRegistrationDto> EventRegistrations { get; }
+    IBaseRepository<EventAttendee, EventAttendeeDto> EventAttendees { get; }
 
     IBaseRepository<UserRole, UserRoleDto> UserRoles { get; }
     IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; }

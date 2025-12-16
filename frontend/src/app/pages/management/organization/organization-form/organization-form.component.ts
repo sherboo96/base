@@ -31,6 +31,7 @@ export class OrganizationFormComponent implements OnInit {
   form: FormGroup;
   isEdit = false;
   isSubmitting = false;
+  loginMethods: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -45,25 +46,38 @@ export class OrganizationFormComponent implements OnInit {
       code: ['', Validators.required],
       domain: ['', [Validators.required, this.domainValidator]],
       isMain: [false],
+      defaultLoginMethod: [1, Validators.required], // Default to OTPVerification (1)
     });
 
     if (this.dialogRef.data?.organization) {
       this.isEdit = true;
+      const defaultLoginMethod = this.dialogRef.data.organization.defaultLoginMethod;
       this.form.patchValue({
         name: this.dialogRef.data.organization.name || '',
         nameAr: this.dialogRef.data.organization.nameAr || '',
         code: this.dialogRef.data.organization.code || '',
         domain: this.dialogRef.data.organization.domain || '',
         isMain: this.dialogRef.data.organization.isMain || false,
+        defaultLoginMethod: defaultLoginMethod ? (typeof defaultLoginMethod === 'number' ? defaultLoginMethod : parseInt(defaultLoginMethod.toString())) : 1,
       });
     }
   }
 
   ngOnInit(): void {
+    this.loadLoginMethods();
     // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
     setTimeout(() => {
       this.cdr.detectChanges();
     }, 0);
+  }
+
+  loadLoginMethods(): void {
+    // Load all available login methods
+    this.loginMethods = [
+      { id: 1, name: 'OTP Verification' },
+      { id: 2, name: 'Active Directory' },
+      { id: 3, name: 'Credentials' }
+    ];
   }
 
   domainValidator(control: AbstractControl): ValidationErrors | null {
@@ -87,12 +101,18 @@ export class OrganizationFormComponent implements OnInit {
     const formData = this.form.value;
     
     // Ensure all required fields are included
+    // Convert defaultLoginMethod to number (HTML select returns string)
+    const defaultLoginMethodValue = typeof formData.defaultLoginMethod === 'string' 
+      ? parseInt(formData.defaultLoginMethod) 
+      : (formData.defaultLoginMethod || 1);
+    
     const payload = {
       name: formData.name,
       nameAr: formData.nameAr || '',
       code: formData.code,
       domain: formData.domain,
       isMain: formData.isMain || false,
+      defaultLoginMethod: defaultLoginMethodValue,
     };
 
     if (this.isEdit) {

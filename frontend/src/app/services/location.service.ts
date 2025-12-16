@@ -25,6 +25,7 @@ export interface Location {
   };
   logo?: string;
   template?: string;
+  url?: string;
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;

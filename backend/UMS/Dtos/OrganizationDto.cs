@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using UMS.Models;
+
 namespace UMS.Dtos;
 
 public class OrganizationDto
@@ -9,5 +12,8 @@ public class OrganizationDto
     public string Domain { get; set; }
     public bool IsMain { get; set; }
     public string? AllowedLoginMethods { get; set; }
+    
+    public LoginMethod DefaultLoginMethod { get; set; } = LoginMethod.OTPVerification;
+    
     public bool IsActive { get; set; }
 }

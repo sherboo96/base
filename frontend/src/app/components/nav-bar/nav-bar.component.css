@@ -16,3 +16,13 @@ html[dir="rtl"] nav.fixed .text-right,
 html.rtl nav.fixed .text-right {
   text-align: right !important;
 }
+
+/* RTL animation for breadcrumb chevron */
+@keyframes slideLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-4px);
+  }
+}

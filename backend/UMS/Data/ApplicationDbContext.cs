@@ -28,7 +28,18 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; set; }
     public DbSet<CourseContent> CourseContents { get; set; }
     public DbSet<CourseInstructor> CourseInstructors { get; set; }
+    public DbSet<CourseAdoptionUser> CourseAdoptionUsers { get; set; }
+    public DbSet<CourseContact> CourseContacts { get; set; }
     public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
+    public DbSet<CourseTabApproval> CourseTabApprovals { get; set; }
+    public DbSet<CourseEnrollmentApproval> CourseEnrollmentApprovals { get; set; }
+    public DbSet<Event> Events { get; set; }
+    public DbSet<EventSpeaker> EventSpeakers { get; set; }
+    public DbSet<EventOrganization> EventOrganizations { get; set; }
+    public DbSet<EventRegistration> EventRegistrations { get; set; }
+    public DbSet<EventAttendee> EventAttendees { get; set; }
+    public DbSet<CourseAttendance> CourseAttendances { get; set; }
+    public DbSet<Log> Logs { get; set; }
 
     public new DbSet<UserRole> UserRoles { get; set; }
     public DbSet<UserSegment> UserSegments { get; set; }
@@ -166,6 +177,35 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 
+        // CourseTabApproval relationship
+        modelBuilder.Entity<CourseTabApproval>()
+            .HasOne(cta => cta.CourseTab)
+            .WithMany(ct => ct.Approvals)
+            .HasForeignKey(cta => cta.CourseTabId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        modelBuilder.Entity<CourseTabApproval>()
+            .HasOne(cta => cta.Role)
+            .WithMany()
+            .HasForeignKey(cta => cta.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // CourseEnrollmentApproval relationship
+        modelBuilder.Entity<CourseEnrollmentApproval>()
+            .HasOne(cea => cea.CourseEnrollment)
+            .WithMany(ce => ce.ApprovalSteps)
+            .HasForeignKey(cea => cea.CourseEnrollmentId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        modelBuilder.Entity<CourseEnrollmentApproval>()
+            .HasOne(cea => cea.CourseTabApproval)
+            .WithMany(cta => cta.EnrollmentApprovals)
+            .HasForeignKey(cea => cea.CourseTabApprovalId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
         // CourseInstructor many-to-many relationship
         modelBuilder.Entity<CourseInstructor>()
             .HasKey(ci => new { ci.CourseId, ci.InstructorId });
@@ -182,6 +222,32 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .WithMany()
             .HasForeignKey(ci => ci.InstructorId)
             .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // CourseAdoptionUser many-to-many relationship
+        modelBuilder.Entity<CourseAdoptionUser>()
+            .HasKey(cau => new { cau.CourseId, cau.AdoptionUserId });
+
+        modelBuilder.Entity<CourseAdoptionUser>()
+            .HasOne(cau => cau.Course)
+            .WithMany(c => c.CourseAdoptionUsers)
+            .HasForeignKey(cau => cau.CourseId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        modelBuilder.Entity<CourseAdoptionUser>()
+            .HasOne(cau => cau.AdoptionUser)
+            .WithMany()
+            .HasForeignKey(cau => cau.AdoptionUserId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // CourseContact relationship
+        modelBuilder.Entity<CourseContact>()
+            .HasOne(cc => cc.Course)
+            .WithMany(c => c.CourseContacts)
+            .HasForeignKey(cc => cc.CourseId)
+            .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 
         // CourseEnrollment relationships
@@ -220,8 +286,61 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasForeignKey(us => us.SegmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Event relationships
+        modelBuilder.Entity<Event>()
+            .HasOne(e => e.Location)
+            .WithMany()
+            .HasForeignKey(e => e.LocationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EventSpeaker>()
+            .HasOne(es => es.Event)
+            .WithMany(e => e.Speakers)
+            .HasForeignKey(es => es.EventId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // EventRegistration relationships
+        modelBuilder.Entity<EventRegistration>()
+            .HasOne(er => er.Event)
+            .WithMany(e => e.Registrations)
+            .HasForeignKey(er => er.EventId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        modelBuilder.Entity<EventRegistration>()
+            .HasOne(er => er.EventOrganization)
+            .WithMany(eo => eo.Registrations)
+            .HasForeignKey(er => er.EventOrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // EventAttendee relationships
+        modelBuilder.Entity<EventAttendee>()
+            .HasOne(ea => ea.EventRegistration)
+            .WithMany(er => er.Attendees)
+            .HasForeignKey(ea => ea.EventRegistrationId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // Unique constraint: Event Code must be unique
+        modelBuilder.Entity<Event>()
+            .HasIndex(e => e.Code)
+            .IsUnique();
+
+        // Unique constraint: EventRegistration Barcode must be unique
+        modelBuilder.Entity<EventRegistration>()
+            .HasIndex(er => er.Barcode)
+            .IsUnique();
+
         // Check constraint: DepartmentId is required if Organization.IsMain is true
         // Note: This is a database-level constraint that will be enforced via migration
+        // CourseAttendance relationship
+        modelBuilder.Entity<CourseAttendance>()
+            .HasOne(ca => ca.CourseEnrollment)
+            .WithMany()
+            .HasForeignKey(ca => ca.CourseEnrollmentId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
     }
 
 }

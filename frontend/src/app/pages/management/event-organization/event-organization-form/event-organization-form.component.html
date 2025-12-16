@@ -1,0 +1,87 @@
+<div class="p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-accent/10 rounded-lg">
+                <i class="fas fa-building text-accent text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-textDark font-poppins">
+                    {{ isEdit ? ('eventOrganization.editOrganization' | translate) : ('eventOrganization.addOrganization' | translate) }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-1 font-poppins">
+                    {{
+                        isEdit
+                            ? ('eventOrganization.editOrganizationDescription' | translate)
+                            : ('eventOrganization.addOrganizationDescription' | translate)
+                    }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Name -->
+        <div class="space-y-2">
+            <label for="name" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventOrganization.name'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-building text-gray-400"></i>
+                </div>
+                <input
+                    id="name"
+                    type="text"
+                    formControlName="name"
+                    class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                    [class.border-red-500]="form.get('name')?.invalid && form.get('name')?.touched"
+                    [placeholder]="'eventOrganization.namePlaceholder' | translate"
+                />
+            </div>
+            <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- Name (Arabic) -->
+        <div class="space-y-2">
+            <label for="nameAr" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventOrganization.nameAr'|translate}}
+            </label>
+            <input
+                id="nameAr"
+                type="text"
+                formControlName="nameAr"
+                dir="rtl"
+                class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+                [placeholder]="'eventOrganization.nameArPlaceholder' | translate"
+            />
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <button
+                type="button"
+                (click)="onCancel()"
+                class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+            >
+                {{ 'common.cancel' | translate }}
+            </button>
+            <button
+                type="submit"
+                [disabled]="isSubmitting || form.invalid"
+                class="px-6 py-2.5 bg-accentDark text-white rounded-lg hover:bg-accentDarker transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
+            >
+                <span *ngIf="!isSubmitting">
+                    {{ isEdit ? ('common.update' | translate) : ('common.save' | translate) }}
+                </span>
+                <span *ngIf="isSubmitting">
+                    {{ isEdit ? ('common.updating' | translate) : ('common.saving' | translate) }}
+                </span>
+            </button>
+        </div>
+    </form>
+</div>
+

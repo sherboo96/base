@@ -11,7 +11,8 @@ export enum CourseStatus {
   Active = 4,
   Completed = 5,
   Canceled = 6,
-  Archived = 7
+  Archived = 7,
+  Rescheduled = 8
 }
 
 export enum CourseLanguage {
@@ -36,6 +37,12 @@ export enum TargetUserType {
   SpecificOrganizationSegment = 7 // For non-main organizations
 }
 
+export enum AdoptionType {
+  GatePass = 1,
+  OnlineMeeting = 2,
+  Other = 3
+}
+
 export interface CourseLearningOutcome {
   id?: number;
   name: string;
@@ -48,6 +55,22 @@ export interface CourseContent {
   name: string;
   nameAr?: string;
   courseId?: number;
+}
+
+export interface CourseAdoptionUser {
+  id?: number;
+  courseId?: number;
+  adoptionUserId: number;
+  adoptionUser?: any;
+  adoptionType: AdoptionType;
+}
+
+export interface CourseContact {
+  id?: number;
+  courseId?: number;
+  name: string;
+  phoneNumber?: string;
+  emailAddress?: string;
 }
 
 export interface Course {
@@ -79,11 +102,14 @@ export interface Course {
   courseContents?: CourseContent[];
   instructorIds?: number[];
   instructors?: any[];
+  adoptionUsers?: CourseAdoptionUser[];
+  courseContacts?: CourseContact[];
   isActive?: boolean;
   isDeleted?: boolean;
   targetUserType?: TargetUserType;
   targetDepartmentIds?: number[];
-  targetDepartmentRole?: string; // "Head", "Member", or "Both"
+  targetDepartmentRole?: string; // "Head", "Member", or "Both" - DEPRECATED: Use targetDepartmentRoles instead
+  targetDepartmentRoles?: { [key: number]: string }; // Dictionary mapping department IDs to roles, e.g., {1: "Head", 2: "Member", 3: "Both"}
   targetOrganizationIds?: number[];
   targetSegmentIds?: number[];
   createdAt?: string;
@@ -124,7 +150,7 @@ export class CourseService {
     this.courseChanged$.next();
   }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getCourses(
     page: number = 1,

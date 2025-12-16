@@ -32,12 +32,15 @@ public class CourseDto
     public List<CourseContentDto> CourseContents { get; set; } = new();
     public List<int> InstructorIds { get; set; } = new();
     public List<InstructorDto> Instructors { get; set; } = new();
+    public List<CourseAdoptionUserDto> AdoptionUsers { get; set; } = new();
+    public List<CourseContactDto> CourseContacts { get; set; } = new();
     public bool IsActive { get; set; } = true;
     
     // Target User Configuration
     public TargetUserType? TargetUserType { get; set; }
     public List<int>? TargetDepartmentIds { get; set; }
-    public string? TargetDepartmentRole { get; set; } // "Head", "Member", or "Both"
+    public string? TargetDepartmentRole { get; set; } // "Head", "Member", or "Both" - DEPRECATED: Use TargetDepartmentRoles instead
+    public Dictionary<int, string>? TargetDepartmentRoles { get; set; } // Dictionary mapping department IDs to roles, e.g., {1: "Head", 2: "Member", 3: "Both"}
     public List<int>? TargetOrganizationIds { get; set; }
     public List<int>? TargetSegmentIds { get; set; }
     

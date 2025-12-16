@@ -96,7 +96,6 @@ export class NavBarComponent implements OnInit, OnDestroy {
 
   logout() {
     this.authService.logout();
-    window.location.reload();
   }
 
   @HostListener('document:click', ['$event'])

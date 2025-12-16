@@ -490,7 +490,7 @@
           >
             <option [value]="null">{{ 'course.selectTargetUserType' | translate }}</option>
             <!-- Options for Main Organization -->
-            <ng-container *ngIf="isMainOrganization">
+            <ng-container *ngIf="isMainOrg">
               <option [value]="TargetUserType.ForOurOrganization">{{ 'course.targetUserTypeForOurOrganization' | translate }}</option>
               <option [value]="TargetUserType.All">{{ 'course.targetUserTypeAll' | translate }}</option>
               <option [value]="TargetUserType.SpecificDepartments">{{ 'course.targetUserTypeSpecificDepartments' | translate }}</option>
@@ -498,7 +498,7 @@
               <option [value]="TargetUserType.SpecificSegments">{{ 'course.targetUserTypeSpecificSegments' | translate }}</option>
             </ng-container>
             <!-- Options for Non-Main Organization -->
-            <ng-container *ngIf="!isMainOrganization">
+            <ng-container *ngIf="!isMainOrg">
               <option [value]="TargetUserType.AllUsersOfOrganization">{{ 'course.targetUserTypeAllUsersOfOrganization' | translate }}</option>
               <option [value]="TargetUserType.SpecificOrganizationSegment">{{ 'course.targetUserTypeSpecificOrganizationSegment' | translate }}</option>
             </ng-container>
@@ -511,37 +511,43 @@
             {{ 'course.selectDepartments' | translate }}
           </label>
           
-          <!-- Department Role Selection -->
-          <div class="mb-3">
-            <label for="targetDepartmentRole" class="block text-sm font-medium text-textDark font-poppins mb-2">
-              {{ 'course.departmentRole' | translate }}
-            </label>
-            <select
-              id="targetDepartmentRole"
-              formControlName="targetDepartmentRole"
-              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
-            >
-              <option [value]="null">{{ 'course.selectDepartmentRole' | translate }}</option>
-              <option value="Head">{{ 'course.departmentRoleHead' | translate }}</option>
-              <option value="Member">{{ 'course.departmentRoleMember' | translate }}</option>
-              <option value="Both">{{ 'course.departmentRoleBoth' | translate }}</option>
-            </select>
-          </div>
-          
-          <div class="max-h-48 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 space-y-2">
-            <label
+          <div class="max-h-96 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 space-y-3">
+            <div
               *ngFor="let department of departments"
-              class="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+              class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
             >
-              <input
-                type="checkbox"
-                [value]="department.id"
-                [checked]="form.get('targetDepartmentIds')?.value?.includes(department.id)"
-                (change)="toggleDepartment(department.id, $event)"
-                class="text-accent focus:ring-accent rounded"
-              />
-              <span class="text-sm text-gray-700">{{ department.nameEn || department.nameAr }}</span>
-            </label>
+              <div class="flex items-center pt-1">
+                <input
+                  type="checkbox"
+                  [value]="department.id"
+                  [checked]="form.get('targetDepartmentIds')?.value?.includes(department.id)"
+                  (change)="toggleDepartment(department.id, $event)"
+                  class="text-accent focus:ring-accent rounded"
+                />
+              </div>
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-2 cursor-pointer" (click)="toggleDepartment(department.id, {target: {checked: !form.get('targetDepartmentIds')?.value?.includes(department.id)}})">
+                  {{ department.nameEn || department.nameAr }}
+                </label>
+                <!-- Department Role Selection (only show when department is checked) -->
+                <div *ngIf="form.get('targetDepartmentIds')?.value?.includes(department.id)" class="mt-2">
+                  <label [for]="'deptRole_' + department.id" class="block text-xs font-medium text-gray-600 mb-1">
+                    {{ 'course.departmentRole' | translate }}
+                  </label>
+                  <select
+                    [id]="'deptRole_' + department.id"
+                    [value]="getDepartmentRole(department.id)"
+                    (change)="setDepartmentRole(department.id, $any($event.target).value || null)"
+                    class="form-control w-full border-2 border-gray-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+                  >
+                    <option [value]="null">{{ 'course.selectDepartmentRole' | translate }}</option>
+                    <option value="Head">{{ 'course.departmentRoleHead' | translate }}</option>
+                    <option value="Member">{{ 'course.departmentRoleMember' | translate }}</option>
+                    <option value="Both">{{ 'course.departmentRoleBoth' | translate }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
             <p *ngIf="departments.length === 0" class="text-xs text-gray-500 italic">
               {{ 'course.noDepartmentsAvailable' | translate }}
             </p>
@@ -600,7 +606,7 @@
       </div>
 
       <!-- Instructors Section -->
-      <div class="space-y-4">
+      <div class="space-y-4 border-b border-gray-200 pb-6">
         <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
           <i class="fas fa-chalkboard-teacher text-accent"></i>
           {{ 'course.instructors' | translate }}
@@ -630,6 +636,7 @@
           </div>
         </div>
       </div>
+
     </form>
   </div>
 

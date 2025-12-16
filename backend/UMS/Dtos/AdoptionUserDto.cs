@@ -4,6 +4,7 @@ namespace UMS.Dtos;
 
 public class AdoptionUserDto
 {
+    public int? Id { get; set; }
     public string Name { get; set; }
     public string NameAr { get; set; }
     public AttendanceType Attendance { get; set; } = AttendanceType.Optional;

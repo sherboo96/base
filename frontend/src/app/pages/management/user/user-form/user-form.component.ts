@@ -192,14 +192,17 @@ export class UserFormComponent implements OnInit {
     });
 
     // Update validators based on organization.isMain
+    // In edit mode, department and jobTitle are NOT required
     const isMain = this.selectedOrganization?.isMain || false;
     const departmentControl = this.form.get('departmentId');
     const jobTitleControl = this.form.get('jobTitleId');
     
-    if (isMain) {
+    if (isMain && !this.isEdit) {
+      // Only require in add mode for main organization
       departmentControl?.setValidators([Validators.required]);
       jobTitleControl?.setValidators([Validators.required]);
     } else {
+      // In edit mode or non-main organization: not required
       departmentControl?.clearValidators();
       jobTitleControl?.clearValidators();
     }
@@ -331,31 +334,40 @@ export class UserFormComponent implements OnInit {
       const isMain = this.selectedOrganization?.isMain || false;
       
       // Update validators based on isMain
+      // In edit mode, department and jobTitle are NOT required
       const departmentControl = this.form.get('departmentId');
       const jobTitleControl = this.form.get('jobTitleId');
       
-      if (isMain) {
-        // Main organization: Department and Job Title are required
+      if (isMain && !this.isEdit) {
+        // Only require in add mode for main organization
         departmentControl?.setValidators([Validators.required]);
         jobTitleControl?.setValidators([Validators.required]);
         this.loadDepartments(organizationId);
       } else {
-        // Non-main organization: Department and Job Title are not required
+        // In edit mode or non-main organization: not required
         departmentControl?.clearValidators();
         jobTitleControl?.clearValidators();
-        this.departments = [];
-        this.positions = [];
-        // Clear department, department role, and job title selections
-        this.form.patchValue({ departmentId: '', departmentRole: '', jobTitleId: '' });
+        if (!this.isEdit) {
+          // Only clear and reset in add mode
+          this.departments = [];
+          this.positions = [];
+          // Clear department, department role, and job title selections
+          this.form.patchValue({ departmentId: '', departmentRole: '', jobTitleId: '' });
+        } else if (isMain) {
+          // In edit mode, still load departments but don't require them
+          this.loadDepartments(organizationId);
+        }
       }
       
       departmentControl?.updateValueAndValidity();
       jobTitleControl?.updateValueAndValidity();
       
       this.loadLoginMethods(organizationId);
-      // Reset login method selection when organization changes
-      this.form.patchValue({ loginMethod: '' });
-      this.selectedLoginMethod = 0;
+      // Reset login method selection when organization changes (only in add mode)
+      if (!this.isEdit) {
+        this.form.patchValue({ loginMethod: '' });
+        this.selectedLoginMethod = 0;
+      }
     } else {
       this.selectedOrganization = null;
       this.departments = [];

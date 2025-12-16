@@ -65,15 +65,6 @@
             <!-- Key Metrics Card -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <i class="fas fa-chalkboard-teacher text-purple-600"></i>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 font-medium">{{ 'course.instructors' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ course.instructors?.length || 0 }}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
                   <i class="fas fa-star text-yellow-600"></i>
                 </div>
@@ -97,7 +88,16 @@
                 </div>
                 <div>
                   <p class="text-xs text-gray-500 font-medium">{{ 'course.seats' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ course.availableSeats }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ course.availableSeats || 0 }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <i class="fas fa-user-check text-green-600"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.availableSeats' | translate }}</p>
+                  <p class="text-sm font-bold text-accent">{{ getAvailableSeats() }}</p>
                 </div>
               </div>
             </div>
@@ -119,7 +119,7 @@
             <div class="border-b border-gray-200">
               <nav class="flex -mb-px overflow-x-auto">
                 <button
-                  (click)="activeTab = 'overview'"
+                  (click)="switchTab('overview')"
                   class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
                   [ngClass]="{
                     'border-accent text-accent': activeTab === 'overview',
@@ -131,7 +131,7 @@
                 </button>
                 <button
                   *ngIf="course.instructors && course.instructors.length > 0"
-                  (click)="activeTab = 'instructor'"
+                  (click)="switchTab('instructor')"
                   class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
                   [ngClass]="{
                     'border-accent text-accent': activeTab === 'instructor',
@@ -140,6 +140,30 @@
                 >
                   <i class="fas fa-user mr-2"></i>
                   {{ 'course.instructor' | translate }}
+                </button>
+                <button
+                  *ngIf="course.adoptionUsers && course.adoptionUsers.length > 0"
+                  (click)="switchTab('adoptionUsers')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                  [ngClass]="{
+                    'border-accent text-accent': activeTab === 'adoptionUsers',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'adoptionUsers'
+                  }"
+                >
+                  <i class="fas fa-user-friends mr-2"></i>
+                  {{ 'course.adoptionUsers' | translate }}
+                </button>
+                <button
+                  *ngIf="course.courseContacts && course.courseContacts.length > 0"
+                  (click)="switchTab('courseContacts')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                  [ngClass]="{
+                    'border-accent text-accent': activeTab === 'courseContacts',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'courseContacts'
+                  }"
+                >
+                  <i class="fas fa-address-book mr-2"></i>
+                  {{ 'course.courseContacts' | translate }}
                 </button>
               </nav>
             </div>
@@ -225,6 +249,76 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Adoption Users Tab -->
+              <div *ngIf="activeTab === 'adoptionUsers' && course.adoptionUsers && course.adoptionUsers.length > 0" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-user-friends text-accent"></i>
+                    {{ 'course.adoptionUsers' | translate }}
+                  </h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div *ngFor="let adoptionUser of course.adoptionUsers" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-md flex-shrink-0">
+                        {{ getAdoptionUserInitial(adoptionUser) }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-1">
+                          {{ getAdoptionUserName(adoptionUser) }}
+                        </h4>
+                        <p *ngIf="getAdoptionUserEmail(adoptionUser)" class="text-sm text-gray-600 mb-2">
+                          <i class="fas fa-envelope mr-2"></i>
+                          <a [href]="'mailto:' + getAdoptionUserEmail(adoptionUser)" class="hover:text-accent transition-colors">
+                            {{ getAdoptionUserEmail(adoptionUser) }}
+                          </a>
+                        </p>
+                        <div class="flex items-center gap-2 mt-2">
+                          <span class="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-medium">
+                            <i class="fas fa-tag mr-1"></i>
+                            {{ getAdoptionTypeLabel(adoptionUser.adoptionType) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Course Contacts Tab -->
+              <div *ngIf="activeTab === 'courseContacts' && course.courseContacts && course.courseContacts.length > 0" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-address-book text-accent"></i>
+                    {{ 'course.courseContacts' | translate }}
+                  </h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div *ngFor="let contact of course.courseContacts" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user text-accent text-xl"></i>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-3">{{ contact.name }}</h4>
+                        <div class="space-y-2">
+                          <p *ngIf="contact.phoneNumber" class="text-sm text-gray-600 flex items-center gap-2">
+                            <i class="fas fa-phone text-gray-400"></i>
+                            <a [href]="'tel:' + contact.phoneNumber" class="hover:text-accent transition-colors">{{ contact.phoneNumber }}</a>
+                          </p>
+                          <p *ngIf="contact.emailAddress" class="text-sm text-gray-600 flex items-center gap-2">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                            <a [href]="'mailto:' + contact.emailAddress" class="hover:text-accent transition-colors break-all">{{ contact.emailAddress }}</a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -284,7 +378,7 @@
 
             <!-- Enroll Button -->
             <button
-              *ngIf="!isEnrolled && course.status === CourseStatus.Published"
+              *ngIf="!isEnrolled && course.status === CourseStatus.Published && getAvailableSeats() > 0"
               (click)="enrollInCourse()"
               [disabled]="isCheckingEnrollment"
               class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4"
@@ -292,6 +386,15 @@
               <i class="fas fa-user-plus"></i>
               <span>{{ 'course.enroll' | translate }}</span>
             </button>
+
+            <!-- No Seats Available -->
+            <div
+              *ngIf="!isEnrolled && course.status === CourseStatus.Published && getAvailableSeats() < 1"
+              class="w-full px-6 py-3 bg-red-500 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 mb-4"
+            >
+              <i class="fas fa-exclamation-circle"></i>
+              <span>{{ 'course.noSeatsAvailable' | translate }}</span>
+            </div>
 
             <!-- Already Enrolled -->
             <div *ngIf="isEnrolled" class="space-y-3 mb-4">

@@ -36,6 +36,7 @@ export class LoginComponent implements OnInit {
   otpRequesting = false;
   loginMethodChecked = false; // Track if login method has been checked
   isRegistrationMode = false; // Toggle between login and registration
+  userChecked = false; // Track if user has been checked (first click)
   registrationOtpSent = false; // Track if OTP was sent after registration
   registrationEmail = ''; // Store email for OTP verification
   showRegistrationOtpVerification = false; // Show OTP verification form after registration
@@ -50,7 +51,7 @@ export class LoginComponent implements OnInit {
     private userService: UserService,
     private storageService: StorageService,
     private translationService: TranslationService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -179,7 +180,7 @@ export class LoginComponent implements OnInit {
   // Check if form is valid based on current mode
   isFormValid(): boolean {
     const usernameValid = this.loginForm.get('username')?.valid;
-    
+
     if (!usernameValid) {
       return false;
     }
@@ -235,7 +236,7 @@ export class LoginComponent implements OnInit {
             this.isOtpMode = false;
             this.otpSent = false;
           }
-          
+
           // Update form validators based on mode
           this.updateFormValidators();
         }
@@ -284,7 +285,73 @@ export class LoginComponent implements OnInit {
   onLogin() {
     this.formSubmitted = true;
 
-    // Validate based on mode
+    // Validate username first
+    if (this.loginForm.get('username')?.invalid) {
+      this.loginForm.get('username')?.markAsTouched();
+      this.toastr.warning(this.translationService.instant('login.usernameRequired'));
+      return;
+    }
+
+    const username = this.loginForm.get('username')?.value;
+
+    // First click: Check user exists and determine login method
+    if (!this.userChecked) {
+      this.loadingService.show();
+      this.authService.checkLoginMethod(username).subscribe({
+        next: (checkResponse) => {
+          this.loadingService.hide();
+          if (checkResponse.result) {
+            const loginMethodId = checkResponse.result.loginMethod?.id;
+            const isEnabled = checkResponse.result.isEnabled;
+
+            if (!isEnabled) {
+              this.toastr.warning(
+                this.translationService.instant('login.loginMethodDisabled')
+              );
+              return;
+            }
+
+            // Mark that user has been checked
+            this.userChecked = true;
+            this.loginMethodChecked = true;
+
+            // Update login method based on check
+            if (loginMethodId === 1) {
+              this.isOtpMode = true;
+              // Auto-request OTP if email is available
+              if (checkResponse.result.email) {
+                this.requestOtp();
+              }
+            } else {
+              this.isOtpMode = false;
+              this.otpSent = false;
+            }
+
+            // Update form validators based on mode
+            this.updateFormValidators();
+            
+            // Show message to user
+            if (this.isOtpMode) {
+              this.toastr.info(this.translationService.instant('login.enterOtp'));
+            } else {
+              this.toastr.info(this.translationService.instant('login.enterPassword'));
+            }
+          }
+        },
+        error: (error) => {
+          this.loadingService.hide();
+          // Show generic error message (security: don't reveal if user exists)
+          const errorMessage = error.error?.message || this.translationService.instant('login.checkUserError');
+          this.toastr.error(errorMessage);
+          this.loginMethodChecked = false;
+          this.userChecked = false;
+          this.formSubmitted = false;
+        },
+      });
+      return; // Exit after checking user on first click
+    }
+
+    // Second click: Validate password/OTP and proceed with login
     if (this.isOtpMode) {
       if (!this.loginForm.get('otp')?.valid) {
         this.loginForm.get('otp')?.markAsTouched();
@@ -299,18 +366,11 @@ export class LoginComponent implements OnInit {
       }
     }
 
-    if (this.loginForm.get('username')?.invalid) {
-      this.loginForm.get('username')?.markAsTouched();
-      this.toastr.warning(this.translationService.instant('login.usernameRequired'));
-      return;
-    }
-
-    const { username, password, otp, rememberMe } = this.loginForm.value;
+    // Proceed with login
+    const { password, otp, rememberMe } = this.loginForm.value;
     const loginPassword = this.isOtpMode ? otp : password;
 
-    // Show loading immediately when login button is clicked
     this.loadingService.show();
-
     this.authService.login({ username, password: loginPassword }).subscribe({
       next: (response) => {
         if (rememberMe) {
@@ -326,19 +386,22 @@ export class LoginComponent implements OnInit {
           this.storageService.setItem('userRoles', response.result.roles);
         }
 
+        // Note: Department ID and Department Role are now included in response.result.user
+        // and are automatically stored in 'currentUser' by AuthService.
+
         // Fetch and store user permissions (AuthService handles storage automatically)
         this.authService.getUserPermissions().subscribe({
           next: () => {
             this.toastr.success(this.translationService.instant('login.loginSuccessful'));
-            this.router.navigate(['/dashboard']);
-            this.loadingService.hide();
+            // Check if profile completion is required
+            this.checkProfileCompletion();
           },
           error: (permissionsError) => {
             console.error('Error fetching permissions:', permissionsError);
             // Still proceed with login even if permissions fetch fails
             this.toastr.success(this.translationService.instant('login.loginSuccessful'));
-            this.router.navigate(['/dashboard']);
-            this.loadingService.hide();
+            // Check if profile completion is required
+            this.checkProfileCompletion();
           },
         });
       },
@@ -360,6 +423,7 @@ export class LoginComponent implements OnInit {
     this.isOtpMode = false;
     this.otpSent = false;
     this.loginMethodChecked = false;
+    this.userChecked = false; // Reset user checked flag
     this.showRegistrationOtpVerification = false;
     this.registrationOtpSent = false;
     this.registrationEmail = '';
@@ -490,5 +554,26 @@ export class LoginComponent implements OnInit {
   // Check if registration OTP verification form is valid
   isRegistrationOtpValid(): boolean {
     return this.registrationForm.get('registrationOtp')?.valid || false;
+  }
+
+  checkProfileCompletion(): void {
+    this.authService.isProfileCompletionRequired().subscribe({
+      next: (response: any) => {
+        if (response.statusCode === 200 && response.result === true) {
+          // Profile completion is required, redirect to profile completion page
+          this.router.navigate(['/profile-completion'], { replaceUrl: true });
+        } else {
+          // Profile completion not required, go to dashboard
+          this.router.navigate(['/dashboard'], { replaceUrl: true });
+        }
+        this.loadingService.hide();
+      },
+      error: (error) => {
+        console.error('Error checking profile completion:', error);
+        // On error, proceed to dashboard
+        this.router.navigate(['/dashboard'], { replaceUrl: true });
+        this.loadingService.hide();
+      },
+    });
   }
 }

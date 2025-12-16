@@ -108,6 +108,7 @@ export class LocationFormComponent implements OnInit {
       building: [''],
       category: [LocationCategory.Onsite, Validators.required],
       organizationId: [null, Validators.required],
+      url: [''],
     });
 
     if (this.dialogRef.data?.location) {
@@ -120,6 +121,7 @@ export class LocationFormComponent implements OnInit {
         building: location.building || '',
         category: typeof location.category === 'number' ? location.category : Number(location.category),
         organizationId: location.organizationId,
+        url: location.url || '',
       });
     }
 

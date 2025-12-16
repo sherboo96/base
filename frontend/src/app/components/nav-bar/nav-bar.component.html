@@ -1,12 +1,12 @@
-<nav class="fixed top-0 right-0 h-[72px] bg-white shadow-sm border-b border-gray-100 py-3 px-6 z-50 flex items-center transition-all duration-300" [ngClass]="{
+<nav class="fixed top-0 left-0 rtl:left-auto rtl:right-0 h-[72px] bg-white shadow-sm border-b border-gray-100 py-3 px-6 z-50 flex items-center transition-all duration-300" [ngClass]="{
     'left-[220px] rtl:left-0 rtl:right-[220px] w-[calc(100%-220px)]': !isSideMenuCollapsed,
     'left-[80px] rtl:left-0 rtl:right-[80px] w-[calc(100%-80px)]': isSideMenuCollapsed
   }">
     <div class="w-full max-w-full mx-auto flex justify-between items-center rtl:flex-row-reverse">
-        <!-- Left Section - Page Title and Breadcrumbs -->
-        <div class="flex items-center space-x-4 rtl:space-x-reverse rtl:flex-row-reverse">
+        <!-- Left Section - Page Title and Breadcrumbs (Right in RTL) -->
+        <div class="flex items-center space-x-4 rtl:space-x-reverse rtl:flex-row-reverse order-1 rtl:order-2">
             <!-- Hamburger Menu Button (for mobile) -->
-            <button class="lg:hidden text-gray-500 hover:text-accent transition-colors font-poppins">
+            <button class="lg:hidden text-gray-500 hover:text-accent transition-colors font-poppins rtl:ml-4 rtl:mr-0">
                 <i class="fas fa-bars text-xl"></i>
             </button>
 
@@ -17,14 +17,14 @@
                 </h1>
                 <div class="flex items-center text-xs text-gray-500 rtl:flex-row-reverse font-poppins">
                     <span>{{ 'navbar.management' | translate }}</span>
-                    <i class="fas fa-chevron-right mx-2 rtl:rotate-180 text-[0.6rem] animate-[slideRight_1s_infinite_alternate]"></i>
+                    <i class="fas fa-chevron-right mx-2 rtl:mx-2 rtl:rotate-180 text-[0.6rem] rtl:animate-[slideLeft_1s_infinite_alternate] animate-[slideRight_1s_infinite_alternate]"></i>
                     <span class="text-accent font-poppins">{{ getCurrentPageTitle() }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Right Section - User Profile and Actions -->
-        <div class="flex items-center space-x-6 rtl:space-x-reverse rtl:flex-row-reverse">
+        <!-- Right Section - User Profile and Actions (Left in RTL) -->
+        <div class="flex items-center space-x-6 rtl:space-x-reverse rtl:flex-row-reverse order-2 rtl:order-1">
             <!-- Notifications -->
             <!-- <div class="relative">
         <button
@@ -54,7 +54,7 @@
                 </div>
 
                 <!-- User Info -->
-                <div class="text-right rtl:text-right hidden md:block">
+                <div class="text-left rtl:text-right hidden md:block">
                     <span class="block text-base font-semibold text-gray-800 font-poppins">{{
             name
           }}</span>
@@ -68,7 +68,7 @@
                             {{ getInitials() }}
                         </div>
                         <img *ngIf="avatarImage" [src]="avatarImage" alt="User Avatar" class="w-10 h-10 rounded-full border-2 border-gray-200 group-hover:border-accent transition-colors" />
-                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs rtl:rotate-180"></i>
                     </button>
 
                     <!-- Dropdown Menu -->
@@ -79,14 +79,14 @@
                         </div>
 
                         <a (click)="routeToProfile()" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-accent cursor-pointer rtl:flex-row-reverse font-poppins">
-                            <i class="fas fa-user-circle w-5 mr-2 rtl:mr-0 rtl:ml-2 text-gray-400"></i>
-                            <span>{{ 'navbar.myProfile' | translate }}</span>
+                            <i class="fas fa-user-circle w-5 ml-0 mr-2 rtl:mr-0 rtl:ml-2 text-gray-400"></i>
+                            <span class="flex-1">{{ 'navbar.myProfile' | translate }}</span>
                         </a>
 
                         <div class="border-t border-gray-100 my-1"></div>
                         <button (click)="logout()" class="w-full text-left rtl:text-right flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 rtl:flex-row-reverse font-poppins hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-200">
-                            <i class="fas fa-sign-out-alt w-5 mr-2 rtl:mr-0 rtl:ml-2"></i>
-                            <span>{{ 'navbar.logout' | translate }}</span>
+                            <i class="fas fa-sign-out-alt w-5 ml-0 mr-2 rtl:mr-0 rtl:ml-2"></i>
+                            <span class="flex-1">{{ 'navbar.logout' | translate }}</span>
                         </button>
                     </div>
                 </div>

@@ -10,6 +10,43 @@ export enum EnrollmentStatus {
   Excuse = 4
 }
 
+export interface CourseEnrollmentApprovalStep {
+  id: number;
+  courseEnrollmentId: number;
+  courseTabApprovalId: number;
+  approvedBy?: string;
+  approvedAt?: string;
+  isApproved: boolean;
+  isRejected: boolean;
+  comments?: string;
+  approvedByUser?: {
+    id: string;
+    fullName: string;
+    email: string;
+    userName?: string;
+    organizationId?: number;
+    organizationName?: string;
+    organizationIsMain?: boolean;
+    departmentId?: number;
+    departmentName?: string;
+    jobTitle?: string;
+  };
+  courseTabApproval?: {
+    id: number;
+    courseTabId: number;
+    approvalOrder: number;
+    isHeadApproval: boolean;
+    roleId?: number;
+    role?: {
+      id: number;
+      name: string;
+      applyToAllOrganizations: boolean;
+      organizationId?: number;
+      isDefault: boolean;
+    };
+  };
+}
+
 export interface CourseEnrollment {
   id: number;
   courseId: number;
@@ -18,20 +55,35 @@ export interface CourseEnrollment {
   isActive: boolean;
   finalApproval?: boolean;
   status?: EnrollmentStatus;
+  course?: {
+    id: number;
+    courseTitle: string;
+    courseTitleAr?: string;
+    courseTabId: number;
+    startDateTime?: string;
+    endDateTime?: string;
+  };
   user?: {
     id: string;
     fullName: string;
     email: string;
     userName?: string;
+    organizationId?: number;
+    organizationName?: string;
+    organizationIsMain?: boolean;
+    departmentId?: number;
+    departmentName?: string;
+    jobTitle?: string;
   };
+  approvalSteps?: CourseEnrollmentApprovalStep[];
 }
 
 export interface EnrollmentResponse {
   statusCode: number;
   message: string;
-  result: CourseEnrollment[];
-  total: number;
-  pagination: {
+  result?: CourseEnrollment[];
+  total?: number;
+  pagination?: {
     currentPage: number;
     pageSize: number;
     total: number;
@@ -44,7 +96,7 @@ export interface EnrollmentResponse {
 export class EnrollmentService {
   private apiUrl = `${environment.baseUrl}/CourseEnrollments`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getEnrollmentsByCourse(courseId: number, page: number = 1, pageSize: number = 20): Observable<EnrollmentResponse> {
     return this.http.get<EnrollmentResponse>(`${this.apiUrl}/course/${courseId}?page=${page}&pageSize=${pageSize}`);
@@ -72,6 +124,41 @@ export class EnrollmentService {
 
   excuseEnrollment(enrollmentId: number): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/${enrollmentId}/excuse`, {});
+  }
+
+  approveEnrollmentStep(enrollmentId: number, courseTabApprovalId: number, comments?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/approve-step`, {
+      courseEnrollmentId: enrollmentId,
+      courseTabApprovalId: courseTabApprovalId,
+      comments: comments
+    });
+  }
+
+  rejectEnrollmentStep(enrollmentId: number, courseTabApprovalId: number, comments?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/reject-step`, {
+      courseEnrollmentId: enrollmentId,
+      courseTabApprovalId: courseTabApprovalId,
+      comments: comments
+    });
+  }
+
+  resendConfirmationEmail(enrollmentId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${enrollmentId}/resend-confirmation`, {});
+  }
+
+  exportEnrollments(courseId: number, status?: EnrollmentStatus, organizationId?: number): Observable<Blob> {
+    let url = `${this.apiUrl}/export?courseId=${courseId}`;
+    if (status !== undefined) {
+      url += `&status=${status}`;
+    }
+    if (organizationId !== undefined) {
+      url += `&organizationId=${organizationId}`;
+    }
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+  getPendingHeadApprovals(page: number = 1, pageSize: number = 20): Observable<EnrollmentResponse> {
+    return this.http.get<EnrollmentResponse>(`${this.apiUrl}/pending-head-approvals?page=${page}&pageSize=${pageSize}`);
   }
 }
 

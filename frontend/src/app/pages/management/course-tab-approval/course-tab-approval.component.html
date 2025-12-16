@@ -1,0 +1,314 @@
+<div class="p-4 mx-auto max-w-full">
+  <app-course-tab-approval-form *ngIf="false"></app-course-tab-approval-form>
+  <app-loading></app-loading>
+  <div
+    *ngIf="isLoading && !groupedApprovals.length"
+    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
+    id="custom-loader"
+  >
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="mt-3 text-accent font-medium text-sm">
+        {{ 'courseTabApproval.loadingApprovals' | translate }}
+      </p>
+    </div>
+  </div>
+  <div class="mb-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-textDark mb-0.5 flex items-center gap-2">
+        <i class="material-icons text-accent text-lg">verified</i>
+        <span>{{ 'courseTabApproval.title' | translate }}</span>
+      </h1>
+      <p class="text-xs text-gray-600">
+        {{ 'courseTabApproval.subtitle' | translate }}
+      </p>
+    </div>
+    <button
+      (click)="addNewApproval()"
+      class="bg-accent hover:bg-accentDark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200 text-sm font-medium"
+    >
+      <i class="fas fa-plus-circle"></i>
+      <span>{{ 'courseTabApproval.addApproval' | translate }}</span>
+    </button>
+  </div>
+  <div class="mb-3 bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+    <div class="bg-accentDark px-3 py-1.5">
+      <div class="flex items-center gap-1.5">
+        <i class="fas fa-filter text-white text-xs"></i>
+        <h2 class="text-xs font-semibold text-white">
+          {{ 'courseTabApproval.filter' | translate }}
+        </h2>
+      </div>
+    </div>
+    <div class="p-3 bg-gray-50">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">
+            <i class="fas fa-search mr-1 text-accent text-xs"></i
+            >{{ 'courseTabApproval.search' | translate }}
+          </label>
+          <div class="relative">
+            <div
+              class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none"
+            >
+              <i class="fas fa-search text-gray-400 text-xs"></i>
+            </div>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onSearch()"
+              [placeholder]="'courseTabApproval.searchPlaceholder' | translate"
+              class="w-full border-2 border-gray-300 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white shadow-sm"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">
+            <i class="fas fa-folder mr-1.5 text-accent text-xs"></i
+            >{{ 'courseTabApproval.courseTab' | translate }}
+          </label>
+          <div class="relative">
+            <select
+              [(ngModel)]="filterCourseTabId"
+              class="appearance-none w-full border-2 border-gray-300 rounded-lg py-2 px-3 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer bg-white shadow-sm transition-all duration-200"
+            >
+              <option [value]="null">
+                {{ 'courseTabApproval.allCourseTabs' | translate }}
+              </option>
+              <option *ngFor="let tab of courseTabs" [value]="tab.id">
+                {{ tab.name }}
+              </option>
+            </select>
+            <div
+              class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
+            >
+              <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200"
+      >
+        <button
+          *ngIf="hasActiveFilters()"
+          (click)="clearFilters()"
+          class="px-4 py-1.5 border-2 border-red-300 rounded-lg text-xs font-medium text-red-700 bg-white hover:bg-red-50 hover:border-red-400 transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
+        >
+          <i class="fas fa-times-circle text-xs"></i>
+          <span>{{ 'common.clearFilters' | translate }}</span>
+        </button>
+        <button
+          (click)="applyFilters()"
+          class="px-4 py-1.5 bg-accentDark hover:bg-accentDarker text-white rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg transform hover:scale-105 font-poppins"
+        >
+          <i class="fas fa-check-circle text-xs"></i>
+          <span>{{ 'common.applyFilter' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grouped Approvals by Course Tab -->
+  <div *ngIf="groupedApprovals.length === 0 && !isLoading" class="empty-state py-12 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+    <div class="bg-white rounded-full p-4 mb-3 shadow-md">
+      <i class="material-icons text-4xl text-gray-300">verified</i>
+    </div>
+    <h3 class="text-xl font-bold text-textDark mb-1">
+      <span *ngIf="hasActiveFilters()">{{
+        'courseTabApproval.noApprovalsMatching' | translate
+      }}</span>
+      <span *ngIf="!hasActiveFilters()">{{
+        'courseTabApproval.noApprovalsFound' | translate
+      }}</span>
+    </h3>
+    <p class="text-xs text-gray-600 text-center max-w-md mb-4">
+      <span *ngIf="hasActiveFilters()">{{
+        'courseTabApproval.noApprovalsMatchingDescription' | translate
+      }}</span>
+      <span *ngIf="!hasActiveFilters()">{{
+        'courseTabApproval.noApprovalsAvailable' | translate
+      }}</span>
+    </p>
+    <button
+      *ngIf="hasActiveFilters()"
+      (click)="clearFilters()"
+      class="px-4 py-2 bg-accentDark hover:bg-accentDarker text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-xs flex items-center gap-1.5 font-poppins"
+    >
+      <i class="fas fa-times-circle text-xs"></i>
+      <span>{{ 'common.clearFilters' | translate }}</span>
+    </button>
+  </div>
+
+  <div *ngFor="let group of groupedApprovals" class="mb-4 bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+    <div class="bg-accent/10 px-4 py-3 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-folder text-accent text-lg"></i>
+          <h3 class="text-lg font-semibold text-textDark">
+            {{ group.courseTab.name }}
+          </h3>
+          <span *ngIf="group.courseTab.nameAr" class="text-sm text-gray-600" dir="rtl">
+            ({{ group.courseTab.nameAr }})
+          </span>
+        </div>
+        <button
+          (click)="addNewApproval(group.courseTab)"
+          class="bg-accent hover:bg-accentDark text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors duration-200 text-xs font-medium"
+        >
+          <i class="fas fa-plus-circle text-xs"></i>
+          <span>{{ 'courseTabApproval.addApproval' | translate }}</span>
+        </button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-sort-numeric-up mr-1.5 text-accent text-xs"></i>
+              {{ 'courseTabApproval.approvalOrder' | translate }}
+            </th>
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-user-tie mr-1.5 text-accent text-xs"></i>
+              {{ 'courseTabApproval.isHeadApproval' | translate }}
+            </th>
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-user-shield mr-1.5 text-accent text-xs"></i>
+              {{ 'courseTabApproval.role' | translate }}
+            </th>
+            <th scope="col" class="px-4 py-2.5 text-right text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-cog mr-1.5 text-accent text-xs"></i>
+              {{ 'common.actions' | translate }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr
+            *ngFor="let approval of group.approvals"
+            class="hover:bg-gray-50 transition-all duration-150"
+          >
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                {{ approval.approvalOrder }}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              <span *ngIf="approval.isHeadApproval" class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                <i class="fas fa-check-circle mr-1"></i>
+                {{ 'courseTabApproval.yes' | translate }}
+              </span>
+              <span *ngIf="!approval.isHeadApproval" class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
+                {{ 'courseTabApproval.no' | translate }}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-900">
+              <span *ngIf="approval.role">{{ approval.role.name }}</span>
+              <span *ngIf="!approval.role" class="text-gray-400">-</span>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex items-center justify-end gap-2">
+                <button
+                  (click)="editApproval(approval)"
+                  class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                  [title]="'common.edit' | translate"
+                >
+                  <i class="fas fa-edit mr-1.5"></i>
+                  <span>{{ 'common.edit' | translate }}</span>
+                </button>
+                <button
+                  (click)="deleteApproval(approval)"
+                  class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                  [title]="'common.delete' | translate"
+                >
+                  <i class="fas fa-trash mr-1.5"></i>
+                  <span>{{ 'common.delete' | translate }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div
+    *ngIf="groupedApprovals.length > 0"
+    class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t-2 border-gray-200 rounded-lg mt-4"
+  >
+    <div class="text-sm font-medium text-textDark mb-2 sm:mb-0">
+      <i class="fas fa-info-circle mr-2 text-accent"></i>
+      {{
+        'common.showing'
+          | translate
+            : {
+                from: (currentPage - 1) * pageSize + 1,
+                to: Math.min(currentPage * pageSize, totalItems),
+                total: totalItems
+              }
+      }}
+    </div>
+    <div class="flex items-center space-x-3">
+      <select
+        [(ngModel)]="pageSize"
+        (change)="onPageSizeChange()"
+        class="text-sm border-2 border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium"
+      >
+        <option [value]="5">5 {{ 'common.perPage' | translate }}</option>
+        <option [value]="10">10 {{ 'common.perPage' | translate }}</option>
+        <option [value]="20">20 {{ 'common.perPage' | translate }}</option>
+        <option [value]="50">50 {{ 'common.perPage' | translate }}</option>
+      </select>
+      <div class="flex space-x-1">
+        <button
+          class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(1)"
+          [title]="'common.firstPage' | translate"
+        >
+          <i class="fas fa-angle-double-left"></i>
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+          [title]="'common.previousPage' | translate"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="flex space-x-1">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            (click)="goToPage(page)"
+            class="px-4 py-1.5 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            [ngClass]="{
+              'bg-accentDark text-white border-accent shadow-md':
+                currentPage === page,
+              'border-gray-300 hover:bg-gray-100 hover:border-gray-400':
+                currentPage !== page
+            }"
+          >
+            {{ page }}
+          </button>
+        </div>
+        <button
+          class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+          [title]="'common.nextPage' | translate"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(totalPages)"
+          [title]="'common.lastPage' | translate"
+        >
+          <i class="fas fa-angle-double-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

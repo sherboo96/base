@@ -10,7 +10,7 @@
     <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl min-h-[70vh]">
         <!-- Left Section -->
         <div class="flex flex-col items-center justify-center p-6" [ngClass]="{'md:w-1/2': !isRegistrationMode, 'md:w-full': isRegistrationMode}">
-            <img src="assets/images/logo.png" alt="Ministry of Oil Logo" class="h-36 mb-4" />
+            <img src="assets/images/logo.png" alt="Ministry of Oil Logo" class="h-24 mb-8" />
             <h2 class="text-2xl font-bold text-accent mb-2 flex items-center font-poppins">
                 {{ (isRegistrationMode ? 'registration.title' : 'login.title') | translate }}
                 <span class="ml-2 rtl:ml-0 rtl:mr-2">👋</span>
@@ -47,7 +47,7 @@
                         <input type="text" id="username" formControlName="username" class="form-input" [ngClass]="{
                 'input-error': hasError('username'),
                 'input-success': usernameControl?.valid && usernameControl?.touched && !hasError('username')
-              }" [placeholder]="'login.usernamePlaceholder' | translate" (blur)="usernameControl?.markAsTouched(); checkUserLoginMethod()" />
+              }" [placeholder]="'login.usernamePlaceholder' | translate" (blur)="usernameControl?.markAsTouched()" />
                         <!-- Validation Icon Right -->
                         <div class="input-icon-right">
                             <i *ngIf="hasError('username')" class="fas fa-times-circle text-red-500 validation-icon"></i>
@@ -153,9 +153,9 @@
                     <label for="remember-me" class="ml-2 rtl:ml-0 rtl:mr-2 text-sm text-gray-600">{{ 'login.rememberMe' | translate }}</label>
                 </div>
 
-                <button type="submit" [disabled]="!isFormValid()" [ngClass]="{
+                <button type="submit" [disabled]="!usernameControl?.valid" [ngClass]="{
             'opacity-70 cursor-not-allowed':
-              !isFormValid()
+              !usernameControl?.valid
           }" class="w-full py-2.5 px-4 bg-accentLight text-white rounded-lg shadow-md hover:bg-accent hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/30 transform hover:-translate-y-0.5 flex justify-center items-center font-poppins">
                     <span>{{ 'login.signIn' | translate }}</span>
                 </button>

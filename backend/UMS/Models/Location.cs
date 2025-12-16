@@ -23,4 +23,5 @@ public class Location : BaseModel
     public Organization Organization { get; set; }
     public string? Logo { get; set; } // Path to logo file
     public string? Template { get; set; } // Path to template file
+    public string? Url { get; set; } // Optional URL link
 }

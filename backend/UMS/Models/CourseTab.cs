@@ -16,4 +16,7 @@ public class CourseTab : BaseModel
     public bool ShowInMenu { get; set; } = true;
     public bool ShowPublic { get; set; } = false;
     public bool ShowForOtherOrganizations { get; set; } = false; // Show this tab to other organizations (only for main organization)
+    
+    [JsonIgnore]
+    public ICollection<CourseTabApproval> Approvals { get; set; } = new List<CourseTabApproval>();
 }

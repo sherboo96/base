@@ -1,0 +1,78 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+    <i class="fas fa-address-book text-accent"></i>
+    <span *ngIf="!isEdit">{{ 'course.addCourseContact' | translate }}</span>
+    <span *ngIf="isEdit">{{ 'course.editCourseContact' | translate }}</span>
+  </h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+    <!-- Contact Name -->
+    <div class="space-y-2">
+      <label for="name" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.contactName' | translate }} <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="text"
+        id="name"
+        formControlName="name"
+        [placeholder]="'course.contactName' | translate"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+        [class.border-red-500]="form.get('name')?.invalid && form.get('name')?.touched"
+      />
+      <p *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="text-xs text-red-600">
+        {{ 'course.contactNameRequired' | translate }}
+      </p>
+    </div>
+
+    <!-- Phone Number -->
+    <div class="space-y-2">
+      <label for="phoneNumber" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.contactPhone' | translate }}
+      </label>
+      <input
+        type="tel"
+        id="phoneNumber"
+        formControlName="phoneNumber"
+        [placeholder]="'course.contactPhone' | translate"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+      />
+    </div>
+
+    <!-- Email Address -->
+    <div class="space-y-2">
+      <label for="emailAddress" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.contactEmail' | translate }}
+      </label>
+      <input
+        type="email"
+        id="emailAddress"
+        formControlName="emailAddress"
+        [placeholder]="'course.contactEmail' | translate"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+        [class.border-red-500]="form.get('emailAddress')?.invalid && form.get('emailAddress')?.touched"
+      />
+      <p *ngIf="form.get('emailAddress')?.invalid && form.get('emailAddress')?.touched" class="text-xs text-red-600">
+        {{ 'course.invalidEmail' | translate }}
+      </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors font-poppins"
+      >
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        class="px-4 py-2 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-poppins"
+      >
+        {{ 'common.save' | translate }}
+      </button>
+    </div>
+  </form>
+</div>
+

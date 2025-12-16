@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RequestService, Request } from '../../services/request.service';
+import { EnrollmentService, CourseEnrollment, EnrollmentStatus } from '../../services/enrollment.service';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingService } from '../../services/loading.service';
 import { LoadingComponent } from '../../components/loading/loading.component';
+import { TranslateModule } from '@ngx-translate/core';
 import { finalize } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
@@ -12,42 +13,51 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-request',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, LoadingComponent, TranslateModule],
   templateUrl: './request.component.html',
   styleUrl: './request.component.scss',
 })
 export class RequestComponent implements OnInit, OnDestroy {
-  requests: Request[] = [];
+  enrollments: CourseEnrollment[] = [];
   isLoading = false;
   pageSize = 10;
   currentPage = 1;
   totalPages = 1;
   totalItems = 0;
-  searchTerm = '';
   Math = Math;
   private subscriptions: Subscription[] = [];
 
   constructor(
-    private requestService: RequestService,
+    private enrollmentService: EnrollmentService,
     private toastr: ToastrService,
     public loadingService: LoadingService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    this.fetchRequests();
+    this.fetchPendingRequests();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
-  fetchRequests(): void {
+  viewCourseDetails(course: any): void {
+    if (course?.id) {
+      // Open course details in a new tab
+      const url = this.router.serializeUrl(
+        this.router.createUrlTree(['/management/courses/details', course.id])
+      );
+      window.open(url, '_blank');
+    }
+  }
+
+  fetchPendingRequests(): void {
     this.isLoading = true;
     this.loadingService.show();
 
-    const sub = this.requestService
-      .getRequests(this.currentPage, this.pageSize)
+    const sub = this.enrollmentService
+      .getPendingHeadApprovals(this.currentPage, this.pageSize)
       .pipe(
         finalize(() => {
           this.isLoading = false;
@@ -56,12 +66,12 @@ export class RequestComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.requests = response.result;
-          this.totalItems = response.pagination.total;
+          this.enrollments = response.result || [];
+          this.totalItems = response.pagination?.total || 0;
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
         },
         error: (error) => {
-          this.toastr.error(error.error.message || 'Failed to fetch requests');
+          this.toastr.error(error.error?.message || 'Failed to fetch pending requests');
         },
       });
 
@@ -69,8 +79,8 @@ export class RequestComponent implements OnInit, OnDestroy {
   }
 
   onPageSizeChange(): void {
-    this.currentPage = 1; // Reset to first page when changing page size
-    this.fetchRequests();
+    this.currentPage = 1;
+    this.fetchPendingRequests();
   }
 
   getPageNumbers(): number[] {
@@ -98,12 +108,7 @@ export class RequestComponent implements OnInit, OnDestroy {
       return;
     }
     this.currentPage = page;
-    this.fetchRequests();
-  }
-
-  onSearch(): void {
-    this.currentPage = 1; // Reset to first page when searching
-    this.fetchRequests();
+    this.fetchPendingRequests();
   }
 
   formatDate(dateString: string): string {
@@ -111,42 +116,56 @@ export class RequestComponent implements OnInit, OnDestroy {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 
-  formatTransactionId(transID: string): string {
-    return `##${transID}`;
-  }
+  approveRequest(enrollment: CourseEnrollment): void {
+    // Find the head approval step
+    const headApprovalStep = enrollment.approvalSteps?.find(step => step.courseTabApproval?.isHeadApproval);
 
-  getStatusClass(statusId: number): string {
-    switch (statusId) {
-      case 1: // Draft
-        return 'bg-yellow-100 text-yellow-800';
-      case 2: // Accepted
-        return 'bg-green-100 text-green-800';
-      case 5: // Documents
-        return 'bg-blue-100 text-blue-800';
-      case 1002: // Other status
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if (!headApprovalStep) {
+      this.toastr.error('Head approval step not found');
+      return;
     }
+
+    this.loadingService.show();
+    this.enrollmentService.approveEnrollmentStep(enrollment.id, headApprovalStep.courseTabApprovalId)
+      .pipe(finalize(() => this.loadingService.hide()))
+      .subscribe({
+        next: () => {
+          this.toastr.success('Request approved successfully');
+          this.fetchPendingRequests();
+        },
+        error: (error) => {
+          this.toastr.error(error.error?.message || 'Failed to approve request');
+        }
+      });
   }
 
-  getStatusText(statusId: number): string {
-    switch (statusId) {
-      case 1:
-        return 'مسودة';
-      case 2:
-        return 'تحت الدراسة';
-      case 1002:
-        return 'تم الاعتماد';
-      default:
-        return 'غير معروف';
+  rejectRequest(enrollment: CourseEnrollment): void {
+    // Find the head approval step
+    const headApprovalStep = enrollment.approvalSteps?.find(step => step.courseTabApproval?.isHeadApproval);
+
+    if (!headApprovalStep) {
+      this.toastr.error('Head approval step not found');
+      return;
     }
-  }
 
-  viewRequestDetails(request: Request): void {
-    this.router.navigate(['/request', request.id]);
+    const comments = prompt('Please provide a reason for rejection (optional):');
+
+    this.loadingService.show();
+    this.enrollmentService.rejectEnrollmentStep(enrollment.id, headApprovalStep.courseTabApprovalId, comments || undefined)
+      .pipe(finalize(() => this.loadingService.hide()))
+      .subscribe({
+        next: () => {
+          this.toastr.success('Request rejected successfully');
+          this.fetchPendingRequests();
+        },
+        error: (error) => {
+          this.toastr.error(error.error?.message || 'Failed to reject request');
+        }
+      });
   }
 }

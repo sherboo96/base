@@ -29,12 +29,19 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(clonedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        // Unauthorized - clear token and redirect to login
-        storageService.removeItem('token');
-        storageService.removeItem('currentUser');
-        storageService.removeItem('userPermissions');
-        storageService.removeItem('userRoles');
-        router.navigate(['/login']);
+        // Check if this is a public route (events registration)
+        const currentUrl = router.url;
+        const isPublicRoute = currentUrl.startsWith('/events/');
+        
+        if (!isPublicRoute) {
+          // Unauthorized - clear token and redirect to login (only for protected routes)
+          storageService.removeItem('token');
+          storageService.removeItem('currentUser');
+          storageService.removeItem('userPermissions');
+          storageService.removeItem('userRoles');
+          router.navigate(['/login']);
+        }
+        // For public routes, let the component handle the error
       }
       return throwError(() => error);
     })

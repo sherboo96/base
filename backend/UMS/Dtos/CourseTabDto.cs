@@ -2,6 +2,7 @@ namespace UMS.Dtos;
 
 public class CourseTabDto
 {
+    public int? Id { get; set; }
     public string Name { get; set; }
     public string NameAr { get; set; }
     public string RouteCode { get; set; } // Unique route code for URL routing
@@ -11,4 +12,5 @@ public class CourseTabDto
     public bool ShowInMenu { get; set; } = true;
     public bool ShowPublic { get; set; } = false;
     public bool ShowForOtherOrganizations { get; set; } = false; // Show this tab to other organizations (only for main organization)
+    public List<CourseTabApprovalDto>? Approvals { get; set; }
 }

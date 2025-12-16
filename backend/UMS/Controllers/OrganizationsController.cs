@@ -179,7 +179,7 @@ public class OrganizationsController : ControllerBase
             {
                 LoginMethod.Credentials => "Credentials (Username/Password)",
                 LoginMethod.ActiveDirectory => "Active Directory",
-                LoginMethod.KMNID => "KMNID",
+                LoginMethod.OTPVerification => "OTP Verification",
                 _ => m.ToString()
             }
         }).ToList();
@@ -248,6 +248,8 @@ public class OrganizationsController : ControllerBase
         existing.Code = dto.Code;
         existing.Domain = dto.Domain;
         existing.IsMain = dto.IsMain;
+        existing.AllowedLoginMethods = dto.AllowedLoginMethods;
+        existing.DefaultLoginMethod = dto.DefaultLoginMethod;
         existing.UpdatedAt = DateTime.Now;
 
         var updated = await _unitOfWork.Organizations.UpdateAsync(existing);

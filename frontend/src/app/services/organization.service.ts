@@ -10,6 +10,7 @@ export interface Organization {
   code: string;
   domain: string;
   isMain: boolean;
+  defaultLoginMethod?: number;
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;

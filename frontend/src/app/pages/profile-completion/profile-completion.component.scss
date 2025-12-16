@@ -1,0 +1,90 @@
+:host {
+  position: relative;
+  display: block;
+  min-height: 100vh;
+}
+
+// Watermark using CSS custom properties to avoid build issues
+.profile-completion-wrapper {
+  position: relative;
+  min-height: 100vh;
+  
+  // Watermark background with OTC logo - Layer 1
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../../../assets/images/logo.png');
+    background-repeat: repeat;
+    background-size: 400px 400px;
+    background-position: 0 0;
+    opacity: 0.1;
+    z-index: 0;
+    pointer-events: none;
+    background-attachment: fixed;
+  }
+  
+  // Additional watermark layers for more coverage - Layer 2
+  &::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../../../assets/images/logo.png');
+    background-repeat: repeat;
+    background-size: 350px 350px;
+    background-position: 200px 200px;
+    opacity: 0.07;
+    z-index: 0;
+    pointer-events: none;
+    background-attachment: fixed;
+  }
+}
+
+.form-group {
+  @apply space-y-2;
+  position: relative;
+  z-index: 1;
+}
+
+.form-label {
+  @apply block text-sm font-medium font-poppins;
+  position: relative;
+  z-index: 1;
+}
+
+.input-wrapper {
+  @apply relative;
+  z-index: 1;
+}
+
+.input-icon-left {
+  @apply absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none;
+  z-index: 2;
+}
+
+.form-input {
+  @apply w-full px-4 py-2.5 pl-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white shadow-sm font-poppins;
+  position: relative;
+  z-index: 1;
+}
+
+.input-error {
+  @apply border-red-500 focus:ring-red-500 focus:border-red-500;
+}
+
+.input-success {
+  @apply border-green-500 focus:ring-green-500 focus:border-green-500;
+}
+
+.error-message {
+  @apply text-xs text-red-600 flex items-center mt-1;
+  position: relative;
+  z-index: 2;
+}
+

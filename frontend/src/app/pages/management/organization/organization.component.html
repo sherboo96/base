@@ -143,6 +143,9 @@
                             <i class="fas fa-flag mr-1.5 text-accent text-xs"></i>{{'organization.isMain'|translate}}
                         </th>
                         <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-key mr-1.5 text-accent text-xs"></i>{{'organization.defaultLoginMethod'|translate}}
+                        </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
                             <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{'organization.status'|translate}}
                         </th>
                         <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
@@ -170,6 +173,11 @@
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span [ngClass]="{'bg-primary/20 text-primary':organization.isMain,'bg-gray-100 text-gray-800':!organization.isMain}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                                 {{organization.isMain?('organization.main'|translate):'-'}}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span [ngClass]="getLoginMethodBadgeClass(organization.defaultLoginMethod)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                {{getLoginMethodLabel(organization.defaultLoginMethod)}}
                             </span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">

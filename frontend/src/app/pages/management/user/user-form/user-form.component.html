@@ -265,7 +265,7 @@
         <div class="space-y-2" *ngIf="selectedOrganization?.isMain">
             <label for="departmentId" class="block text-sm font-medium text-gray-700 font-poppins">
                 {{ 'user.department' | translate }}
-                <span class="text-red-500">*</span>
+                <span class="text-red-500" *ngIf="!isEdit">*</span>
             </label>
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -340,7 +340,7 @@
         <div class="space-y-2" *ngIf="selectedOrganization?.isMain">
             <label for="jobTitleId" class="block text-sm font-medium text-gray-700 font-poppins">
                 {{ 'user.jobTitle' | translate }}
-                <span class="text-red-500">*</span>
+                <span class="text-red-500" *ngIf="!isEdit">*</span>
             </label>
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

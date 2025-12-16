@@ -1,6 +1,4 @@
 <div class="min-h-screen bg-gray-50">
-  <app-loading></app-loading>
-
   <!-- Loading State -->
   <div *ngIf="isLoading && !course" class="flex justify-center items-center min-h-screen">
     <div class="text-center">
@@ -13,27 +11,42 @@
   <div *ngIf="course && !isLoading">
     <!-- Top Navigation -->
     <div class="border-b border-gray-200 bg-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="max-w-full mx-auto px-2 sm:px-4 lg:px-6 py-4">
         <div class="flex items-center justify-between">
-          <button
-            (click)="goBack()"
-            class="inline-flex items-center text-gray-600 hover:text-accent transition-colors text-sm font-medium"
-          >
-            <i class="fas fa-arrow-left mr-2"></i>
-            <span>{{ 'course.courses' | translate }}</span>
-          </button>
+          <div></div>
           <div class="flex items-center gap-2">
-            <button
-              (click)="editCourse()"
-              class="px-4 py-2 bg-accent hover:bg-accentDark text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-            >
+            <!-- Change Status Dropdown -->
+            <div class="relative" #statusDropdown>
+              <button (click)="toggleStatusDropdown()"
+                class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium">
+                <i class="fas fa-exchange-alt"></i>
+                <span>{{ 'course.changeStatus' | translate }}</span>
+                <i class="fas fa-chevron-down ml-1 text-xs"></i>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div *ngIf="showStatusDropdown && course"
+                class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1">
+                <div class="px-3 py-2 border-b border-gray-100">
+                  <p class="text-xs text-gray-500">{{ 'course.currentStatus' | translate }}</p>
+                  <p class="text-sm font-medium text-gray-800">{{ getStatusText(course.status) }}</p>
+                </div>
+                <div class="max-h-64 overflow-y-auto">
+                  <button *ngFor="let status of getAvailableStatuses()" (click)="updateCourseStatus(status.value)"
+                    class="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
+                    <i class="fas fa-circle text-xs" [style.color]="getStatusColor(status.value)"></i>
+                    <span>{{ status.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button (click)="editCourse()"
+              class="px-4 py-2 bg-accent hover:bg-accentDark text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium">
               <i class="fas fa-edit"></i>
               <span>{{ 'course.edit' | translate }}</span>
             </button>
-            <button
-              (click)="deleteCourse()"
-              class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
-            >
+            <button (click)="deleteCourse()"
+              class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium">
               <i class="fas fa-trash"></i>
               <span>{{ 'course.delete' | translate }}</span>
             </button>
@@ -43,7 +56,7 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-full mx-auto px-2 sm:px-4 lg:px-6 py-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left Column - Main Content (2/3) -->
         <div class="lg:col-span-2 space-y-6">
@@ -52,7 +65,8 @@
             <!-- Course Provider/Organization -->
             <div class="flex items-center gap-4 mb-4">
               <div *ngIf="course.organization" class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accentDark flex items-center justify-center text-white font-bold text-lg shadow-md">
+                <div
+                  class="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accentDark flex items-center justify-center text-white font-bold text-lg shadow-md">
                   {{ course.organization.name?.charAt(0) || 'O' }}
                 </div>
                 <div>
@@ -71,26 +85,19 @@
             </div>
 
             <!-- Course Title -->
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight" [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight"
+              [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
               {{ currentLanguage === 'ar' && course.courseTitleAr ? course.courseTitleAr : course.courseTitle }}
             </h1>
 
             <!-- Course Description -->
             <p class="text-gray-700 text-base leading-relaxed mb-6" [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
-              {{ currentLanguage === 'ar' && course.descriptionAr ? course.descriptionAr : (course.description || ('course.noDescription' | translate)) }}
+              {{ currentLanguage === 'ar' && course.descriptionAr ? course.descriptionAr : (course.description ||
+              ('course.noDescription' | translate)) }}
             </p>
 
             <!-- Key Metrics Card -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <i class="fas fa-chalkboard-teacher text-purple-600"></i>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 font-medium">{{ 'course.instructors' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ course.instructors?.length || 0 }}</p>
-                </div>
-              </div>
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
                   <i class="fas fa-star text-yellow-600"></i>
@@ -115,7 +122,16 @@
                 </div>
                 <div>
                   <p class="text-xs text-gray-500 font-medium">{{ 'course.seats' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ course.availableSeats }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ course.availableSeats || 0 }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <i class="fas fa-user-check text-green-600"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-medium">{{ 'course.availableSeats' | translate }}</p>
+                  <p class="text-sm font-bold text-accent">{{ getAvailableSeats() }}</p>
                 </div>
               </div>
             </div>
@@ -125,7 +141,8 @@
               <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
                 {{ course.language === 1 ? 'العربية' : 'English' }}
               </span>
-              <span *ngIf="course.certificateAvailable" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+              <span *ngIf="course.certificateAvailable"
+                class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
                 <i class="fas fa-certificate mr-1"></i>{{ 'course.certificate' | translate }}
               </span>
             </div>
@@ -135,42 +152,57 @@
           <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div class="border-b border-gray-200">
               <nav class="flex -mb-px overflow-x-auto">
-                <button
-                  (click)="switchTab('overview')"
-                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-                  [ngClass]="{
+                <button (click)="switchTab('overview')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" [ngClass]="{
                     'border-accent text-accent': activeTab === 'overview',
                     'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'overview'
-                  }"
-                >
+                  }">
                   <i class="fas fa-info-circle mr-2"></i>
                   {{ 'course.overview' | translate }}
                 </button>
-                <button
-                  *ngIf="course.instructors && course.instructors.length > 0"
-                  (click)="switchTab('instructor')"
-                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-                  [ngClass]="{
+                <button *ngIf="course.instructors && course.instructors.length > 0" (click)="switchTab('instructor')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" [ngClass]="{
                     'border-accent text-accent': activeTab === 'instructor',
                     'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'instructor'
-                  }"
-                >
+                  }">
                   <i class="fas fa-user mr-2"></i>
                   {{ 'course.instructor' | translate }}
                 </button>
-                <button
-                  (click)="switchTab('enrollments')"
-                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-                  [ngClass]="{
+                <button (click)="switchTab('enrollments')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" [ngClass]="{
                     'border-accent text-accent': activeTab === 'enrollments',
                     'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'enrollments'
-                  }"
-                >
+                  }">
                   <i class="fas fa-users mr-2"></i>
                   {{ 'course.enrollments' | translate }}
-                  <span *ngIf="totalEnrollments > 0" class="ml-2 px-2 py-0.5 bg-accent/10 text-accent rounded-full text-xs">
+                  <span *ngIf="totalEnrollments > 0"
+                    class="ml-2 px-2 py-0.5 bg-accent/10 text-accent rounded-full text-xs">
                     {{ totalEnrollments }}
                   </span>
+                </button>
+                <button (click)="switchTab('attendance')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" [ngClass]="{
+                    'border-accent text-accent': activeTab === 'attendance',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'attendance'
+                  }">
+                  <i class="fas fa-clipboard-list mr-2"></i>
+                  {{ 'attendance.title' | translate }}
+                </button>
+                <button (click)="switchTab('adoptionUsers')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" [ngClass]="{
+                    'border-accent text-accent': activeTab === 'adoptionUsers',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'adoptionUsers'
+                  }">
+                  <i class="fas fa-user-friends mr-2"></i>
+                  {{ 'course.adoptionUsers' | translate }}
+                </button>
+                <button (click)="switchTab('courseContacts')"
+                  class="px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap" [ngClass]="{
+                    'border-accent text-accent': activeTab === 'courseContacts',
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'courseContacts'
+                  }">
+                  <i class="fas fa-address-book mr-2"></i>
+                  {{ 'course.courseContacts' | translate }}
                 </button>
               </nav>
             </div>
@@ -186,7 +218,8 @@
                     {{ 'course.whatYouWillLearn' | translate }}
                   </h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div *ngFor="let outcome of course.learningOutcomes" class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div *ngFor="let outcome of course.learningOutcomes"
+                      class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                       <i class="fas fa-check-circle text-green-500 mt-1 flex-shrink-0"></i>
                       <div [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
                         <p class="text-gray-800 font-medium text-sm">
@@ -204,8 +237,10 @@
                     {{ 'course.courseContents' | translate }}
                   </h3>
                   <div class="space-y-2">
-                    <div *ngFor="let content of course.courseContents; let i = index" class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                      <span class="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    <div *ngFor="let content of course.courseContents; let i = index"
+                      class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span
+                        class="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                         {{ i + 1 }}
                       </span>
                       <div [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
@@ -219,29 +254,27 @@
               </div>
 
               <!-- Instructor Tab -->
-              <div *ngIf="activeTab === 'instructor' && course.instructors && course.instructors.length > 0" class="space-y-4">
-                <div *ngFor="let instructor of course.instructors" class="bg-white border border-gray-200 rounded-lg p-4">
+              <div *ngIf="activeTab === 'instructor' && course.instructors && course.instructors.length > 0"
+                class="space-y-4">
+                <div *ngFor="let instructor of course.instructors"
+                  class="bg-white border border-gray-200 rounded-lg p-4">
                   <div class="flex items-start gap-4">
                     <!-- Instructor Image -->
                     <div class="flex-shrink-0">
-                      <div class="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 shadow-md border-2 border-white relative">
-                        <img 
-                          *ngIf="instructor.profileImage" 
-                          [src]="getInstructorImageUrl(instructor.profileImage)" 
+                      <div
+                        class="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 shadow-md border-2 border-white relative">
+                        <img *ngIf="instructor.profileImage" [src]="getInstructorImageUrl(instructor.profileImage)"
                           [alt]="currentLanguage === 'ar' && instructor.nameAr ? instructor.nameAr : instructor.nameEn"
-                          class="w-full h-full object-cover"
-                          (error)="onImageError($event)"
-                        />
-                        <div 
+                          class="w-full h-full object-cover" (error)="onImageError($event)" />
+                        <div
                           class="w-full h-full flex items-center justify-center text-white text-2xl font-bold absolute inset-0"
-                          [style.display]="instructor.profileImage ? 'none' : 'flex'"
-                          #fallbackImage
-                        >
-                          {{ (currentLanguage === 'ar' && instructor.nameAr ? instructor.nameAr : instructor.nameEn)?.charAt(0) || 'I' }}
+                          [style.display]="instructor.profileImage ? 'none' : 'flex'" #fallbackImage>
+                          {{ (currentLanguage === 'ar' && instructor.nameAr ? instructor.nameAr :
+                          instructor.nameEn)?.charAt(0) || 'I' }}
                         </div>
                       </div>
                     </div>
-                    
+
                     <!-- Instructor Info -->
                     <div class="flex-1 min-w-0" [dir]="currentLanguage === 'ar' ? 'rtl' : 'ltr'">
                       <h3 class="text-xl font-bold text-gray-900 mt-2">
@@ -264,9 +297,29 @@
                     <i class="fas fa-users text-accent"></i>
                     {{ 'course.enrollments' | translate }}
                   </h3>
-                  <span class="text-sm text-gray-600">
-                    {{ 'course.totalEnrollments' | translate }}: {{ totalEnrollments }}
-                  </span>
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-lg border border-accent/20">
+                      <i class="fas fa-users text-accent text-sm"></i>
+                      <span class="text-sm font-semibold text-gray-900">
+                        {{ 'course.totalEnrollments' | translate }}:
+                        <span class="text-accent">{{ totalEnrollments }}</span>
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button (click)="exportAllEnrollments()"
+                        class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md font-medium text-xs"
+                        [title]="'course.exportAllEnrollments' | translate">
+                        <i class="fas fa-file-excel text-xs"></i>
+                        <span>{{ 'course.exportAllEnrollments' | translate }}</span>
+                      </button>
+                      <button (click)="exportApprovedEnrollments()"
+                        class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md font-medium text-xs"
+                        [title]="'course.exportApprovedEnrollments' | translate">
+                        <i class="fas fa-file-excel text-xs"></i>
+                        <span>{{ 'course.exportApprovedEnrollments' | translate }}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Loading State -->
@@ -277,77 +330,134 @@
                   </div>
                 </div>
 
-                <!-- Enrollments Table -->
-                <div *ngIf="!isLoadingEnrollments && enrollments.length > 0" class="overflow-x-auto">
-                  <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                      <tr>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-textDark uppercase tracking-wider">
-                          {{ 'course.user' | translate }}
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-textDark uppercase tracking-wider">
-                          {{ 'course.email' | translate }}
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-textDark uppercase tracking-wider">
-                          {{ 'course.enrollmentDate' | translate }}
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-textDark uppercase tracking-wider">
-                          {{ 'course.status' | translate }}
-                        </th>
-                        <th class="px-4 py-3 text-right text-xs font-bold text-textDark uppercase tracking-wider">
-                          {{ 'course.actions' | translate }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                      <tr *ngFor="let enrollment of enrollments" class="hover:bg-gray-50">
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          {{ enrollment.user?.fullName || '-' }}
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                          {{ enrollment.user?.email || '-' }}
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                          {{ formatEnrollmentDate(enrollment.enrollmentAt) }}
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                          <span [class]="getEnrollmentStatusClass(enrollment.status)" class="px-2 py-1 rounded-full text-xs font-semibold">
-                            {{ getEnrollmentStatusText(enrollment.status) }}
+                <!-- Enrollments List Grouped by Organization -->
+                <div *ngIf="!isLoadingEnrollments && enrollmentOrganizations.length > 0" class="space-y-6">
+                  <div *ngFor="let orgName of enrollmentOrganizations" class="space-y-4">
+                    <!-- Organization Header -->
+                    <div
+                      class="bg-accent/10 border-l-4 border-accent px-4 py-2 rounded-r-lg flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <h4 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          <i class="fas fa-building text-accent"></i>
+                          {{ orgName }}
+                        </h4>
+                        <div
+                          class="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-accent/30 shadow-sm">
+                          <i class="fas fa-users text-accent text-xs"></i>
+                          <span class="text-xs font-semibold text-gray-900">
+                            <span class="text-accent font-bold">{{ groupedEnrollments[orgName]?.length || 0 }}</span>
+                            <span class="text-gray-600 ml-1">{{ 'course.enrollments' | translate }}</span>
                           </span>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                          <div class="flex items-center justify-end gap-2">
-                            <button
-                              *ngIf="!enrollment.finalApproval || enrollment.status === 1"
-                              (click)="approveEnrollment(enrollment)"
-                              class="px-3 py-1.5 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                              [title]="'course.approve' | translate"
-                            >
-                              <i class="fas fa-check mr-1"></i>
-                              {{ 'course.approve' | translate }}
-                            </button>
-                            <button
-                              *ngIf="!enrollment.finalApproval || enrollment.status === 1"
-                              (click)="rejectEnrollment(enrollment)"
-                              class="px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                              [title]="'course.reject' | translate"
-                            >
-                              <i class="fas fa-times mr-1"></i>
-                              {{ 'course.reject' | translate }}
-                            </button>
-                            <button
-                              (click)="cancelEnrollment(enrollment)"
-                              class="px-3 py-1.5 border-2 border-gray-500 rounded-lg text-gray-600 bg-white hover:bg-gray-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                              [title]="'course.cancelEnrollment' | translate"
-                            >
-                              <i class="fas fa-trash mr-1"></i>
-                              {{ 'course.cancel' | translate }}
-                            </button>
+                        </div>
+                      </div>
+                      <button (click)="exportOrganizationEnrollments(orgName)"
+                        class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 flex items-center gap-1 shadow-sm hover:shadow-md font-medium text-xs"
+                        [title]="'course.exportOrganizationEnrollments' | translate">
+                        <i class="fas fa-file-excel text-xs"></i>
+                        <span>{{ 'course.export' | translate }}</span>
+                      </button>
+                    </div>
+
+                    <!-- Enrollments for this organization -->
+                    <div class="space-y-3">
+                      <div *ngFor="let enrollment of groupedEnrollments[orgName]"
+                        class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <!-- Enrollment Header -->
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                          <div class="flex items-center gap-4 flex-1">
+                            <div class="flex-1">
+                              <h4 class="text-sm font-semibold text-gray-900">{{ enrollment.user?.fullName || '-' }}
+                              </h4>
+                              <p class="text-xs text-gray-600">{{ enrollment.user?.email || '-' }}</p>
+                              <div *ngIf="enrollment.user?.organizationIsMain"
+                                class="mt-1 flex items-center gap-2 flex-wrap">
+                                <span *ngIf="enrollment.user?.departmentName" class="text-xs text-gray-500">
+                                  <i class="fas fa-sitemap mr-1"></i>
+                                  {{ enrollment.user?.departmentName }}
+                                </span>
+                                <span *ngIf="enrollment.user?.jobTitle" class="text-xs text-gray-500">
+                                  <i class="fas fa-briefcase mr-1"></i>
+                                  {{ enrollment.user?.jobTitle }}
+                                </span>
+                              </div>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                              {{ formatEnrollmentDate(enrollment.enrollmentAt) }}
+                            </div>
+                            <div>
+                              <span [class]="getEnrollmentStatusClass(enrollment.status)"
+                                class="px-2 py-1 rounded-full text-xs font-semibold">
+                                {{ getEnrollmentStatusText(enrollment.status) }}
+                              </span>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                          <button *ngIf="!hasCheckedIn(enrollment)" (click)="deleteEnrollment(enrollment)"
+                            class="px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs ml-2"
+                            [title]="'course.deleteEnrollment' | translate">
+                            <i class="fas fa-trash mr-1"></i>
+                            {{ 'course.delete' | translate }}
+                          </button>
+                          <button *ngIf="enrollment.approvalSteps && enrollment.approvalSteps.length > 0"
+                            (click)="viewApprovalSteps(enrollment)"
+                            class="px-3 py-1.5 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs ml-2"
+                            [title]="'course.viewApprovalSteps' | translate">
+                            <i class="fas fa-tasks mr-1"></i>
+                            {{ 'course.approvalSteps' | translate }}
+                          </button>
+                          <button *ngIf="enrollment.finalApproval && enrollment.status === 2 && !hasCheckedIn(enrollment)"
+                            (click)="resendConfirmationEmail(enrollment)"
+                            class="px-3 py-1.5 border-2 border-purple-500 rounded-lg text-purple-600 bg-white hover:bg-purple-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs ml-2"
+                            [title]="'course.resendEmail' | translate">
+                            <i class="fas fa-envelope mr-1"></i>
+                            {{ 'course.resendEmail' | translate }}
+                          </button>
+
+                          <!-- Check-In/Check-Out Buttons -->
+                          <!-- Show Check-In button for all approved enrollments -->
+                          <button *ngIf="isApprovedEnrollment(enrollment) && !hasCheckedIn(enrollment)" 
+                            (click)="checkIn(enrollment)"
+                            [disabled]="isCheckInDisabled(enrollment)"
+                            [class.opacity-50]="isCheckInDisabled(enrollment)"
+                            [class.cursor-not-allowed]="isCheckInDisabled(enrollment)"
+                            class="px-3 py-1.5 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            [title]="isCheckInDisabled(enrollment) ? getCheckInDisabledReason(enrollment) : ('attendance.checkIn' | translate)">
+                              <i class="fas fa-sign-in-alt mr-1"></i>
+                              {{ 'attendance.checkIn' | translate }}
+                            </button>
+                          <button *ngIf="canCheckOut(enrollment)" (click)="checkOut(enrollment)"
+                              class="px-3 py-1.5 border-2 border-yellow-500 rounded-lg text-yellow-600 bg-white hover:bg-yellow-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs ml-2"
+                              [title]="'attendance.checkOut' | translate">
+                              <i class="fas fa-sign-out-alt mr-1"></i>
+                              {{ 'attendance.checkOut' | translate }}
+                            </button>
+                          <span *ngIf="hasCheckedOut(enrollment)"
+                            class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold ml-2">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            {{ 'attendance.checkedOut' | translate }}
+                          </span>
+                        </div>
+
+                        <!-- No Approval Steps (Fallback to old behavior) -->
+                        <div *ngIf="!enrollment.approvalSteps || enrollment.approvalSteps.length === 0"
+                          class="flex items-center justify-end gap-2">
+                          <button *ngIf="!enrollment.finalApproval || enrollment.status === 1"
+                            (click)="approveEnrollment(enrollment)"
+                            class="px-3 py-1.5 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                            [title]="'course.approve' | translate">
+                            <i class="fas fa-check mr-1"></i>
+                            {{ 'course.approve' | translate }}
+                          </button>
+                          <button *ngIf="!enrollment.finalApproval || enrollment.status === 1"
+                            (click)="rejectEnrollment(enrollment)"
+                            class="px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                            [title]="'course.reject' | translate">
+                            <i class="fas fa-times mr-1"></i>
+                            {{ 'course.reject' | translate }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Empty State -->
@@ -357,48 +467,210 @@
                 </div>
 
                 <!-- Pagination -->
-                <div *ngIf="!isLoadingEnrollments && enrollments.length > 0 && totalEnrollments > enrollmentPageSize" class="mt-4 flex items-center justify-between">
+                <div *ngIf="!isLoadingEnrollments && enrollments.length > 0 && totalEnrollments > enrollmentPageSize"
+                  class="mt-4 flex items-center justify-between">
                   <div class="text-sm text-gray-600">
                     {{ 'course.showing' | translate: {
-                      from: (enrollmentPage - 1) * enrollmentPageSize + 1,
-                      to: Math.min(enrollmentPage * enrollmentPageSize, totalEnrollments),
-                      total: totalEnrollments
+                    from: (enrollmentPage - 1) * enrollmentPageSize + 1,
+                    to: Math.min(enrollmentPage * enrollmentPageSize, totalEnrollments),
+                    total: totalEnrollments
                     } }}
                   </div>
                   <div class="flex items-center gap-2">
-                    <button
-                      (click)="goToFirstPage()"
-                      [disabled]="!canGoToPreviousPage()"
-                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button (click)="goToFirstPage()" [disabled]="!canGoToPreviousPage()"
+                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                       <i class="fas fa-angle-double-left"></i>
                     </button>
-                    <button
-                      (click)="goToPreviousPage()"
-                      [disabled]="!canGoToPreviousPage()"
-                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button (click)="goToPreviousPage()" [disabled]="!canGoToPreviousPage()"
+                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                       <i class="fas fa-chevron-left"></i>
                     </button>
                     <span class="px-4 py-1.5 text-sm font-medium">
                       {{ enrollmentPage }} / {{ Math.ceil(totalEnrollments / enrollmentPageSize) }}
                     </span>
-                    <button
-                      (click)="goToNextPage()"
-                      [disabled]="!canGoToNextPage()"
-                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button (click)="goToNextPage()" [disabled]="!canGoToNextPage()"
+                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                       <i class="fas fa-chevron-right"></i>
                     </button>
-                    <button
-                      (click)="goToLastPage()"
-                      [disabled]="!canGoToNextPage()"
-                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button (click)="goToLastPage()" [disabled]="!canGoToNextPage()"
+                      class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                       <i class="fas fa-angle-double-right"></i>
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <!-- Adoption Users Tab -->
+              <div *ngIf="activeTab === 'adoptionUsers'" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-user-friends text-accent"></i>
+                    {{ 'course.adoptionUsers' | translate }}
+                    </h3>
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-lg border border-accent/20">
+                      <i class="fas fa-user-friends text-accent text-sm"></i>
+                      <span class="text-sm font-semibold text-gray-900">
+                        {{ 'course.adoptionUsers' | translate }}:
+                        <span class="text-accent">{{ course.adoptionUsers?.length || 0 }}</span>
+                      </span>
+                  </div>
+                  <button (click)="addAdoptionUser()"
+                      class="px-3 py-1.5 bg-accent hover:bg-accentDark text-white rounded-lg transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md font-medium text-xs">
+                      <i class="fas fa-plus text-xs"></i>
+                    <span>{{ 'course.addAdoptionUser' | translate }}</span>
+                  </button>
+                  </div>
+                </div>
+
+                <!-- Adoption Users List Grouped by Organization -->
+                <div *ngIf="adoptionUserOrganizations.length > 0" class="space-y-6">
+                  <div *ngFor="let orgName of adoptionUserOrganizations" class="space-y-4">
+                    <!-- Organization Header -->
+                    <div
+                      class="bg-accent/10 border-l-4 border-accent px-4 py-2 rounded-r-lg flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <h4 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          <i class="fas fa-building text-accent"></i>
+                          {{ orgName }}
+                        </h4>
+                        <div
+                          class="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-accent/30 shadow-sm">
+                          <i class="fas fa-user-friends text-accent text-xs"></i>
+                          <span class="text-xs font-semibold text-gray-900">
+                            <span class="text-accent font-bold">{{ groupedAdoptionUsers[orgName]?.length || 0 }}</span>
+                            <span class="text-gray-600 ml-1">{{ 'course.adoptionUsers' | translate }}</span>
+                          </span>
+                        </div>
+                        </div>
+                      </div>
+
+                    <!-- Adoption Users for this organization -->
+                      <div class="space-y-3">
+                      <div *ngFor="let adoptionUser of groupedAdoptionUsers[orgName]"
+                        class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <!-- Adoption User Header -->
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                          <div class="flex items-center gap-4 flex-1">
+                            <div class="flex-1">
+                              <h4 class="text-sm font-semibold text-gray-900">
+                            {{ getAdoptionUserName(adoptionUser) }}
+                          </h4>
+                              <p *ngIf="getAdoptionUserEmail(adoptionUser)" class="text-xs text-gray-600 mt-1">
+                                {{ getAdoptionUserEmail(adoptionUser) }}
+                              </p>
+                              <div class="mt-2 flex items-center gap-2">
+                                <span
+                                  class="px-2 py-1 bg-accent/10 text-accent rounded-full text-xs font-semibold border border-accent/20">
+                                  <i class="fas fa-tag mr-1"></i>
+                                  {{ getAdoptionTypeLabel(adoptionUser.adoptionType) }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <button (click)="editAdoptionUser(adoptionUser)"
+                              class="px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                              [title]="'common.edit' | translate">
+                              <i class="fas fa-edit mr-1"></i>
+                              {{ 'common.edit' | translate }}
+                            </button>
+                            <button (click)="deleteAdoptionUser(adoptionUser)"
+                              class="px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                              [title]="'common.delete' | translate">
+                              <i class="fas fa-trash mr-1"></i>
+                              {{ 'common.delete' | translate }}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty State -->
+                <div *ngIf="!course.adoptionUsers || course.adoptionUsers.length === 0" class="text-center py-12">
+                  <i class="fas fa-user-friends text-4xl text-gray-300 mb-3"></i>
+                  <p class="text-gray-600">{{ 'course.noAdoptionUsers' | translate }}</p>
+                </div>
+              </div>
+
+              <!-- Course Contacts Tab -->
+              <div *ngIf="activeTab === 'courseContacts'" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-address-book text-accent"></i>
+                    {{ 'course.courseContacts' | translate }}
+                    </h3>
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-lg border border-accent/20">
+                      <i class="fas fa-address-book text-accent text-sm"></i>
+                      <span class="text-sm font-semibold text-gray-900">
+                        {{ 'course.courseContacts' | translate }}:
+                        <span class="text-accent">{{ course.courseContacts?.length || 0 }}</span>
+                      </span>
+                  </div>
+                  <button (click)="addCourseContact()"
+                      class="px-3 py-1.5 bg-accent hover:bg-accentDark text-white rounded-lg transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md font-medium text-xs">
+                      <i class="fas fa-plus text-xs"></i>
+                    <span>{{ 'course.addCourseContact' | translate }}</span>
+                  </button>
+                  </div>
+                </div>
+
+                <!-- Course Contacts List -->
+                <div *ngIf="course.courseContacts && course.courseContacts.length > 0" class="space-y-3">
+                  <div *ngFor="let contact of course.courseContacts"
+                    class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <!-- Contact Header -->
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                      <div class="flex items-center gap-4 flex-1">
+                        <div class="flex-1">
+                          <h4 class="text-sm font-semibold text-gray-900">{{ contact.name || '-' }}</h4>
+                          <div class="mt-2 flex items-center gap-3 flex-wrap">
+                            <div *ngIf="contact.phoneNumber" class="flex items-center gap-2 text-xs text-gray-600">
+                              <i class="fas fa-phone text-green-600"></i>
+                              <a [href]="'tel:' + contact.phoneNumber" class="hover:text-accent transition-colors">
+                                {{ contact.phoneNumber }}
+                              </a>
+                            </div>
+                            <div *ngIf="contact.emailAddress" class="flex items-center gap-2 text-xs text-gray-600">
+                              <i class="fas fa-envelope text-blue-600"></i>
+                              <a [href]="'mailto:' + contact.emailAddress" class="hover:text-accent transition-colors">
+                                {{ contact.emailAddress }}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button (click)="editCourseContact(contact)"
+                          class="px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                          [title]="'common.edit' | translate">
+                          <i class="fas fa-edit mr-1"></i>
+                          {{ 'common.edit' | translate }}
+                        </button>
+                        <button (click)="deleteCourseContact(contact)"
+                          class="px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                          [title]="'common.delete' | translate">
+                          <i class="fas fa-trash mr-1"></i>
+                          {{ 'common.delete' | translate }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty State -->
+                <div *ngIf="!course.courseContacts || course.courseContacts.length === 0" class="text-center py-12">
+                  <i class="fas fa-address-book text-4xl text-gray-300 mb-3"></i>
+                  <p class="text-gray-600">{{ 'course.noCourseContacts' | translate }}</p>
+                </div>
+              </div>
+
+              <!-- Attendance Tab -->
+              <div *ngIf="activeTab === 'attendance'" class="space-y-6">
+                <app-course-attendance *ngIf="course" [courseId]="course.id" [course]="course"></app-course-attendance>
               </div>
             </div>
           </div>
@@ -445,7 +717,8 @@
                 <i class="fas fa-dollar-sign text-gray-500"></i>
                 <div>
                   <p class="text-xs text-gray-500 font-medium">{{ 'course.price' | translate }}</p>
-                  <p class="text-sm font-semibold text-gray-900">{{ course.price }} {{ 'course.currency' | translate }}</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ course.price }} {{ 'course.currency' | translate }}
+                  </p>
                 </div>
               </div>
             </div>
