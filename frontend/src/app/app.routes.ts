@@ -34,6 +34,8 @@ import { EventRegistrationComponent } from './pages/events/event-registration/ev
 import { EventComponent } from './pages/management/event/event.component';
 import { EventOrganizationComponent } from './pages/management/event-organization/event-organization.component';
 import { EventSpeakerComponent } from './pages/management/event-speaker/event-speaker.component';
+import { DigitalLibraryComponent } from './pages/digital-library/digital-library.component';
+import { DigitalLibraryManagementComponent } from './pages/management/digital-library/digital-library-management.component';
 
 export const routes: Routes = [
   {
@@ -56,12 +58,21 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: DashboardComponent,
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent
+      ),
     canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
-    data: {
-      redirectIfLoggedIn: false,
-      permission: 'DASHBOARD_VIEW',
-    },
+    data: { permission: 'DASHBOARD_VIEW' },
+  },
+  {
+    path: 'user-dashboard',
+    loadComponent: () =>
+      import('./pages/user-dashboard/user-dashboard.component').then(
+        (m) => m.UserDashboardComponent
+      ),
+    canActivate: [AuthGuard, PermissionGuard],
+    data: { permission: 'USER_DASHBOARD_VIEW' }, // Requires USER_DASHBOARD_VIEW permission
   },
   {
     path: 'requests',
@@ -320,6 +331,24 @@ export const routes: Routes = [
     data: {
       redirectIfLoggedIn: false,
     },
+  },
+  {
+    path: 'digital-library/:routeCode',
+    component: DigitalLibraryComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      permission: 'DIGITAL_LIBRARY_VIEW',
+      redirectIfLoggedIn: false
+    }
+  },
+  {
+    path: 'management/digital-library/:routeCode',
+    component: DigitalLibraryManagementComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      permission: 'DIGITAL_LIBRARY_MANAGEMENT_VIEW',
+      redirectIfLoggedIn: false
+    }
   },
   {
     path: 'profile-completion',

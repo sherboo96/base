@@ -92,4 +92,17 @@ export class DepartmentService {
       newOrderIndex: newOrderIndex ?? null
     });
   }
+
+  uploadDepartments(departments: Array<{
+    nameEn: string;
+    nameAr: string;
+    code: string;
+    type: string;
+    level: string;
+    organizationId: number;
+    parentDepartmentId?: number | null;
+    originalId?: number | null;
+  }>): Observable<any> {
+    return this.http.post(`${this.apiUrl}/upload`, { departments });
+  }
 }

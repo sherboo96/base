@@ -1,0 +1,215 @@
+<div class="dialog-content">
+  <!-- Header Section -->
+  <div class="dialog-header p-6 pb-4 border-b border-gray-200">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-accent/10 rounded-lg">
+        <i class="fas fa-book text-accent text-xl"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-textDark font-poppins">
+          {{
+            isEdit
+              ? ('digitalLibrary.editItem' | translate)
+              : ('digitalLibrary.addDigitalLibrary' | translate)
+          }}
+        </h2>
+        <p class="text-sm text-gray-600 mt-1 font-poppins">
+          {{
+            isEdit
+              ? ('digitalLibrary.editItemDescription' | translate)
+              : ('digitalLibrary.addItemDescription' | translate)
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable Form Content -->
+  <div class="form-scroll-container p-6">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Basic Information Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-info-circle text-accent"></i>
+          {{ 'digitalLibrary.basicInformation' | translate }}
+        </h3>
+
+        <!-- Name -->
+        <div class="space-y-2">
+          <label for="name" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'digitalLibrary.name' | translate }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="name"
+            formControlName="name"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'digitalLibrary.namePlaceholder' | translate"
+          />
+          <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="flex items-center text-xs text-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ 'digitalLibrary.nameRequired' | translate }}
+          </div>
+        </div>
+
+        <!-- Name Ar -->
+        <div class="space-y-2">
+          <label for="nameAr" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'digitalLibrary.nameAr' | translate }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="nameAr"
+            formControlName="nameAr"
+            dir="rtl"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+            [placeholder]="'digitalLibrary.nameArPlaceholder' | translate"
+          />
+          <div *ngIf="form.get('nameAr')?.invalid && form.get('nameAr')?.touched" class="flex items-center text-xs text-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ 'digitalLibrary.nameArRequired' | translate }}
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+          <label for="description" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'digitalLibrary.description' | translate }}
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="4"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            [placeholder]="'digitalLibrary.descriptionPlaceholder' | translate"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Additional Information Section -->
+      <div class="space-y-4 border-b border-gray-200 pb-6">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-cog text-accent"></i>
+          {{ 'digitalLibrary.additionalInformation' | translate }}
+        </h3>
+
+        <!-- Course Selection -->
+        <div class="space-y-2">
+          <label for="courseId" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'digitalLibrary.course' | translate }}
+          </label>
+          <select
+            id="courseId"
+            formControlName="courseId"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+          >
+            <option [value]="null">{{ 'digitalLibrary.selectCourse' | translate }}</option>
+            <option *ngFor="let course of courses" [value]="course.id">
+              {{ course.courseTitle }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Show Public -->
+        <div class="space-y-2">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              formControlName="showPublic"
+              class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer"
+            />
+            <span class="text-sm text-gray-700 font-poppins">
+              {{ 'digitalLibrary.showPublic' | translate }}
+            </span>
+          </label>
+          <p class="text-xs text-gray-500 font-poppins">
+            {{ 'digitalLibrary.showPublicDescription' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Poster Upload Section -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-image text-accent"></i>
+          {{ 'digitalLibrary.poster' | translate }}
+        </h3>
+
+        <!-- Poster Preview -->
+        <div *ngIf="posterPreview" class="relative">
+          <img [src]="posterPreview" alt="Poster preview" class="w-full h-64 object-cover rounded-lg border-2 border-gray-300" />
+          <button
+            type="button"
+            (click)="removePoster()"
+            class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+            [title]="'digitalLibrary.removePoster' | translate"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Poster File Input -->
+        <div class="space-y-2">
+          <label for="posterFile" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'digitalLibrary.posterFile' | translate }}
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              type="file"
+              id="posterFile"
+              accept="image/*"
+              (change)="onPosterFileSelected($event)"
+              class="hidden"
+            />
+            <label
+              for="posterFile"
+              class="flex-1 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-all duration-200"
+            >
+              <i class="fas fa-upload text-accent text-lg mb-2"></i>
+              <p class="text-sm text-gray-600 font-poppins">
+                {{ 'digitalLibrary.uploadPoster' | translate }}
+              </p>
+              <p class="text-xs text-gray-500 mt-1 font-poppins">
+                {{ 'digitalLibrary.posterFileTypes' | translate }}
+              </p>
+            </label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="dialog-actions p-6 pt-4 border-t border-gray-200 bg-gray-50">
+    <div class="flex items-center justify-end gap-3">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 font-medium text-sm font-poppins"
+      >
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        (click)="onSubmit()"
+        [disabled]="isSubmitting || form.invalid"
+        class="px-6 py-2.5 bg-accent hover:bg-accentDark text-white rounded-lg transition-colors duration-200 font-medium text-sm font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span *ngIf="!isSubmitting">
+          {{ isEdit ? ('common.update' | translate) : ('course.create' | translate) }}
+        </span>
+        <span *ngIf="isSubmitting" class="flex items-center gap-2">
+          <i class="fas fa-spinner fa-spin"></i>
+          {{ 'common.processing' | translate }}
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+

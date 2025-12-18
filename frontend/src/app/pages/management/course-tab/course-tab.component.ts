@@ -41,11 +41,11 @@ export class CourseTabComponent implements OnInit, OnDestroy {
   courseTabs: CourseTab[] = [];
   organizations: any[] = [];
   isLoading = false;
-  
+
   getOrganizationById(id: number): any {
     return this.organizations.find(org => org.id === id);
   }
-  
+
   isMainOrganization(organizationId: number): boolean {
     const org = this.getOrganizationById(organizationId);
     return org?.isMain === true;
@@ -69,7 +69,7 @@ export class CourseTabComponent implements OnInit, OnDestroy {
     private dialogService: DialogService,
     private translationService: TranslationService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.fetchOrganizations();
@@ -99,8 +99,8 @@ export class CourseTabComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.loadingService.show();
 
-    const showInMenuFilter = this.filterShowInMenu !== 'all' 
-      ? (this.filterShowInMenu === 'true') 
+    const showInMenuFilter = this.filterShowInMenu !== 'all'
+      ? (this.filterShowInMenu === 'true')
       : undefined;
 
     const sub = this.courseTabService
@@ -370,7 +370,7 @@ export class CourseTabComponent implements OnInit, OnDestroy {
     delete (updatedCourseTab as any).organization;
     delete (updatedCourseTab as any).isActive;
     delete (updatedCourseTab as any).isDeleted;
-    
+
     this.courseTabService.updateCourseTab(courseTab.id, updatedCourseTab).subscribe({
       next: () => {
         this.toastr.success(
@@ -382,6 +382,82 @@ export class CourseTabComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.toastr.error(
           error.error?.message || this.translationService.instant('courseTab.toggleShowForOtherOrganizationsError')
+        );
+        this.loadingService.hide();
+      },
+    });
+  }
+
+  toggleShowDigitalLibraryInMenu(courseTab: CourseTab): void {
+    // Store the original value in case we need to revert
+    const originalValue = courseTab.showDigitalLibraryInMenu;
+    
+    // Optimistically update the UI immediately
+    courseTab.showDigitalLibraryInMenu = !courseTab.showDigitalLibraryInMenu;
+    this.cdr.detectChanges();
+    
+    this.loadingService.show();
+    const updatedCourseTab = {
+      ...courseTab,
+      showDigitalLibraryInMenu: courseTab.showDigitalLibraryInMenu
+    };
+
+    // Remove read-only or system properties before sending update
+    const { id, createdOn, organization, isActive, isDeleted, ...updatePayload } = updatedCourseTab as any;
+
+    this.courseTabService.updateCourseTab(courseTab.id, updatePayload).subscribe({
+      next: () => {
+        this.toastr.success(
+          this.translationService.instant('courseTab.toggleDigitalLibraryInMenuSuccess')
+        );
+        this.loadingService.hide();
+        // Refresh the full list to ensure consistency with backend
+        this.fetchCourseTabs();
+      },
+      error: (error) => {
+        // Revert the optimistic update on error
+        courseTab.showDigitalLibraryInMenu = originalValue;
+        this.cdr.detectChanges();
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('courseTab.toggleDigitalLibraryInMenuError')
+        );
+        this.loadingService.hide();
+      },
+    });
+  }
+
+  toggleShowDigitalLibraryPublic(courseTab: CourseTab): void {
+    // Store the original value in case we need to revert
+    const originalValue = courseTab.showDigitalLibraryPublic;
+    
+    // Optimistically update the UI immediately
+    courseTab.showDigitalLibraryPublic = !courseTab.showDigitalLibraryPublic;
+    this.cdr.detectChanges();
+    
+    this.loadingService.show();
+    const updatedCourseTab = {
+      ...courseTab,
+      showDigitalLibraryPublic: courseTab.showDigitalLibraryPublic
+    };
+
+    // Remove read-only or system properties before sending update
+    const { id, createdOn, organization, isActive, isDeleted, ...updatePayload } = updatedCourseTab as any;
+
+    this.courseTabService.updateCourseTab(courseTab.id, updatePayload).subscribe({
+      next: () => {
+        this.toastr.success(
+          this.translationService.instant('courseTab.toggleDigitalLibraryPublicSuccess')
+        );
+        this.loadingService.hide();
+        // Refresh the full list to ensure consistency with backend
+        this.fetchCourseTabs();
+      },
+      error: (error) => {
+        // Revert the optimistic update on error
+        courseTab.showDigitalLibraryPublic = originalValue;
+        this.cdr.detectChanges();
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('courseTab.toggleDigitalLibraryPublicError')
         );
         this.loadingService.hide();
       },

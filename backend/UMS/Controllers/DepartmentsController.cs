@@ -230,6 +230,215 @@ public class DepartmentsController : ControllerBase
         return Ok(new BaseResponse<bool> { StatusCode = 200, Message = "Department deleted successfully.", Result = true });
     }
 
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadDepartments([FromBody] BulkDepartmentUploadRequest request)
+    {
+        if (request.Departments == null || request.Departments.Count == 0)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "No departments provided for upload.",
+                Result = false
+            });
+        }
+
+        var results = new List<BulkDepartmentUploadResult>();
+        int successCount = 0;
+        int failureCount = 0;
+        
+        // Dictionary to map original IDs to new IDs
+        var idMapping = new Dictionary<int, int>();
+        
+        // Verify organization is main organization
+        var organizationId = request.Departments.First().OrganizationId;
+        var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == organizationId);
+        if (organization == null)
+        {
+            return NotFound(new BaseResponse<bool>
+            {
+                StatusCode = 404,
+                Message = "Organization not found.",
+                Result = false
+            });
+        }
+
+        if (!organization.IsMain)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Departments can only be created for main organizations.",
+                Result = false
+            });
+        }
+
+        // Get all existing departments for this organization to check for duplicates and parent mapping
+        var existingDepartments = await _unitOfWork.Departments.GetAllAsync(
+            match: d => d.OrganizationId == organizationId && !d.IsDeleted,
+            includes: new[] { "ParentDepartment" }
+        );
+        var existingDepartmentsDict = existingDepartments.ToDictionary(d => d.Id, d => d);
+
+        // First pass: Create departments without parent relationships (or with existing parents)
+        foreach (var deptDto in request.Departments)
+        {
+            var result = new BulkDepartmentUploadResult
+            {
+                NameEn = deptDto.NameEn,
+                NameAr = deptDto.NameAr,
+                Success = false
+            };
+
+            try
+            {
+                // Check for duplicate by name
+                var duplicate = existingDepartments.FirstOrDefault(d => 
+                    d.NameEn.ToLower() == deptDto.NameEn.ToLower() || 
+                    d.NameAr == deptDto.NameAr);
+
+                if (duplicate != null)
+                {
+                    result.Message = $"Department with name '{deptDto.NameEn}' already exists.";
+                    results.Add(result);
+                    failureCount++;
+                    continue;
+                }
+
+                // Check if parent exists (either in existing departments or will be created in this batch)
+                int? parentDepartmentId = null;
+                if (deptDto.ParentDepartmentId.HasValue)
+                {
+                    // First check if parent exists in existing departments
+                    if (existingDepartmentsDict.ContainsKey(deptDto.ParentDepartmentId.Value))
+                    {
+                        parentDepartmentId = deptDto.ParentDepartmentId.Value;
+                    }
+                    // Then check if parent will be created in this batch (by checking if ParentDepartmentId is in the list)
+                    else if (request.Departments.Any(d => d.OriginalId == deptDto.ParentDepartmentId.Value))
+                    {
+                        // Parent will be created in this batch, handle in second pass
+                        parentDepartmentId = null; // Will be set in second pass
+                    }
+                    else
+                    {
+                        result.Message = $"Parent department with ID {deptDto.ParentDepartmentId.Value} not found.";
+                        results.Add(result);
+                        failureCount++;
+                        continue;
+                    }
+                }
+
+                // Create department
+                var newDepartment = new Department
+                {
+                    NameEn = deptDto.NameEn,
+                    NameAr = deptDto.NameAr,
+                    Code = !string.IsNullOrWhiteSpace(deptDto.Code) ? deptDto.Code : GenerateCodeFromName(deptDto.NameEn),
+                    Type = !string.IsNullOrWhiteSpace(deptDto.Type) ? deptDto.Type : "Department",
+                    Level = !string.IsNullOrWhiteSpace(deptDto.Level) ? deptDto.Level : "DepartmentHead",
+                    OrganizationId = deptDto.OrganizationId,
+                    ParentDepartmentId = parentDepartmentId,
+                    IsActive = true,
+                    CreatedOn = DateTime.UtcNow,
+                    CreatedBy = User.Identity?.Name ?? "System"
+                };
+
+                var created = await _unitOfWork.Departments.AddAsync(newDepartment);
+                await _unitOfWork.CompleteAsync();
+
+                // Map original ID to new ID if provided
+                if (deptDto.OriginalId.HasValue)
+                {
+                    idMapping[deptDto.OriginalId.Value] = ((Department)created).Id;
+                }
+
+                result.Success = true;
+                result.Message = "Department created successfully.";
+                result.NewId = ((Department)created).Id;
+                results.Add(result);
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                result.Message = $"Error: {ex.Message}";
+                results.Add(result);
+                failureCount++;
+            }
+        }
+
+        // Second pass: Update parent relationships for departments that reference other departments in the batch
+        foreach (var deptDto in request.Departments)
+        {
+            if (!deptDto.ParentDepartmentId.HasValue || !deptDto.OriginalId.HasValue)
+                continue;
+
+            // Check if parent was created in this batch (by checking if ParentDepartmentId maps to a new ID)
+            if (idMapping.ContainsKey(deptDto.ParentDepartmentId.Value))
+            {
+                // Find the department we just created by matching the original ID
+                var createdDept = results.FirstOrDefault(r => 
+                    r.NameEn == deptDto.NameEn && 
+                    r.NameAr == deptDto.NameAr &&
+                    r.Success && 
+                    r.NewId.HasValue);
+
+                if (createdDept != null && createdDept.NewId.HasValue)
+                {
+                    var department = await _unitOfWork.Departments.FindAsync(d => d.Id == createdDept.NewId.Value);
+                    if (department != null)
+                    {
+                        // Update parent relationship (only if it's null, meaning parent was in the batch)
+                        if (department.ParentDepartmentId == null)
+                        {
+                            department.ParentDepartmentId = idMapping[deptDto.ParentDepartmentId.Value];
+                            department.UpdatedAt = DateTime.UtcNow;
+                            department.UpdatedBy = User.Identity?.Name ?? "System";
+                            await _unitOfWork.Departments.UpdateAsync(department);
+                            await _unitOfWork.CompleteAsync();
+                        }
+                    }
+                }
+            }
+        }
+
+        return Ok(new BaseResponse<BulkDepartmentUploadResponse>
+        {
+            StatusCode = 200,
+            Message = $"Upload completed. {successCount} succeeded, {failureCount} failed.",
+            Result = new BulkDepartmentUploadResponse
+            {
+                Total = request.Departments.Count,
+                SuccessCount = successCount,
+                FailureCount = failureCount,
+                Results = results
+            }
+        });
+    }
+
+    private string GenerateCodeFromName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return $"DEPT_{DateTime.UtcNow.Ticks}";
+
+        var code = name.ToUpper()
+            .Replace(" ", "_")
+            .Replace("-", "_")
+            .Replace(".", "_")
+            .Replace(",", "_")
+            .Replace("'", "")
+            .Replace("\"", "");
+
+        // Remove special characters, keep only letters, numbers, and underscores
+        code = new string(code.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+
+        // Limit length
+        if (code.Length > 50)
+            code = code.Substring(0, 50);
+
+        return code;
+    }
+
     [HttpPatch("{id}/move")]
     public async Task<IActionResult> MoveDepartment(int id, [FromBody] MoveDepartmentDto dto)
     {

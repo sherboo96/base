@@ -1,10 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
-import { DragDropModule } from '@angular/cdk/drag-drop';
-import type { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import {
   Department,
   DepartmentService,
@@ -18,8 +15,18 @@ import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { DialogService } from '@ngneat/dialog';
 import { DepartmentFormComponent } from './department-form/department-form.component';
+import { DepartmentUploadComponent } from './department-upload/department-upload.component';
+import { DepartmentUsersComponent } from './department-users/department-users.component';
+import { DepartmentMoveComponent } from './department-move/department-move.component';
+import { DepartmentJobTitlesComponent } from './department-job-titles/department-job-titles.component';
 import { TranslationService } from '../../../services/translation.service';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
+
+interface DepartmentTreeNode extends Omit<Department, 'level'> {
+  children?: DepartmentTreeNode[];
+  level?: number;
+  expanded?: boolean;
+}
 
 @Component({
   selector: 'app-department',
@@ -28,7 +35,6 @@ import { DeleteConfirmationDialogComponent } from '../../../components/delete-co
     CommonModule,
     FormsModule,
     TranslateModule,
-    DragDropModule,
     LoadingComponent,
     DepartmentFormComponent,
   ],
@@ -44,10 +50,9 @@ export class DepartmentComponent implements OnInit, OnDestroy {
   totalPages = 1;
   totalItems = 0;
   searchTerm = '';
-  viewMode: 'table' | 'tree' = 'table';
+  viewMode: 'table' | 'hierarchy' = 'table';
   Math = Math;
   private subscriptions: Subscription[] = [];
-  cachedDropListIds: string[] = [];
 
   constructor(
     private departmentService: DepartmentService,
@@ -55,7 +60,8 @@ export class DepartmentComponent implements OnInit, OnDestroy {
     public loadingService: LoadingService,
     private router: Router,
     private dialogService: DialogService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -86,15 +92,6 @@ export class DepartmentComponent implements OnInit, OnDestroy {
           this.departments = response.result;
           this.totalItems = response.pagination.total;
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
-          // Only build tree if in tree view mode, tree is empty, and not already loading
-          if (this.viewMode === 'tree' && this.departmentTree.length === 0 && !this.isLoading) {
-            // Use setTimeout to avoid calling during the same change detection cycle
-            setTimeout(() => {
-              if (this.viewMode === 'tree' && this.departmentTree.length === 0 && !this.isLoading) {
-                this.buildDepartmentTree();
-              }
-            }, 0);
-          }
         },
         error: (error) => {
           this.toastr.error(
@@ -162,6 +159,7 @@ export class DepartmentComponent implements OnInit, OnDestroy {
       : this.translationService.instant('common.inactive');
   }
 
+
   viewDepartmentDetails(department: Department): void {
     this.router.navigate(['/department', department.id]);
   }
@@ -180,8 +178,10 @@ export class DepartmentComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed$.subscribe((result) => {
       if (result) {
         this.fetchDepartments();
-        if (this.viewMode === 'tree') {
+        if (this.viewMode === 'hierarchy') {
+          setTimeout(() => {
           this.buildDepartmentTree();
+          }, 500);
         }
       }
     });
@@ -201,9 +201,37 @@ export class DepartmentComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed$.subscribe((result) => {
       if (result) {
         this.fetchDepartments();
-        if (this.viewMode === 'tree') {
+        if (this.viewMode === 'hierarchy') {
+          setTimeout(() => {
           this.buildDepartmentTree();
+          }, 500);
         }
+      }
+    });
+  }
+
+  uploadDepartments(): void {
+    const dialogRef = this.dialogService.open(DepartmentUploadComponent, {
+      data: {},
+      width: '90vw',
+      maxWidth: '900px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Reload departments after successful upload
+        setTimeout(() => {
+          this.fetchDepartments();
+          if (this.viewMode === 'hierarchy') {
+            this.buildDepartmentTree();
+          }
+        }, 500);
       }
     });
   }
@@ -234,8 +262,10 @@ export class DepartmentComponent implements OnInit, OnDestroy {
             this.toastr.success(this.translationService.instant('department.deleteSuccess'));
             this.loadingService.hide();
             this.fetchDepartments();
-            if (this.viewMode === 'tree') {
+            if (this.viewMode === 'hierarchy') {
+              setTimeout(() => {
               this.buildDepartmentTree();
+              }, 500);
             }
           },
           error: (error) => {
@@ -249,77 +279,89 @@ export class DepartmentComponent implements OnInit, OnDestroy {
     });
   }
 
+
   toggleViewMode(): void {
-    const newMode = this.viewMode === 'table' ? 'tree' : 'table';
-    if (newMode === this.viewMode) return; // Already in this mode
+    this.viewMode = this.viewMode === 'table' ? 'hierarchy' : 'table';
     
-    this.viewMode = newMode;
-    
-    // Only build tree if switching to tree view and tree is empty
-    // Don't rebuild if already loading or if tree already exists
-    if (this.viewMode === 'tree' && this.departmentTree.length === 0 && !this.isLoading) {
+    if (this.viewMode === 'hierarchy' && this.departmentTree.length === 0) {
       this.buildDepartmentTree();
     }
   }
 
   buildDepartmentTree(): void {
-    // Prevent multiple simultaneous builds
-    if (this.isLoading) {
-      console.log('Already loading, skipping tree build');
-      return;
-    }
+    if (this.isLoading) return;
 
     this.isLoading = true;
     this.loadingService.show();
-    
-    console.log('Building department tree...');
-    
-    // Fetch all departments for tree view
-    const sub = this.departmentService.getAllDepartments()
+    this.cdr.detectChanges();
+
+    this.departmentService
+      .getAllDepartments()
       .pipe(
         finalize(() => {
           this.isLoading = false;
           this.loadingService.hide();
+          this.cdr.detectChanges();
         })
       )
       .subscribe({
         next: (response: any) => {
-          const allDepartments = response.result || [];
-          console.log('Fetched departments for tree:', allDepartments.length);
-          this.departmentTree = this.buildTree(allDepartments);
-          console.log('Built tree with', this.departmentTree.length, 'root nodes');
-          // Cache drop list IDs for better performance
-          this.cachedDropListIds = this.getAllDropListIds();
-          console.log('Tree build complete');
+          try {
+            let allDepartments: Department[] = [];
+            
+            if (Array.isArray(response)) {
+              allDepartments = response;
+            } else if (response && Array.isArray(response.result)) {
+              allDepartments = response.result;
+            } else if (response && response.data && Array.isArray(response.data)) {
+              allDepartments = response.data;
+            } else {
+              allDepartments = [];
+            }
+
+            const activeDepartments = allDepartments.filter(
+              (dept: Department) => dept.isActive !== false && !dept.isDeleted
+            );
+            
+            this.departmentTree = this.buildTree(activeDepartments);
+            this.cdr.detectChanges();
+          } catch (error) {
+            console.error('Error processing departments:', error);
+            this.toastr.error(
+              this.translationService.instant('department.fetchError')
+            );
+            this.departmentTree = [];
+            this.cdr.detectChanges();
+          }
         },
         error: (error) => {
-          console.error('Error loading departments for tree:', error);
-          this.departmentTree = [];
-          this.cachedDropListIds = [];
+          console.error('Error loading departments:', error);
           this.toastr.error(
-            error.error?.message || this.translationService.instant('department.fetchError')
+            error.error?.message || 
+            this.translationService.instant('department.fetchError')
           );
+          this.departmentTree = [];
+          this.cdr.detectChanges();
         },
       });
-    
-    this.subscriptions.push(sub);
   }
 
   private buildTree(departments: Department[]): DepartmentTreeNode[] {
     const departmentMap = new Map<number, DepartmentTreeNode>();
     const roots: DepartmentTreeNode[] = [];
 
-    // First pass: create all nodes
-    departments.forEach((dept) => {
+    const activeDepartments = departments.filter((dept) => !dept.isDeleted);
+
+    activeDepartments.forEach((dept) => {
       departmentMap.set(dept.id, {
         ...dept,
         children: [],
         level: 0,
+        expanded: true,
       });
     });
 
-    // Second pass: build tree structure
-    departments.forEach((dept) => {
+    activeDepartments.forEach((dept) => {
       const node = departmentMap.get(dept.id)!;
       if (dept.parentDepartmentId && departmentMap.has(dept.parentDepartmentId)) {
         const parent = departmentMap.get(dept.parentDepartmentId)!;
@@ -328,16 +370,14 @@ export class DepartmentComponent implements OnInit, OnDestroy {
           parent.children = [];
         }
         parent.children.push(node);
-      } else {
+      } else if (!dept.parentDepartmentId) {
         roots.push(node);
       }
     });
 
-    // Third pass: sort children by OrderIndex
     const sortChildren = (nodes: DepartmentTreeNode[]): void => {
       nodes.forEach((node) => {
         if (node.children && node.children.length > 0) {
-          // Sort children by OrderIndex (nulls last), then by name
           node.children.sort((a, b) => {
             const orderA = a.orderIndex ?? Number.MAX_SAFE_INTEGER;
             const orderB = b.orderIndex ?? Number.MAX_SAFE_INTEGER;
@@ -346,13 +386,11 @@ export class DepartmentComponent implements OnInit, OnDestroy {
             }
             return (a.nameEn || '').localeCompare(b.nameEn || '');
           });
-          // Recursively sort children
           sortChildren(node.children);
         }
       });
     };
 
-    // Sort roots by OrderIndex
     roots.sort((a, b) => {
       const orderA = a.orderIndex ?? Number.MAX_SAFE_INTEGER;
       const orderB = b.orderIndex ?? Number.MAX_SAFE_INTEGER;
@@ -362,304 +400,58 @@ export class DepartmentComponent implements OnInit, OnDestroy {
       return (a.nameEn || '').localeCompare(b.nameEn || '');
     });
 
-    // Sort all children recursively
     sortChildren(roots);
-
     return roots;
   }
 
-  onDragDrop(event: CdkDragDrop<DepartmentTreeNode[]>): void {
-    console.log('=== DRAG DROP EVENT ===');
-    console.log('Event:', event);
-    console.log('Event container:', event.container);
-    console.log('Event previousContainer:', event.previousContainer);
-    console.log('Event container ID:', event.container?.id);
-    console.log('Event previousContainer ID:', event.previousContainer?.id);
-    console.log('Event container data:', event.container?.data);
-    console.log('Event previousContainer data:', event.previousContainer?.data);
-    console.log('Event previousIndex:', event.previousIndex);
-    console.log('Event currentIndex:', event.currentIndex);
-    
-    if (!event.container || !event.previousContainer) {
-      console.error('Missing container or previousContainer');
-      return;
-    }
-
-    // Get the dragged node - try multiple ways to ensure we get it
-    let draggedNode: DepartmentTreeNode | undefined = undefined;
-    
-    // Method 1: From previousContainer data array
-    if (event.previousContainer.data && Array.isArray(event.previousContainer.data)) {
-      draggedNode = event.previousContainer.data[event.previousIndex];
-    }
-    
-    // Method 2: From cdkDragData if available
-    if (!draggedNode && (event as any).item?.data) {
-      draggedNode = (event as any).item.data;
-    }
-    
-    if (!draggedNode) {
-      console.error('No dragged node found. Event data:', event);
-      this.toastr.error('Could not identify the department being moved. Please try again.');
-      return;
-    }
-    
-    console.log('Dragged node:', draggedNode.nameEn, 'ID:', draggedNode.id);
-    console.log('Container ID:', event.container.id);
-    console.log('Previous container ID:', event.previousContainer.id);
-    console.log('Container data length:', event.container.data?.length);
-    console.log('Previous container data length:', event.previousContainer.data?.length);
-    
-    // Determine the new parent ID from the drop container - simplified logic
-    let newParentId: number | null = null;
-    const containerId = event.container.id;
-    
-    console.log('Container ID:', containerId);
-    
-    if (!containerId) {
-      console.error('Container ID is missing. Event:', event);
-      this.toastr.error('Could not identify drop target. Please try again.');
-      this.cachedDropListIds = [];
-      this.buildDepartmentTree();
-      return;
-    }
-    
-    if (containerId === 'root-drop-list') {
-      // Dropped at root level
-      newParentId = null;
-      console.log('✓ Dropped at root level');
-    } else {
-      // Extract parent ID from container ID (format: "drop-list-{id}")
-      const match = containerId.match(/^drop-list-(\d+)$/);
-      if (match) {
-        newParentId = parseInt(match[1], 10);
-        console.log('✓ New parent ID extracted:', newParentId);
-        
-        // Validate that the parent ID is not the same as the dragged node
-        if (newParentId === draggedNode.id) {
-          console.error('✗ Cannot move department to itself');
-          this.toastr.error('Cannot move a department to be a child of itself.');
-          this.cachedDropListIds = [];
-          this.buildDepartmentTree();
-          return;
-        }
-      } else {
-        console.error('✗ Could not extract parent ID from container ID:', containerId);
-        this.toastr.error('Invalid drop target. Please try again.');
-        this.cachedDropListIds = [];
-        this.buildDepartmentTree();
-        return;
-      }
-    }
-    
-    console.log('✓ Final newParentId:', newParentId);
-
-    // Prevent moving a department to be a child of itself or its descendants
-    if (this.wouldCreateCircularReference(draggedNode, newParentId)) {
-      console.log('Circular reference detected');
-      this.toastr.error(
-        this.translationService.instant('department.moveCircularError')
-      );
-      // Rebuild tree to reset UI without showing loading
-      this.cachedDropListIds = [];
-      this.buildDepartmentTree();
-      return;
-    }
-
-    // Handle reordering within the same container
-    if (event.previousContainer === event.container) {
-      console.log('Reordering within same container');
-      const newOrderIndex = event.currentIndex;
-      
-      // Update UI optimistically
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      
-      // Call API to save the new order
-      const wasLoading = this.isLoading;
-      if (!wasLoading) {
-        this.loadingService.show();
-      }
-      
-      const sub = this.departmentService.moveDepartment(
-        draggedNode.id,
-        newParentId,
-        newOrderIndex
-      )
-        .pipe(
-          finalize(() => {
-            if (!wasLoading) {
-              this.loadingService.hide();
-            }
-          })
-        )
-        .subscribe({
-        next: (result) => {
-          console.log('✓ Order update successful, response:', result);
-          this.toastr.success(
-            this.translationService.instant('department.moveSuccess')
-          );
-          // Reload tree to reflect changes
-          this.cachedDropListIds = [];
-          console.log('Rebuilding tree after order update...');
-          this.buildDepartmentTree();
-        },
-        error: (error) => {
-          console.error('✗ Order update error:', error);
-          
-          let errorMessage = this.translationService.instant('department.moveError');
-          if (error.error?.message) {
-            errorMessage = error.error.message;
-          }
-          
-          this.toastr.error(errorMessage);
-          // Rebuild tree to reset UI state
-          this.cachedDropListIds = [];
-          console.log('Rebuilding tree after error...');
-          this.buildDepartmentTree();
-        },
-        });
-      
-      this.subscriptions.push(sub);
-      return;
-    }
-
-    // Handle moving to a different container
-    console.log('Moving to different container, calling API...');
-    console.log('Dragged node ID:', draggedNode.id);
-    console.log('New parent ID:', newParentId);
-    console.log('New order index:', event.currentIndex);
-    
-    // Don't update UI optimistically - wait for API confirmation
-    // This prevents UI inconsistencies if the API call fails
-    
-    // Determine the new order index based on drop position
-    const newOrderIndex = event.currentIndex;
-
-    // Update the parent and order in the backend
-    const wasLoading = this.isLoading;
-    if (!wasLoading) {
-      this.loadingService.show();
-    }
-    
-    console.log('Calling moveDepartment API with:', {
-      id: draggedNode.id,
-      newParentId: newParentId,
-      newOrderIndex: newOrderIndex
+  getChildrenCount(node: DepartmentTreeNode): number {
+    if (!node.children || node.children.length === 0) return 0;
+    let count = node.children.length;
+    node.children.forEach((child) => {
+      count += this.getChildrenCount(child);
     });
-    
-    const sub = this.departmentService.moveDepartment(draggedNode.id, newParentId, newOrderIndex)
-      .pipe(
-        finalize(() => {
-          if (!wasLoading) {
-            this.loadingService.hide();
-          }
-        })
-      )
-      .subscribe({
-        next: () => {
-          console.log('Move successful');
-          this.toastr.success(
-            this.translationService.instant('department.moveSuccess')
-          );
-          // Clear cache and rebuild tree to reflect changes
-          this.cachedDropListIds = [];
-          this.buildDepartmentTree();
-        },
-        error: (error) => {
-          console.error('Move error:', error);
-          this.toastr.error(
-            error.error?.message || this.translationService.instant('department.moveError')
-          );
-          // Clear cache and rebuild tree to reset UI on error
-          this.cachedDropListIds = [];
-          this.buildDepartmentTree();
-        },
-      });
-    
-    this.subscriptions.push(sub);
+    return count;
   }
 
-  private wouldCreateCircularReference(node: DepartmentTreeNode, newParentId: number | null): boolean {
-    if (!newParentId) return false; // Moving to root is always safe
-    
-    // Check if newParentId is the node itself
-    if (newParentId === node.id) return true;
-    
-    // Check if newParentId is any descendant of the node
-    const checkDescendants = (currentNode: DepartmentTreeNode): boolean => {
-      if (currentNode.id === newParentId) return true;
-      if (currentNode.children) {
-        return currentNode.children.some(child => checkDescendants(child));
-      }
-      return false;
-    };
-    
-    return checkDescendants(node);
+  toggleNode(node: DepartmentTreeNode): void {
+    node.expanded = !node.expanded;
   }
 
-  getAllDropListIds(): string[] {
-    if (this.cachedDropListIds.length > 0) {
-      return this.cachedDropListIds;
-    }
-    
-    const lists: string[] = ['root-drop-list'];
-    
-    const addAllIds = (nodes: DepartmentTreeNode[]) => {
-      nodes.forEach(n => {
-        // Each card has a drop zone for its children
-        lists.push(`drop-list-${n.id}`);
-        if (n.children && n.children.length > 0) {
-          addAllIds(n.children);
-        }
-      });
-    };
-    
-    addAllIds(this.departmentTree);
-    this.cachedDropListIds = lists;
-    console.log('All drop list IDs:', lists);
-    return lists;
+  showUsers(node: DepartmentTreeNode): void {
+    const dialogRef = this.dialogService.open(DepartmentUsersComponent, {
+      data: {
+        departmentId: node.id,
+        departmentName: node.nameEn,
+      },
+      width: '90vw',
+      maxWidth: '1200px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
   }
 
-  getConnectedDropLists(node?: DepartmentTreeNode): string[] {
-    const allLists = this.getAllDropListIds();
-    
-    // If a node is provided (the card being dragged), exclude its own children drop list and descendant drop lists
-    if (node) {
-      const excludeIds: number[] = [node.id];
-      
-      const addDescendantIds = (n: DepartmentTreeNode) => {
-        if (n.children && n.children.length > 0) {
-          n.children.forEach(child => {
-            excludeIds.push(child.id);
-            addDescendantIds(child);
-          });
-        }
-      };
-      
-      addDescendantIds(node);
-      
-      const connectedLists = allLists.filter(id => {
-        const match = id.match(/^drop-list-(\d+)$/);
-        if (match) {
-          const nodeId = parseInt(match[1], 10);
-          return !excludeIds.includes(nodeId);
-        }
-        return true; // Keep root-drop-list
-      });
-      
-      console.log('Connected drop lists for node', node.nameEn, ':', connectedLists);
-      return connectedLists;
-    }
-    
-    return allLists;
-  }
+  showJobTitles(node: DepartmentTreeNode): void {
+    const dialogRef = this.dialogService.open(DepartmentJobTitlesComponent, {
+      data: {
+        department: node,
+      },
+      width: '90vw',
+      maxWidth: '1200px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
 
-  trackByNodeId(index: number, node: DepartmentTreeNode): number {
-    return node.id;
-  }
-
-  getEmptyChildrenArray(): DepartmentTreeNode[] {
-    return [];
+    dialogRef.afterClosed$.subscribe((result) => {
+      // No action needed after closing
+    });
   }
 
   get paginationParams() {
@@ -669,9 +461,109 @@ export class DepartmentComponent implements OnInit, OnDestroy {
       total: this.totalItems
     };
   }
+
+  moveDepartment(department: DepartmentTreeNode): void {
+    const dialogRef = this.dialogService.open(DepartmentMoveComponent, {
+      data: { department },
+      width: '600px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((destinationDepartment: any) => {
+      if (destinationDepartment) {
+        // Get current parent name
+        let currentParentName = 'Root Level';
+        if (department.parentDepartmentId) {
+          const currentParent = this.findNodeById(this.departmentTree, department.parentDepartmentId);
+          currentParentName = currentParent?.nameEn || 'Unknown Department';
+        }
+
+        // Show confirmation dialog
+        const confirmDialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
+          data: {
+            title: this.translationService.instant('department.moveConfirmTitle'),
+            message: this.translationService.instant('department.moveConfirmMessage', {
+              departmentName: department.nameEn,
+              currentParent: currentParentName,
+              newParent: (destinationDepartment as any).nameEn || 'Root Level'
+            }),
+            confirmText: this.translationService.instant('department.move'),
+            cancelText: this.translationService.instant('common.cancel'),
+            type: 'warning',
+            showWarning: true,
+            warningMessage: this.translationService.instant('department.moveWarning')
+          },
+          width: '500px',
+          enableClose: true,
+          closeButton: true,
+          resizable: false,
+          draggable: true,
+        });
+
+        confirmDialogRef.afterClosed$.subscribe((confirmed) => {
+          if (confirmed) {
+            const newParentId = (destinationDepartment as any).id || null;
+            
+            // Prevent moving to itself
+            if (newParentId === department.id) {
+              this.toastr.warning(this.translationService.instant('department.cannotMoveToSelf'));
+              return;
+            }
+
+            // Check if parent actually changed
+            if (department.parentDepartmentId === newParentId) {
+              this.toastr.info(this.translationService.instant('department.parentUnchanged'));
+              return;
+            }
+
+            // Call API to move department
+            this.loadingService.show();
+            this.departmentService.moveDepartment(department.id, newParentId, null).subscribe({
+              next: (response: any) => {
+                const result = response.result || response;
+                if (result) {
+                  this.toastr.success(this.translationService.instant('department.moveSuccess'));
+                  // Rebuild tree to ensure consistency
+                  setTimeout(() => {
+                    this.buildDepartmentTree();
+                  }, 300);
+                } else {
+                  this.toastr.error(this.translationService.instant('department.moveError'));
+                }
+                this.loadingService.hide();
+              },
+              error: (error) => {
+                console.error('Error moving department:', error);
+                this.toastr.error(
+                  error.error?.message || this.translationService.instant('department.moveError')
+                );
+                this.loadingService.hide();
+              },
+            });
+          }
+        });
+      }
+    });
+  }
+
+  private findNodeById(nodes: DepartmentTreeNode[], id: number): DepartmentTreeNode | null {
+    for (const node of nodes) {
+      if (node.id === id) {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = this.findNodeById(node.children, id);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
+  }
+
 }
 
-interface DepartmentTreeNode extends Omit<Department, 'level'> {
-  children?: DepartmentTreeNode[];
-  level?: number;
-}

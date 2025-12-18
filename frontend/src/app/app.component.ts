@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { SideMenuComponent } from './components/side-menu/side-menu.component';
 import { NavBarComponent } from './components/nav-bar/nav-bar.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { LoadingComponent } from './components/loading/loading.component';
 import { TranslationService } from './services/translation.service';
 import { AuthService } from './services/auth.service';
@@ -29,8 +29,9 @@ export class AppComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private translationService: TranslationService,
     private authService: AuthService,
-    private profileCompletionGuard: ProfileCompletionGuard
-  ) {}
+    private profileCompletionGuard: ProfileCompletionGuard,
+    private location: Location
+  ) { }
 
   ngOnInit(): void {
     // Initialize translation service to set language and direction
@@ -41,18 +42,14 @@ export class AppComponent implements OnInit {
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
         this.shouldHideNavigation = this.shouldHideNavigationForCurrentRoute();
-        
-        // Check authentication on route change (except for login, profile-completion, and public routes)
-        const currentUrl = this.router.url;
-        if (!currentUrl.startsWith('/login') && 
-            !currentUrl.startsWith('/events/') && 
-            !currentUrl.startsWith('/unauthorized') &&
-            !currentUrl.startsWith('/profile-completion')) {
-          if (!this.authService.isAuthenticated()) {
-            // User is not authenticated, redirect to login
-            this.router.navigate(['/login'], { replaceUrl: true });
-          } else {
-            // Check profile completion for authenticated users
+
+        // Check profile completion for authenticated users
+        const currentUrl = this.location.path() || this.router.url;
+        if (!currentUrl.startsWith('/login') &&
+          !currentUrl.includes('/events/') &&
+          !currentUrl.startsWith('/unauthorized') &&
+          !currentUrl.startsWith('/profile-completion')) {
+          if (this.authService.isAuthenticated()) {
             this.checkProfileCompletion();
           }
         }
@@ -60,18 +57,14 @@ export class AppComponent implements OnInit {
 
     // Check initial route
     this.shouldHideNavigation = this.shouldHideNavigationForCurrentRoute();
-    
-    // Check authentication on app initialization
-    const currentUrl = this.router.url;
-    if (!currentUrl.startsWith('/login') && 
-        !currentUrl.startsWith('/events/') && 
-        !currentUrl.startsWith('/unauthorized') &&
-        !currentUrl.startsWith('/profile-completion')) {
-      if (!this.authService.isAuthenticated()) {
-        // User is not authenticated, redirect to login
-        this.router.navigate(['/login'], { replaceUrl: true });
-      } else {
-        // Check profile completion for authenticated users
+
+    // Check profile completion for authenticated users on app initialization
+    const currentUrl = this.location.path() || this.router.url;
+    if (!currentUrl.startsWith('/login') &&
+      !currentUrl.includes('/events/') &&
+      !currentUrl.startsWith('/unauthorized') &&
+      !currentUrl.startsWith('/profile-completion')) {
+      if (this.authService.isAuthenticated()) {
         this.checkProfileCompletion();
       }
     }
@@ -102,23 +95,23 @@ export class AppComponent implements OnInit {
 
   // Check if navigation should be hidden for the current route
   private shouldHideNavigationForCurrentRoute(): boolean {
-    const url = this.router.url;
-    
+    const url = this.location.path() || this.router.url;
+
     // Hide for login page
     if (url === '/login') {
       return true;
     }
-    
+
     // Hide for profile completion page
     if (url === '/profile-completion') {
       return true;
     }
-    
+
     // Hide for public routes (events registration, etc.)
-    if (url.startsWith('/events/')) {
+    if (url.includes('/events/')) {
       return true;
     }
-    
+
     return false;
   }
 }

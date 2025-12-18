@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -5,23 +6,139 @@ using UMS.Dtos;
 using UMS.Dtos.Shared;
 using UMS.Models;
 using UMS.Services;
+using AutoMapper;
+using System.Security.Claims;
 
 namespace UMS.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-
 public class DashboardController : ControllerBase
 {
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly OrganizationAccessService _orgAccessService;
+    private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
 
-    public DashboardController(IUnitOfWork unitOfWork, OrganizationAccessService orgAccessService)
+    public DashboardController(IUnitOfWork unitOfWork, OrganizationAccessService orgAccessService, ApplicationDbContext context, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _orgAccessService = orgAccessService;
+        _context = context;
+        _mapper = mapper;
     }
+
+    [HttpGet("user-statistics")]
+    public async Task<IActionResult> GetUserStatistics()
+    {
+        try
+        {
+            var userId = User.FindFirst("UserId")?.Value 
+                         ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                 return Unauthorized(new BaseResponse<object> { StatusCode = 401, Message = "User ID not found in token.", Result = null });
+            }
+
+            var user = await _unitOfWork.Users.FindAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new BaseResponse<object> { StatusCode = 404, Message = "User not found.", Result = null });
+            }
+
+            // 1. Approved Courses List
+            var approvedEnrollments = await _context.CourseEnrollments
+                .Include(x => x.Course)
+                .Where(x => x.UserId == userId && x.Status == EnrollmentStatus.Approve && !x.IsDeleted)
+                .ToListAsync();
+
+            var approvedCourses = _mapper.Map<List<CourseDto>>(approvedEnrollments.Select(e => e.Course).ToList());
+
+            // 2. Attended Hours (Total DurationMinutes)
+            var userAttendances = await _context.CourseAttendances
+                .Include(ca => ca.CourseEnrollment)
+                .ThenInclude(ce => ce.Course)
+                .Where(ca => ca.CourseEnrollment.UserId == userId && !ca.IsDeleted)
+                .ToListAsync();
+
+            var attendedHours = userAttendances.Sum(x => x.DurationMinutes ?? 0) / 60.0;
+
+            // 3. Attended Courses List (Courses with at least one attendance)
+            var attendedCoursesIds = userAttendances
+                .Select(ca => ca.CourseEnrollment.CourseId)
+                .Distinct()
+                .ToList();
+                
+            var attendedEnrollments = userAttendances
+                .Select(ca => ca.CourseEnrollment)
+                .DistinctBy(ce => ce.Id)
+                .ToList();
+                
+            var attendedCourses = _mapper.Map<List<CourseDto>>(attendedEnrollments.Select(e => e.Course).ToList());
+
+            // 4. Rank
+            var orgId = user.OrganizationId;
+            
+            var allUsersAttendances = await _context.CourseAttendances
+                .Include(ca => ca.CourseEnrollment)
+                .ThenInclude(ce => ce.User)
+                .Where(ca => ca.CourseEnrollment.User.OrganizationId == orgId && !ca.IsDeleted && !ca.CourseEnrollment.IsDeleted && !ca.CourseEnrollment.User.IsDeleted)
+                .Select(ca => new 
+                {
+                    UserId = ca.CourseEnrollment.UserId,
+                    DurationMinutes = ca.DurationMinutes ?? 0
+                })
+                .ToListAsync();
+
+            var userRanks = allUsersAttendances
+                .GroupBy(x => x.UserId)
+                .Select(g => new 
+                { 
+                    UserId = g.Key, 
+                    TotalMinutes = g.Sum(x => x.DurationMinutes) 
+                })
+                .OrderByDescending(x => x.TotalMinutes)
+                .ToList();
+
+            var rank = userRanks.FindIndex(x => x.UserId == userId) + 1;
+            if (rank == 0) 
+            {
+                rank = userRanks.Count + 1;
+            }
+
+            var result = new
+            {
+                ApprovedCourses = approvedCourses,
+                ApprovedCoursesCount = approvedCourses.Count,
+                AttendedCourses = attendedCourses,
+                AttendedCoursesCount = attendedCourses.Count,
+                AttendedHours = Math.Round(attendedHours, 2),
+                Rank = rank,
+                OrganizationId = orgId
+            };
+
+            return Ok(new BaseResponse<object>
+            {
+                StatusCode = 200,
+                Message = "User statistics retrieved successfully.",
+                Result = result
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new BaseResponse<object>
+            {
+                StatusCode = 500,
+                Message = $"Error retrieving user statistics: {ex.Message}",
+                Result = null
+            });
+        }
+    }
+
 
     [HttpGet("statistics")]
     public async Task<IActionResult> GetStatistics()

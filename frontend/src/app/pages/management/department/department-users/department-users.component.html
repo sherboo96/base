@@ -1,0 +1,149 @@
+<div class="p-8 max-w-6xl mx-auto font-poppins">
+  <!-- Header -->
+  <div class="mb-8 border-b border-gray-200 pb-6">
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex-1">
+        <h2 class="text-2xl font-bold text-textDark mb-2 flex items-center gap-2">
+          <i class="fas fa-users text-accent text-xl"></i>
+          <span>{{ 'department.departmentUsers' | translate }}</span>
+        </h2>
+        <p class="text-sm text-gray-600 mt-1" *ngIf="departmentName">
+          {{ 'department.departmentUsersDescription' | translate }}: <strong class="text-textDark">{{ departmentName }}</strong>
+        </p>
+      </div>
+     
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="py-16 flex flex-col items-center justify-center">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="mt-4 text-accent font-medium text-sm">
+        {{ 'user.loadingUsers' | translate }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div
+    *ngIf="!isLoading && users.length === 0"
+    class="text-center py-16"
+  >
+    <i class="fas fa-users text-gray-400 text-4xl mb-4"></i>
+    <h3 class="text-xl font-bold text-textDark mb-2">
+      {{ 'department.noUsersFound' | translate }}
+    </h3>
+    <p class="text-sm text-gray-600">
+      {{ 'department.noUsersInDepartment' | translate }}
+    </p>
+  </div>
+
+  <!-- Users Table -->
+  <div *ngIf="!isLoading && users.length > 0" class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+            <i class="fas fa-user mr-1.5 text-accent text-xs"></i>{{ 'user.name' | translate }}
+          </th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+            <i class="fas fa-envelope mr-1.5 text-accent text-xs"></i>{{ 'user.email' | translate }}
+          </th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+            <i class="fas fa-briefcase mr-1.5 text-accent text-xs"></i>{{ 'user.jobTitle' | translate }}
+          </th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+            <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{ 'user.status' | translate }}
+          </th>
+          <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+            <i class="fas fa-calendar mr-1.5 text-accent text-xs"></i>{{ 'user.createdOn' | translate }}
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let user of users" class="hover:bg-gray-50 transition-all duration-150">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {{ user.fullName || '-' }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {{ user.email || '-' }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {{ getJobTitle(user) }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span
+              [ngClass]="user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+            >
+              {{ user.isActive ? ('user.active' | translate) : ('user.inactive' | translate) }}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {{ formatDate(user.createdOn) }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="users.length > 0"
+      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-4 border-t-2 border-gray-200 mt-6"
+    >
+      <div class="text-xs font-medium text-textDark mb-2 sm:mb-0">
+        <i class="fas fa-info-circle mr-1.5 text-accent text-xs"></i>
+        {{ 'user.showing' | translate:paginationParams }}
+      </div>
+      <div class="flex items-center space-x-2">
+        <button
+          class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(1)"
+          [title]="'common.firstPage' | translate"
+        >
+          <i class="fas fa-angle-double-left text-xs"></i>
+        </button>
+        <button
+          class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+          [title]="'common.previousPage' | translate"
+        >
+          <i class="fas fa-chevron-left text-xs"></i>
+        </button>
+        <div class="flex space-x-1">
+          <button
+            *ngFor="let page of getPageNumbers()"
+            (click)="goToPage(page)"
+            class="px-3 py-1 rounded-lg border-2 text-xs min-w-[36px] font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            [ngClass]="{
+              'bg-accentDark text-white border-accent shadow-md': currentPage === page,
+              'border-gray-300 hover:bg-gray-100 hover:border-gray-400': currentPage !== page
+            }"
+          >
+            {{ page }}
+          </button>
+        </div>
+        <button
+          class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+          [title]="'common.nextPage' | translate"
+        >
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+        <button
+          class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(totalPages)"
+          [title]="'common.lastPage' | translate"
+        >
+          <i class="fas fa-angle-double-right text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -126,6 +126,8 @@ public class CourseTabsController : ControllerBase
         existing.OrganizationId = dto.OrganizationId;
         existing.ShowInMenu = dto.ShowInMenu;
         existing.ShowPublic = dto.ShowPublic;
+        existing.ShowDigitalLibraryInMenu = dto.ShowDigitalLibraryInMenu;
+        existing.ShowDigitalLibraryPublic = dto.ShowDigitalLibraryPublic;
         existing.ShowForOtherOrganizations = dto.ShowForOtherOrganizations;
         existing.UpdatedAt = DateTime.Now;
 

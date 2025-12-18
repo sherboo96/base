@@ -1,6 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -9,7 +10,7 @@ import { StorageService } from './storage.service';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Inject StorageService to get token
   const storageService = inject(StorageService);
-  
+
   // Retrieve the token from storage
   const token = storageService.getItem<string>('token');
 
@@ -19,10 +20,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Clone the request and add the Authorization header if the token exists
   const clonedRequest = token
     ? req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      setHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
     : req;
 
   // Pass the modified request and handle errors
@@ -30,9 +31,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
         // Check if this is a public route (events registration)
-        const currentUrl = router.url;
-        const isPublicRoute = currentUrl.startsWith('/events/');
-        
+        const location = inject(Location);
+        const currentUrl = location.path() || router.url;
+        const isPublicRoute = currentUrl.indexOf('/events/') > -1;
+
         if (!isPublicRoute) {
           // Unauthorized - clear token and redirect to login (only for protected routes)
           storageService.removeItem('token');

@@ -20,6 +20,8 @@ export interface CourseTab {
   showInMenu: boolean;
   showPublic: boolean;
   showForOtherOrganizations?: boolean; // Show this tab to other organizations (only for main organization)
+  showDigitalLibraryInMenu?: boolean; // Show this tab in Digital Library section for management
+  showDigitalLibraryPublic?: boolean; // Show this tab in Digital Library section for public
   isActive: boolean;
   isDeleted: boolean;
   createdOn: string;
@@ -54,7 +56,7 @@ export class CourseTabService {
     this.courseTabChanged$.next();
   }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getCourseTabs(
     page: number = 1,

@@ -189,7 +189,8 @@ public class DataSeeder
             new Permission { Name = "Remove User Roles", Code = "USER_ROLES_REMOVE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
             // Dashboard Permissions
-            new Permission { Name = "View Dashboard", Code = "DASHBOARD_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "View System Dashboard", Code = "DASHBOARD_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "View User Dashboard", Code = "USER_DASHBOARD_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
             // Segment Management Permissions
             new Permission { Name = "View Segments", Code = "SEGMENTS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
@@ -246,6 +247,10 @@ public class DataSeeder
             new Permission { Name = "Approve Enrollment Step", Code = "ENROLLMENT_APPROVALS_APPROVE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Reject Enrollment Step", Code = "ENROLLMENT_APPROVALS_REJECT", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
+            // Digital Library Permissions
+            new Permission { Name = "View Digital Library", Code = "DIGITAL_LIBRARY_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Management View Digital Library", Code = "DIGITAL_LIBRARY_MANAGEMENT_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
             // System Administration Permissions
             new Permission { Name = "System Administration", Code = "SYSTEM_ADMIN", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "View System Configuration", Code = "SYSTEM_CONFIG_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
@@ -278,8 +283,8 @@ public class DataSeeder
 
         foreach (var permission in permissions)
         {
-            var existingPermission = await _unitOfWork.Permissions.FindAsync(p => p.Code == permission.Code);
-            if (existingPermission == null)
+            var exists = await _unitOfWork.Permissions.ExistsAsync(p => p.Code == permission.Code);
+            if (!exists)
             {
                 await _unitOfWork.Permissions.AddAsync(permission);
                 _logger.LogInformation($"Added permission: {permission.Name} ({permission.Code})");
@@ -405,13 +410,17 @@ public class DataSeeder
 
         foreach (var permission in permissionsToAdd)
         {
-            var rolePermission = new RolePermission
+            var exists = await _unitOfWork.RolePermissions.ExistsAsync(rp => rp.RoleId == superAdminRole.Id && rp.PermissionId == permission.Id);
+            if (!exists)
             {
-                RoleId = superAdminRole.Id,
-                PermissionId = permission.Id
-            };
-            await _unitOfWork.RolePermissions.AddAsync(rolePermission);
-            _logger.LogInformation($"Assigned permission '{permission.Name}' to SuperAdmin role.");
+                var rolePermission = new RolePermission
+                {
+                    RoleId = superAdminRole.Id,
+                    PermissionId = permission.Id
+                };
+                await _unitOfWork.RolePermissions.AddAsync(rolePermission);
+                _logger.LogInformation($"Assigned permission '{permission.Name}' to SuperAdmin role.");
+            }
         }
 
         if (permissionsToAdd.Any())

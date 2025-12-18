@@ -203,6 +203,8 @@ export class CourseTabFormComponent implements OnInit {
       showInMenu: [true],
       showPublic: [false],
       showForOtherOrganizations: [false],
+      showDigitalLibraryInMenu: [false],
+      showDigitalLibraryPublic: [false],
     });
 
     if (this.dialogRef.data?.courseTab) {
@@ -218,6 +220,8 @@ export class CourseTabFormComponent implements OnInit {
         showInMenu: courseTab.showInMenu ?? true,
         showPublic: courseTab.showPublic ?? false,
         showForOtherOrganizations: courseTab.showForOtherOrganizations ?? false,
+        showDigitalLibraryInMenu: courseTab.showDigitalLibraryInMenu ?? false,
+        showDigitalLibraryPublic: courseTab.showDigitalLibraryPublic ?? false,
       });
       // Set selected organization for conditional display
       if (this.dialogRef.data?.organizations) {

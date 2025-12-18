@@ -901,7 +901,17 @@ public class AuthenticationsController : ControllerBase
         // Define side menu items based on app.routes.ts with descriptive permission codes
         var sideMenuItems = new List<SideMenuPermissionDto>
         {
-            // Management Section
+            // User Dashboard Section
+            new SideMenuPermissionDto
+            {
+                code = "USER_DASHBOARD_VIEW",
+                route = "/user-dashboard",
+                label = "Dashboard",
+                icon = "dashboard",
+                section = "Main",
+                hasAccess = permissionCodes.Contains("USER_DASHBOARD_VIEW")
+            },
+           // Management Section
             new SideMenuPermissionDto
             {
                 code = "ORGANIZATIONS_VIEW",

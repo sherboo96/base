@@ -1,0 +1,173 @@
+<div class="dialog-content p-6">
+  <!-- Header Section -->
+  <div class="dialog-header mb-6 border-b border-gray-200 pb-4">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-accent/10 rounded-lg">
+        <i class="fas fa-upload text-accent text-xl"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-textDark font-poppins">
+          {{ 'user.uploadUsers' | translate }}
+        </h2>
+        <p class="text-sm text-gray-600 mt-1 font-poppins">
+          {{ 'user.uploadUsersDescription' | translate }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable Form Content -->
+  <div class="form-scroll-container max-h-[60vh] overflow-y-auto pr-2">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Organization Selection -->
+      <div class="space-y-2">
+        <label for="organizationId" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'user.organization' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="organizationId"
+          formControlName="organizationId"
+          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+        >
+          <option value="">{{ 'user.selectOrganization' | translate }}</option>
+          <option *ngFor="let org of organizations" [value]="org.id">
+            {{ org.name }}
+          </option>
+        </select>
+        <div *ngIf="form.get('organizationId')?.invalid && form.get('organizationId')?.touched" class="flex items-center text-xs text-red-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ 'user.organizationRequired' | translate }}
+        </div>
+      </div>
+
+      <!-- Login Method Selection -->
+      <div class="space-y-2">
+        <label for="loginMethod" class="block text-sm font-medium text-textDark font-poppins">
+          {{ 'user.loginMethod' | translate }}
+          <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="loginMethod"
+          formControlName="loginMethod"
+          class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+        >
+          <option value="">{{ 'user.selectLoginMethod' | translate }}</option>
+          <option *ngFor="let method of loginMethods" [value]="method.id">
+            {{ method.displayName }}
+          </option>
+        </select>
+        <div *ngIf="form.get('loginMethod')?.invalid && form.get('loginMethod')?.touched" class="flex items-center text-xs text-red-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ 'user.loginMethodRequired' | translate }}
+        </div>
+      </div>
+
+      <!-- File Upload Section -->
+      <div class="space-y-4 border-t border-gray-200 pt-4">
+        <h3 class="text-lg font-semibold text-textDark flex items-center gap-2">
+          <i class="fas fa-file-upload text-accent"></i>
+          {{ 'user.uploadJsonFile' | translate }}
+        </h3>
+
+        <!-- File Input -->
+        <div class="space-y-2">
+          <label for="jsonFile" class="block text-sm font-medium text-textDark font-poppins">
+            {{ 'user.selectJsonFile' | translate }}
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              type="file"
+              id="jsonFile"
+              accept=".json,application/json"
+              (change)="onFileSelected($event)"
+              class="hidden"
+            />
+            <label
+              for="jsonFile"
+              class="flex-1 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-all duration-200"
+            >
+              <i class="fas fa-upload text-accent text-lg mb-2"></i>
+              <p class="text-sm text-gray-600 font-poppins">
+                {{ selectedFile ? selectedFile.name : ('user.clickToUpload' | translate) }}
+              </p>
+              <p class="text-xs text-gray-500 mt-1 font-poppins">
+                {{ 'user.jsonFileFormat' | translate }}
+              </p>
+            </label>
+            <button
+              *ngIf="selectedFile"
+              type="button"
+              (click)="removeFile()"
+              class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              [title]="'user.removeFile' | translate"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div *ngIf="previewData.length > 0" class="mt-4">
+          <h4 class="text-sm font-semibold text-textDark mb-3">
+            {{ 'user.uploadPreview' | translate }} ({{ previewData.length }} {{ 'user.users' | translate }})
+          </h4>
+          <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'user.englishName' | translate }}</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'user.arabicName' | translate }}</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'user.adUsername' | translate }}</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ 'user.civilId' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let user of previewData" class="hover:bg-gray-50">
+                  <td class="px-3 py-2 text-xs text-gray-900">{{ user.index }}</td>
+                  <td class="px-3 py-2 text-xs text-gray-900">{{ user.englishName }}</td>
+                  <td class="px-3 py-2 text-xs text-gray-900" dir="rtl">{{ user.arabicName }}</td>
+                  <td class="px-3 py-2 text-xs text-gray-900">{{ user.adUsername }}</td>
+                  <td class="px-3 py-2 text-xs text-gray-900">{{ user.civilId }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="dialog-actions mt-6 pt-4 border-t border-gray-200 bg-gray-50 -mx-6 -mb-6 px-6 py-4">
+    <div class="flex items-center justify-end gap-3">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 font-medium text-sm font-poppins"
+      >
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        (click)="onSubmit()"
+        [disabled]="isSubmitting || form.invalid || parsedUsers.length === 0"
+        class="px-6 py-2.5 bg-accent hover:bg-accentDark text-white rounded-lg transition-colors duration-200 font-medium text-sm font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span *ngIf="!isSubmitting">
+          {{ 'user.uploadUsers' | translate }}
+        </span>
+        <span *ngIf="isSubmitting" class="flex items-center gap-2">
+          <i class="fas fa-spinner fa-spin"></i>
+          {{ 'common.processing' | translate }}
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+

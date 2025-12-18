@@ -34,10 +34,11 @@
             </h2>
         </div>
         <ul class="space-y-1">
-            <li>
+            <!-- System Dashboard -->
+            <li *ngIf="hasPermission('DASHBOARD_VIEW')">
                 <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse relative overflow-hidden animate-[fadeIn_0.3s_ease_forwards]"
                     [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':isActiveRoute('/dashboard'),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!isActiveRoute('/dashboard')}"
-                    (click)="navigateToDashboard()" [title]="isCollapsed?('sidemenu.dashboard'|translate):''">
+                    (click)="navigateToSystemDashboard()" [title]="isCollapsed?('sidemenu.dashboard'|translate):''">
                     <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
                         [ngClass]="{'bg-accent/10 text-accent':isActiveRoute('/dashboard')}">
                         <i class="material-icons text-lg">dashboard</i>
@@ -46,6 +47,22 @@
                         class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
                         [ngClass]="{'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full':!isCollapsed,'ml-0 mr-0 opacity-0 max-w-0':isCollapsed,'text-accent':isActiveRoute('/dashboard'),'text-gray-700':!isActiveRoute('/dashboard')}">
                         {{'sidemenu.dashboard'|translate}}
+                    </span>
+                </a>
+            </li>
+            <!-- User Dashboard -->
+            <li *ngIf="hasPermission('USER_DASHBOARD_VIEW')">
+                <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse relative overflow-hidden animate-[fadeIn_0.3s_ease_forwards]"
+                    [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':isActiveRoute('/user-dashboard'),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!isActiveRoute('/user-dashboard')}"
+                    (click)="navigateToUserDashboard()" [title]="isCollapsed?('dashboard.title'|translate):''">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
+                        [ngClass]="{'bg-accent/10 text-accent':isActiveRoute('/user-dashboard')}">
+                        <i class="material-icons text-lg">account_box</i>
+                    </div>
+                    <span
+                        class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
+                        [ngClass]="{'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full':!isCollapsed,'ml-0 mr-0 opacity-0 max-w-0':isCollapsed,'text-accent':isActiveRoute('/user-dashboard'),'text-gray-700':!isActiveRoute('/user-dashboard')}">
+                        {{'dashboard.title'|translate}}
                     </span>
                 </a>
             </li>
@@ -123,6 +140,70 @@
                         <span
                             class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden flex-1"
                             [ngClass]="{'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full':!isCollapsed,'ml-0 mr-0 opacity-0 max-w-0':isCollapsed,'text-accent':isActiveCourseRoute(courseTab.id),'text-gray-700':!isActiveCourseRoute(courseTab.id)}">
+                            {{courseTab.name}}
+                        </span>
+                    </a>
+                </div>
+            </li>
+        </ul>
+        <!-- DIGITAL LIBRARY Section (Public) -->
+        <div *ngIf="hasDigitalLibraryItems() && hasDigitalLibraryViewPermission()"
+            class="my-4 pl-3 rtl:pl-0 rtl:pr-3 transition-all duration-300"
+            [ngClass]="{'opacity-100':!isCollapsed,'opacity-0 h-0 overflow-hidden':isCollapsed}">
+            <h2
+                class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right font-poppins relative after:content-[''] after:absolute after:left-[-0.75rem] rtl:after:left-auto rtl:after:right-[-0.75rem] after:bottom-[-0.25rem] after:h-[1px] after:w-8 after:bg-accent">
+                {{'sidemenu.digitalLibrary'|translate}}
+            </h2>
+        </div>
+        <ul *ngIf="hasDigitalLibraryItems() && hasDigitalLibraryViewPermission()" class="space-y-1">
+            <li *ngFor="let courseTab of digitalLibraryTabs; trackBy: trackByCourseTabId">
+                <div>
+                    <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse relative overflow-hidden animate-[fadeIn_0.3s_ease_forwards]"
+                        [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':courseTab.routeCode && isActiveRoute('/digital-library/' + courseTab.routeCode),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!courseTab.routeCode || !isActiveRoute('/digital-library/' + courseTab.routeCode)}"
+                        (click)="navigateToDigitalLibrary(courseTab)" [title]="isCollapsed?(courseTab.name):''">
+                        <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
+                            [ngClass]="{'bg-accent/10 text-accent':courseTab.routeCode && isActiveRoute('/digital-library/' + courseTab.routeCode)}">
+                            <i *ngIf="courseTab.icon && isMaterialIcon(courseTab.icon)"
+                                class="material-icons text-lg">{{ getIconName(courseTab.icon) }}</i>
+                            <i *ngIf="courseTab.icon && !isMaterialIcon(courseTab.icon)" [ngClass]="courseTab.icon"
+                                class="text-lg"></i>
+                            <i *ngIf="!courseTab.icon" class="material-icons text-lg">book</i>
+                        </div>
+                        <span
+                            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
+                            [ngClass]="{'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full':!isCollapsed,'ml-0 mr-0 opacity-0 max-w-0':isCollapsed,'text-accent':courseTab.routeCode && isActiveRoute('/digital-library/' + courseTab.routeCode),'text-gray-700':!courseTab.routeCode || !isActiveRoute('/digital-library/' + courseTab.routeCode)}">
+                            {{courseTab.name}}
+                        </span>
+                    </a>
+                </div>
+            </li>
+        </ul>
+        <!-- DIGITAL LIBRARY MANAGEMENT Section -->
+        <div *ngIf="hasDigitalLibraryManagementItems() && hasDigitalLibraryManagementViewPermission()"
+            class="my-4 pl-3 rtl:pl-0 rtl:pr-3 transition-all duration-300"
+            [ngClass]="{'opacity-100':!isCollapsed,'opacity-0 h-0 overflow-hidden':isCollapsed}">
+            <h2
+                class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold text-left rtl:text-right font-poppins relative after:content-[''] after:absolute after:left-[-0.75rem] rtl:after:left-auto rtl:after:right-[-0.75rem] after:bottom-[-0.25rem] after:h-[1px] after:w-8 after:bg-accent">
+                {{'sidemenu.digitalLibrary'|translate}} {{'sidemenu.management'|translate}}
+            </h2>
+        </div>
+        <ul *ngIf="hasDigitalLibraryManagementItems() && hasDigitalLibraryManagementViewPermission()" class="space-y-1">
+            <li *ngFor="let courseTab of digitalLibraryManagementTabs; trackBy: trackByCourseTabId">
+                <div>
+                    <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse relative overflow-hidden animate-[fadeIn_0.3s_ease_forwards]"
+                        [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':courseTab.routeCode && isActiveRoute('/management/digital-library/' + courseTab.routeCode),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!courseTab.routeCode || !isActiveRoute('/management/digital-library/' + courseTab.routeCode)}"
+                        (click)="navigateToDigitalLibraryManagement(courseTab)" [title]="isCollapsed?(courseTab.name):''">
+                        <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
+                            [ngClass]="{'bg-accent/10 text-accent':courseTab.routeCode && isActiveRoute('/management/digital-library/' + courseTab.routeCode)}">
+                            <i *ngIf="courseTab.icon && isMaterialIcon(courseTab.icon)"
+                                class="material-icons text-lg">{{ getIconName(courseTab.icon) }}</i>
+                            <i *ngIf="courseTab.icon && !isMaterialIcon(courseTab.icon)" [ngClass]="courseTab.icon"
+                                class="text-lg"></i>
+                            <i *ngIf="!courseTab.icon" class="material-icons text-lg">book</i>
+                        </div>
+                        <span
+                            class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden flex-1"
+                            [ngClass]="{'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full':!isCollapsed,'ml-0 mr-0 opacity-0 max-w-0':isCollapsed,'text-accent':courseTab.routeCode && isActiveRoute('/management/digital-library/' + courseTab.routeCode),'text-gray-700':!courseTab.routeCode || !isActiveRoute('/management/digital-library/' + courseTab.routeCode)}">
                             {{courseTab.name}}
                         </span>
                     </a>
@@ -444,8 +525,7 @@
             <li *ngIf="hasPermission('LOGS_VIEW')">
                 <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
                     [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':isActiveRoute('/management/logs'),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!isActiveRoute('/management/logs')}"
-                    (click)="navigateToLogs()"
-                    [title]="isCollapsed?('sidemenu.logs'|translate):''">
+                    (click)="navigateToLogs()" [title]="isCollapsed?('sidemenu.logs'|translate):''">
                     <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
                         [ngClass]="{'bg-accent/10 text-accent':isActiveRoute('/management/logs')}">
                         <i class="material-icons text-lg">list_alt</i>

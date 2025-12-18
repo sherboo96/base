@@ -69,6 +69,7 @@ public class EventOrganizationsController : ControllerBase
         });
     }
 
+    [AllowAnonymous]
     [HttpGet("all")]
     public async Task<IActionResult> GetAllActive()
     {

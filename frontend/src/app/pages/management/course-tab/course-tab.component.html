@@ -1,11 +1,8 @@
 <div class="p-4 mx-auto max-w-full">
   <app-course-tab-form *ngIf="false"></app-course-tab-form>
   <app-loading></app-loading>
-  <div
-    *ngIf="isLoading && !courseTabs.length"
-    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50"
-    id="custom-loader"
-  >
+  <div *ngIf="isLoading && !courseTabs.length"
+    class="fixed inset-0 flex justify-center items-center bg-gray-100 bg-opacity-70 z-50" id="custom-loader">
     <div class="spinner-container">
       <div class="spinner"></div>
       <p class="mt-3 text-accent font-medium text-sm">
@@ -37,34 +34,24 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
         <div class="lg:col-span-2">
           <label class="block text-xs font-semibold text-gray-700 mb-1">
-            <i class="fas fa-search mr-1 text-accent text-xs"></i
-            >{{ 'courseTab.search' | translate }}
+            <i class="fas fa-search mr-1 text-accent text-xs"></i>{{ 'courseTab.search' | translate }}
           </label>
           <div class="relative">
-            <div
-              class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none"
-            >
+            <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
               <i class="fas fa-search text-gray-400 text-xs"></i>
             </div>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (keyup.enter)="applyFilters()"
+            <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="applyFilters()"
               [placeholder]="'courseTab.searchPlaceholder' | translate"
-              class="w-full border-2 border-gray-300 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white shadow-sm"
-            />
+              class="w-full border-2 border-gray-300 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white shadow-sm" />
           </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">
-            <i class="fas fa-building mr-1.5 text-accent text-xs"></i
-            >{{ 'courseTab.organization' | translate }}
+            <i class="fas fa-building mr-1.5 text-accent text-xs"></i>{{ 'courseTab.organization' | translate }}
           </label>
           <div class="relative">
-            <select
-              [(ngModel)]="filterOrganizationId"
-              class="appearance-none w-full border-2 border-gray-300 rounded-lg py-2 px-3 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer bg-white shadow-sm transition-all duration-200"
-            >
+            <select [(ngModel)]="filterOrganizationId"
+              class="appearance-none w-full border-2 border-gray-300 rounded-lg py-2 px-3 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer bg-white shadow-sm transition-all duration-200">
               <option [value]="null">
                 {{ 'courseTab.allOrganizations' | translate }}
               </option>
@@ -72,23 +59,18 @@
                 {{ org.name }} ({{ org.code }})
               </option>
             </select>
-            <div
-              class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
-            >
+            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
               <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
             </div>
           </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">
-            <i class="fas fa-eye mr-1.5 text-accent text-xs"></i
-            >{{ 'courseTab.showInMenu' | translate }}
+            <i class="fas fa-eye mr-1.5 text-accent text-xs"></i>{{ 'courseTab.showInMenu' | translate }}
           </label>
           <div class="relative">
-            <select
-              [(ngModel)]="filterShowInMenu"
-              class="appearance-none w-full border-2 border-gray-300 rounded-lg py-2 px-3 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer bg-white shadow-sm transition-all duration-200"
-            >
+            <select [(ngModel)]="filterShowInMenu"
+              class="appearance-none w-full border-2 border-gray-300 rounded-lg py-2 px-3 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent cursor-pointer bg-white shadow-sm transition-all duration-200">
               <option value="all">
                 {{ 'courseTab.all' | translate }}
               </option>
@@ -99,31 +81,22 @@
                 {{ 'courseTab.hideInMenu' | translate }}
               </option>
             </select>
-            <div
-              class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
-            >
+            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
               <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
             </div>
           </div>
         </div>
       </div>
-      <div
-        class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200"
-      >
-        <button
-          *ngIf="hasActiveFilters()"
-          (click)="clearFilters()"
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+        <button *ngIf="hasActiveFilters()" (click)="clearFilters()"
           class="px-4 py-1.5 border-2 border-red-300 rounded-lg text-xs font-medium text-red-700 bg-white hover:bg-red-50 hover:border-red-400 transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
-          [title]="'courseTab.clearFilters' | translate"
-        >
+          [title]="'courseTab.clearFilters' | translate">
           <i class="fas fa-times-circle text-xs"></i>
           <span>{{ 'courseTab.clearFilters' | translate }}</span>
         </button>
-        <button
-          (click)="applyFilters()"
+        <button (click)="applyFilters()"
           class="px-4 py-1.5 bg-accentDark hover:bg-accentDarker text-white rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 shadow-md hover:shadow-lg transform hover:scale-105 font-poppins"
-          [title]="'courseTab.applyFilter' | translate"
-        >
+          [title]="'courseTab.applyFilter' | translate">
           <i class="fas fa-check-circle text-xs"></i>
           <span>{{ 'courseTab.applyFilter' | translate }}</span>
         </button>
@@ -131,72 +104,56 @@
     </div>
   </div>
   <div
-    class="course-tab-card relative flex flex-col w-full h-full bg-white shadow-md rounded-lg overflow-hidden border border-gray-100"
-  >
-    <div
-      class="bg-gray-50 py-2 px-3 border-b border-gray-200 flex flex-wrap gap-2 items-center justify-between"
-    >
+    class="course-tab-card relative flex flex-col w-full h-full bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+    <div class="bg-gray-50 py-2 px-3 border-b border-gray-200 flex flex-wrap gap-2 items-center justify-between">
       <div class="flex items-center gap-2">
         <i class="fas fa-folder text-gray-600 text-sm"></i>
         <h3 class="text-sm font-semibold text-gray-800">
           {{ 'courseTab.title' | translate }}
         </h3>
-        <span
-          *ngIf="totalItems > 0"
-          class="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-full"
-        >
+        <span *ngIf="totalItems > 0" class="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-full">
           {{ totalItems }}
           {{
-            totalItems === 1
-              ? ('courseTab.courseTab' | translate)
-              : ('courseTab.courseTabs' | translate)
+          totalItems === 1
+          ? ('courseTab.courseTab' | translate)
+          : ('courseTab.courseTabs' | translate)
           }}
         </span>
       </div>
-      <button
-        (click)="addNewCourseTab()"
-        class="bg-accent hover:bg-accentDark text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors duration-200 text-xs"
-      >
+      <button (click)="addNewCourseTab()"
+        class="bg-accent hover:bg-accentDark text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors duration-200 text-xs">
         <i class="fas fa-plus-circle text-xs"></i>
         <span>{{ 'courseTab.addCourseTab' | translate }}</span>
       </button>
     </div>
-    <div
-      *ngIf="courseTabs.length === 0 && !isLoading"
-      class="empty-state py-12 flex flex-col items-center justify-center bg-gray-50"
-    >
+    <div *ngIf="courseTabs.length === 0 && !isLoading"
+      class="empty-state py-12 flex flex-col items-center justify-center bg-gray-50">
       <div class="bg-white rounded-full p-4 mb-3 shadow-md">
         <i class="fas fa-folder text-4xl text-gray-300"></i>
       </div>
       <h3 class="text-xl font-bold text-textDark mb-1">
         <span *ngIf="hasActiveFilters()">{{
           'courseTab.noCourseTabsMatching' | translate
-        }}</span>
+          }}</span>
         <span *ngIf="!hasActiveFilters()">{{
           'courseTab.noCourseTabsFound' | translate
-        }}</span>
+          }}</span>
       </h3>
       <p class="text-xs text-gray-600 text-center max-w-md mb-4">
         <span *ngIf="hasActiveFilters()">{{
           'courseTab.noCourseTabsMatchingDescription' | translate
-        }}</span>
+          }}</span>
         <span *ngIf="!hasActiveFilters()">{{
           'courseTab.noCourseTabsAvailable' | translate
-        }}</span>
+          }}</span>
       </p>
-      <button
-        *ngIf="hasActiveFilters()"
-        (click)="clearFilters()"
-        class="px-4 py-2 bg-accentDark hover:bg-accentDarker text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-xs flex items-center gap-1.5 font-poppins"
-      >
+      <button *ngIf="hasActiveFilters()" (click)="clearFilters()"
+        class="px-4 py-2 bg-accentDark hover:bg-accentDarker text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-xs flex items-center gap-1.5 font-poppins">
         <i class="fas fa-times-circle text-xs"></i>
         <span>{{ 'courseTab.clearFilters' | translate }}</span>
       </button>
     </div>
-    <div
-      *ngIf="isLoading && courseTabs.length === 0"
-      class="py-12 flex flex-col items-center justify-center"
-    >
+    <div *ngIf="isLoading && courseTabs.length === 0" class="py-12 flex flex-col items-center justify-center">
       <div class="spinner-container">
         <div class="spinner"></div>
         <p class="mt-3 text-accent font-medium text-sm">
@@ -211,107 +168,66 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-100">
           <tr>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-image mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.icon' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-image mr-1.5 text-accent text-xs"></i>{{ 'courseTab.icon' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-clock mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.excuseTimeHours' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-clock mr-1.5 text-accent text-xs"></i>{{ 'courseTab.excuseTimeHours' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-font mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.name' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-font mr-1.5 text-accent text-xs"></i>{{ 'courseTab.name' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-language mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.nameAr' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-language mr-1.5 text-accent text-xs"></i>{{ 'courseTab.nameAr' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-route mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.routeCode' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-route mr-1.5 text-accent text-xs"></i>{{ 'courseTab.routeCode' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-building mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.organization' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-building mr-1.5 text-accent text-xs"></i>{{ 'courseTab.organization' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-eye mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.showInMenu' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-eye mr-1.5 text-accent text-xs"></i>{{ 'courseTab.showInMenu' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-globe mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.showPublic' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-globe mr-1.5 text-accent text-xs"></i>{{ 'courseTab.showPublic' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-share-alt mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.showForOtherOrganizations' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-share-alt mr-1.5 text-accent text-xs"></i>{{ 'courseTab.showForOtherOrganizations' |
+              translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.status' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{ 'courseTab.status' | translate }}
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-calendar mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.createdOn' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-book mr-1.5 text-accent text-xs"></i>{{ 'sidemenu.digitalLibrary' | translate }} ({{ 'courseTab.showInMenu' | translate }})
             </th>
-            <th
-              scope="col"
-              class="px-4 py-2.5 text-right text-xs font-bold text-textDark uppercase tracking-wider"
-            >
-              <i class="fas fa-cog mr-1.5 text-accent text-xs"></i
-              >{{ 'courseTab.actions' | translate }}
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-book mr-1.5 text-accent text-xs"></i>{{ 'sidemenu.digitalLibrary' | translate }} ({{ 'courseTab.showPublic' | translate }})
+            </th>
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-calendar mr-1.5 text-accent text-xs"></i>{{ 'courseTab.createdOn' | translate }}
+            </th>
+            <th scope="col" class="px-4 py-2.5 text-right text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-cog mr-1.5 text-accent text-xs"></i>{{ 'courseTab.actions' | translate }}
             </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr
-            *ngFor="let courseTab of courseTabs"
-            class="hover:bg-gray-50 transition-all duration-150"
-          >
+          <tr *ngFor="let courseTab of courseTabs" class="hover:bg-gray-50 transition-all duration-150">
             <td class="px-4 py-2.5 whitespace-nowrap">
-              <i *ngIf="courseTab.icon && courseTab.icon.startsWith('material-icons ')" class="material-icons text-lg text-accent">{{ courseTab.icon.replace('material-icons ', '') }}</i>
-              <i *ngIf="courseTab.icon && !courseTab.icon.startsWith('material-icons ')" [ngClass]="courseTab.icon" class="text-lg text-accent"></i>
+              <i *ngIf="courseTab.icon && courseTab.icon.startsWith('material-icons ')"
+                class="material-icons text-lg text-accent">{{ courseTab.icon.replace('material-icons ', '') }}</i>
+              <i *ngIf="courseTab.icon && !courseTab.icon.startsWith('material-icons ')" [ngClass]="courseTab.icon"
+                class="text-lg text-accent"></i>
               <i *ngIf="!courseTab.icon" class="material-icons text-lg text-gray-400">book</i>
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-900">
               <span *ngIf="courseTab.excuseTimeHours !== null && courseTab.excuseTimeHours !== undefined">
                 {{ courseTab.excuseTimeHours }} {{ 'courseTab.hours' | translate }}
               </span>
-              <span *ngIf="courseTab.excuseTimeHours === null || courseTab.excuseTimeHours === undefined" class="text-gray-400">-</span>
+              <span *ngIf="courseTab.excuseTimeHours === null || courseTab.excuseTimeHours === undefined"
+                class="text-gray-400">-</span>
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-900">
               {{ courseTab.name }}
@@ -329,79 +245,60 @@
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap">
               <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  [checked]="courseTab.showInMenu"
-                  (change)="toggleShowInMenu(courseTab)"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"
-                ></div>
+                <input type="checkbox" [checked]="courseTab.showInMenu" (change)="toggleShowInMenu(courseTab)"
+                  class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer" />
               </label>
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap">
               <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  [checked]="courseTab.showPublic"
-                  (change)="toggleShowPublic(courseTab)"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"
-                ></div>
+                <input type="checkbox" [checked]="courseTab.showPublic" (change)="toggleShowPublic(courseTab)"
+                  class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer" />
               </label>
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap">
               <span *ngIf="isMainOrganization(courseTab.organizationId)">
                 <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    [checked]="courseTab.showForOtherOrganizations"
+                  <input type="checkbox" [checked]="courseTab.showForOtherOrganizations"
                     (change)="toggleShowForOtherOrganizations(courseTab)"
-                    class="sr-only peer"
-                  />
-                  <div
-                    class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"
-                  ></div>
+                    class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer" />
                 </label>
               </span>
               <span *ngIf="!isMainOrganization(courseTab.organizationId)" class="text-gray-400 text-xs">-</span>
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap">
               <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  [checked]="courseTab.isActive"
-                  (change)="toggleStatus(courseTab)"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"
-                ></div>
+                <input type="checkbox" [checked]="courseTab.isActive" (change)="toggleStatus(courseTab)"
+                  class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer" />
+              </label>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" [checked]="courseTab.showDigitalLibraryInMenu"
+                  (change)="toggleShowDigitalLibraryInMenu(courseTab)"
+                  class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer" />
+              </label>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" [checked]="courseTab.showDigitalLibraryPublic"
+                  (change)="toggleShowDigitalLibraryPublic(courseTab)"
+                  class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer" />
               </label>
             </td>
             <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-900">
               {{ formatDate(courseTab.createdOn) }}
             </td>
-            <td
-              class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium"
-            >
+            <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
               <div class="flex items-center justify-end gap-2">
-                <button
-                  (click)="editCourseTab(courseTab)"
+                <button (click)="editCourseTab(courseTab)"
                   class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'courseTab.edit' | translate"
-                >
+                  [title]="'courseTab.edit' | translate">
                   <i class="fas fa-edit mr-1.5"></i>
                   <span>{{ 'courseTab.edit' | translate }}</span>
                 </button>
-                <button
-                  (click)="deleteCourseTab(courseTab)"
+                <button (click)="deleteCourseTab(courseTab)"
                   class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
-                  [title]="'courseTab.delete' | translate"
-                >
+                  [title]="'courseTab.delete' | translate">
                   <i class="fas fa-trash mr-1.5"></i>
                   <span>{{ 'courseTab.delete' | translate }}</span>
                 </button>
@@ -413,28 +310,23 @@
     </div>
 
     <!-- Pagination -->
-    <div
-      *ngIf="courseTabs.length > 0"
-      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t-2 border-gray-200"
-    >
+    <div *ngIf="courseTabs.length > 0"
+      class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-5 border-t-2 border-gray-200">
       <div class="text-sm font-medium text-textDark mb-2 sm:mb-0">
         <i class="fas fa-info-circle mr-2 text-accent"></i>
         {{
-          'courseTab.showing'
-            | translate
-              : {
-                  from: (currentPage - 1) * pageSize + 1,
-                  to: Math.min(currentPage * pageSize, totalItems),
-                  total: totalItems
-                }
+        'courseTab.showing'
+        | translate
+        : {
+        from: (currentPage - 1) * pageSize + 1,
+        to: Math.min(currentPage * pageSize, totalItems),
+        total: totalItems
+        }
         }}
       </div>
       <div class="flex items-center space-x-3">
-        <select
-          [(ngModel)]="pageSize"
-          (change)="onPageSizeChange()"
-          class="text-sm border-2 border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium"
-        >
+        <select [(ngModel)]="pageSize" (change)="onPageSizeChange()"
+          class="text-sm border-2 border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium">
           <option [value]="5">5 {{ 'courseTab.perPage' | translate }}</option>
           <option [value]="10">10 {{ 'courseTab.perPage' | translate }}</option>
           <option [value]="20">20 {{ 'courseTab.perPage' | translate }}</option>
@@ -443,49 +335,37 @@
         <div class="flex space-x-1">
           <button
             class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(1)"
-            [title]="'common.firstPage' | translate"
-          >
+            [disabled]="currentPage === 1" (click)="goToPage(1)" [title]="'common.firstPage' | translate">
             <i class="fas fa-angle-double-left"></i>
           </button>
           <button
             class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === 1"
-            (click)="goToPage(currentPage - 1)"
-            [title]="'common.previousPage' | translate"
-          >
+            [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)"
+            [title]="'common.previousPage' | translate">
             <i class="fas fa-chevron-left"></i>
           </button>
           <div class="flex space-x-1">
-            <button
-              *ngFor="let page of getPageNumbers()"
-              (click)="goToPage(page)"
+            <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)"
               class="px-4 py-1.5 rounded-lg border-2 text-sm min-w-[40px] font-medium transition-all duration-200 shadow-sm hover:shadow-md"
               [ngClass]="{
                 'bg-accentDark text-white border-accent shadow-md':
                   currentPage === page,
                 'border-gray-300 hover:bg-gray-100 hover:border-gray-400':
                   currentPage !== page
-              }"
-            >
+              }">
               {{ page }}
             </button>
           </div>
           <button
             class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(currentPage + 1)"
-            [title]="'common.nextPage' | translate"
-          >
+            [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)"
+            [title]="'common.nextPage' | translate">
             <i class="fas fa-chevron-right"></i>
           </button>
           <button
             class="px-3 py-1.5 rounded-lg border-2 border-gray-300 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-            [disabled]="currentPage === totalPages"
-            (click)="goToPage(totalPages)"
-            [title]="'common.lastPage' | translate"
-          >
+            [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)"
+            [title]="'common.lastPage' | translate">
             <i class="fas fa-angle-double-right"></i>
           </button>
         </div>

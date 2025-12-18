@@ -73,7 +73,15 @@ public class Mapping: Profile
             .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
             .ForMember(dest => dest.InstructorIds, opt => opt.MapFrom(src => src.CourseInstructors.Select(ci => ci.InstructorId)))
             .ForMember(dest => dest.Instructors, opt => opt.MapFrom(src => src.CourseInstructors.Select(ci => ci.Instructor)))
+            .ForMember(dest => dest.TargetDepartmentIds, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.TargetDepartmentIds) ? null : System.Text.Json.JsonSerializer.Deserialize<List<int>>(src.TargetDepartmentIds, (System.Text.Json.JsonSerializerOptions)null)))
+            .ForMember(dest => dest.TargetOrganizationIds, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.TargetOrganizationIds) ? null : System.Text.Json.JsonSerializer.Deserialize<List<int>>(src.TargetOrganizationIds, (System.Text.Json.JsonSerializerOptions)null)))
+            .ForMember(dest => dest.TargetSegmentIds, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.TargetSegmentIds) ? null : System.Text.Json.JsonSerializer.Deserialize<List<int>>(src.TargetSegmentIds, (System.Text.Json.JsonSerializerOptions)null)))
+            .ForMember(dest => dest.TargetDepartmentRoles, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.TargetDepartmentRoles) ? null : System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, string>>(src.TargetDepartmentRoles, (System.Text.Json.JsonSerializerOptions)null)))
             .ReverseMap()
+            .ForMember(dest => dest.TargetDepartmentIds, opt => opt.MapFrom(src => src.TargetDepartmentIds == null ? null : System.Text.Json.JsonSerializer.Serialize(src.TargetDepartmentIds, (System.Text.Json.JsonSerializerOptions)null)))
+            .ForMember(dest => dest.TargetOrganizationIds, opt => opt.MapFrom(src => src.TargetOrganizationIds == null ? null : System.Text.Json.JsonSerializer.Serialize(src.TargetOrganizationIds, (System.Text.Json.JsonSerializerOptions)null)))
+            .ForMember(dest => dest.TargetSegmentIds, opt => opt.MapFrom(src => src.TargetSegmentIds == null ? null : System.Text.Json.JsonSerializer.Serialize(src.TargetSegmentIds, (System.Text.Json.JsonSerializerOptions)null)))
+            .ForMember(dest => dest.TargetDepartmentRoles, opt => opt.MapFrom(src => src.TargetDepartmentRoles == null ? null : System.Text.Json.JsonSerializer.Serialize(src.TargetDepartmentRoles, (System.Text.Json.JsonSerializerOptions)null)))
             .ForMember(dest => dest.LearningOutcomes, opt => opt.Ignore())
             .ForMember(dest => dest.CourseContents, opt => opt.Ignore())
             .ForMember(dest => dest.CourseInstructors, opt => opt.Ignore());
@@ -131,5 +139,20 @@ public class Mapping: Profile
 
         // EventAttendee
         CreateMap<EventAttendee, EventAttendeeDto>().ReverseMap();
+        
+        // Digital Library
+        CreateMap<DigitalLibraryItem, DigitalLibraryItemDto>()
+            .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null))
+            .ForMember(dest => dest.FilesCount, opt => opt.MapFrom(src => src.Files.Count))
+            .ReverseMap()
+            .ForMember(dest => dest.Files, opt => opt.Ignore())
+            .ForMember(dest => dest.PosterPath, opt => opt.MapFrom(src => src.PosterPath ?? string.Empty));
+
+        CreateMap<DigitalLibraryFile, DigitalLibraryFileDto>()
+            .ForMember(dest => dest.FileType, opt => opt.MapFrom(src => (int)src.FileType))
+            .ReverseMap()
+            .ForMember(dest => dest.FileType, opt => opt.MapFrom(src => (DigitalFileType)src.FileType));
+            
+        CreateMap<UserDigitalLibraryProgress, UserDigitalLibraryProgressDto>().ReverseMap();
     }
 }

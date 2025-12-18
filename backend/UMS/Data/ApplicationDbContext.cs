@@ -44,6 +44,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public new DbSet<UserRole> UserRoles { get; set; }
     public DbSet<UserSegment> UserSegments { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
+    
+    // Digital Library DbSets
+    public DbSet<DigitalLibraryItem> DigitalLibraryItems { get; set; }
+    public DbSet<DigitalLibraryFile> DigitalLibraryFiles { get; set; }
+    public DbSet<UserDigitalLibraryProgress> UserDigitalLibraryProgresses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -340,7 +345,52 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .WithMany()
             .HasForeignKey(ca => ca.CourseEnrollmentId)
             .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
+            
+        // Digital Library Configuration
+        
+        // DigitalLibraryItem Relationship
+        modelBuilder.Entity<DigitalLibraryItem>()
+            .HasOne(i => i.Course)
+            .WithMany()
+            .HasForeignKey(i => i.CourseId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<DigitalLibraryItem>()
+            .HasOne(i => i.Organization)
+            .WithMany() // Assuming no collection in Organization for now
+            .HasForeignKey(i => i.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        // DigitalLibraryFile Relationship
+        modelBuilder.Entity<DigitalLibraryFile>()
+            .HasOne(f => f.DigitalLibraryItem)
+            .WithMany(i => i.Files)
+            .HasForeignKey(f => f.DigitalLibraryItemId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+            
+        // UserDigitalLibraryProgress Relationship
+        modelBuilder.Entity<UserDigitalLibraryProgress>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+            
+        modelBuilder.Entity<UserDigitalLibraryProgress>()
+            .HasOne(p => p.DigitalLibraryFile)
+            .WithMany()
+            .HasForeignKey(p => p.DigitalLibraryFileId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+            
+        // Unique progress record per user per file
+        modelBuilder.Entity<UserDigitalLibraryProgress>()
+            .HasIndex(p => new { p.UserId, p.DigitalLibraryFileId })
+            .IsUnique();
     }
 
 }

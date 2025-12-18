@@ -8,6 +8,7 @@ using UMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Azure.Core;
 using Microsoft.AspNetCore.Identity;
+using System.Linq;
 
 namespace UMS.Controllers;
 
@@ -489,6 +490,159 @@ public class UsersController : ControllerBase
             StatusCode = 400,
             Message = "Password is not available for this user's login method.",
             Result = null
+        });
+    }
+
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadUsers([FromBody] BulkUserUploadRequest request)
+    {
+        if (request.Users == null || request.Users.Count == 0)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "No users provided for upload.",
+                Result = false
+            });
+        }
+
+        var results = new List<BulkUserUploadResult>();
+        int successCount = 0;
+        int failureCount = 0;
+
+        foreach (var userDto in request.Users)
+        {
+            var result = new BulkUserUploadResult
+            {
+                Email = userDto.Email,
+                FullName = userDto.FullName,
+                Success = false
+            };
+
+            try
+            {
+                // Check for duplicate users
+                User? existingUser = null;
+                if (!string.IsNullOrWhiteSpace(userDto.ADUsername))
+                {
+                    existingUser = await _unitOfWork.Users.FindAsync(u => u.Email == userDto.Email || u.ADUsername == userDto.ADUsername || u.Email == userDto.ADUsername);
+                }
+                else
+                {
+                    existingUser = await _unitOfWork.Users.FindAsync(u => u.Email == userDto.Email);
+                }
+
+                if (existingUser != null)
+                {
+                    result.Message = "User already exists.";
+                    results.Add(result);
+                    failureCount++;
+                    continue;
+                }
+
+                // Create new user
+                var newUser = new User
+                {
+                    FullName = userDto.FullName,
+                    Email = userDto.Email,
+                    UserName = !string.IsNullOrWhiteSpace(userDto.Username) ? userDto.Username : userDto.Email,
+                    ADUsername = userDto.ADUsername ?? string.Empty,
+                    CivilNo = userDto.CivilNo,
+                    OrganizationId = userDto.OrganizationId,
+                    LoginMethod = (LoginMethod)userDto.LoginMethod,
+                    EmailVerified = false,
+                    IsActive = true,
+                    CreatedOn = DateTime.UtcNow
+                };
+
+                // Handle different login methods
+                if (userDto.LoginMethod == (int)LoginMethod.Credentials)
+                {
+                    string tempPassword = PasswordGenerator.GeneratePassword(12);
+                    newUser.TemporaryPassword = tempPassword;
+                    newUser.IsTemporaryPassword = true;
+                    
+                    var createResult = await _userManager.CreateAsync(newUser, tempPassword);
+                    
+                    if (!createResult.Succeeded)
+                    {
+                        result.Message = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                        results.Add(result);
+                        failureCount++;
+                        continue;
+                    }
+                }
+                else if (userDto.LoginMethod == (int)LoginMethod.ActiveDirectory)
+                {
+                    if (string.IsNullOrWhiteSpace(userDto.ADUsername))
+                    {
+                        result.Message = "AD Username is required for Active Directory login method.";
+                        results.Add(result);
+                        failureCount++;
+                        continue;
+                    }
+                    
+                    // Verify user exists in Active Directory
+                    bool existsInAD = _ldapAuthenticator.IsUsernameInDomain(userDto.ADUsername);
+                    
+                    if (!existsInAD)
+                    {
+                        result.Message = "User not found in Active Directory.";
+                        results.Add(result);
+                        failureCount++;
+                        continue;
+                    }
+                    
+                    var createResult = await _userManager.CreateAsync(newUser);
+                    
+                    if (!createResult.Succeeded)
+                    {
+                        result.Message = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                        results.Add(result);
+                        failureCount++;
+                        continue;
+                    }
+                }
+                else // OTPVerification
+                {
+                    var createResult = await _userManager.CreateAsync(newUser);
+                    
+                    if (!createResult.Succeeded)
+                    {
+                        result.Message = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                        results.Add(result);
+                        failureCount++;
+                        continue;
+                    }
+                }
+
+                // User is already saved by UserManager.CreateAsync, just complete the transaction
+                await _unitOfWork.CompleteAsync();
+
+                result.Success = true;
+                result.Message = "User created successfully.";
+                results.Add(result);
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                result.Message = $"Error: {ex.Message}";
+                results.Add(result);
+                failureCount++;
+            }
+        }
+
+        return Ok(new BaseResponse<BulkUserUploadResponse>
+        {
+            StatusCode = 200,
+            Message = $"Upload completed. {successCount} succeeded, {failureCount} failed.",
+            Result = new BulkUserUploadResponse
+            {
+                Total = request.Users.Count,
+                SuccessCount = successCount,
+                FailureCount = failureCount,
+                Results = results
+            }
         });
     }
 

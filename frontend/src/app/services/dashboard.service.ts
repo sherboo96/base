@@ -26,7 +26,7 @@ export interface DashboardStatistics {
 export interface DashboardResponse {
   statusCode: number;
   message: string;
-  result: DashboardStatistics;
+  result: DashboardStatistics | null;
 }
 
 @Injectable({
@@ -35,9 +35,29 @@ export interface DashboardResponse {
 export class DashboardService {
   private apiUrl = `${environment.baseUrl}/Dashboard`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getStatistics(): Observable<DashboardResponse> {
     return this.http.get<DashboardResponse>(`${this.apiUrl}/statistics`);
   }
+
+  getUserStatistics(): Observable<UserDashboardResponse> {
+    return this.http.get<UserDashboardResponse>(`${this.apiUrl}/user-statistics`);
+  }
+}
+
+export interface UserDashboardStatistics {
+  approvedCourses: any[];
+  approvedCoursesCount: number;
+  attendedCourses: any[];
+  attendedCoursesCount: number;
+  attendedHours: number;
+  rank: number;
+  organizationId: number;
+}
+
+export interface UserDashboardResponse {
+  statusCode: number;
+  message: string;
+  result: UserDashboardStatistics | null;
 }

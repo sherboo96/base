@@ -7,6 +7,7 @@ import { DialogService, DialogConfig } from '@ngneat/dialog';
 import { LoadingService } from '../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
 import { UserFormComponent } from './user-form/user-form.component';
+import { UserUploadComponent } from './user-upload/user-upload.component';
 import { LoadingComponent } from '../../../components/loading/loading.component';
 import { TranslationService } from '../../../services/translation.service';
 import { ResetPasswordDialogComponent } from '../../../components/reset-password-dialog/reset-password-dialog.component';
@@ -86,6 +87,29 @@ export class UserComponent implements OnInit {
         setTimeout(() => {
           this.loadUsers();
         }, 300);
+      }
+    });
+  }
+
+  uploadUsers(): void {
+    const dialogRef = this.dialogService.open(UserUploadComponent, {
+      data: {},
+      width: '90vw',
+      maxWidth: '900px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Reload users after successful upload
+        setTimeout(() => {
+          this.loadUsers();
+        }, 500);
       }
     });
   }

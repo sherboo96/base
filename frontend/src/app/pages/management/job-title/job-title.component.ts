@@ -15,6 +15,7 @@ import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { DialogService } from '@ngneat/dialog';
 import { JobTitleFormComponent } from './job-title-form/job-title-form.component';
+import { JobTitleUploadComponent } from './job-title-upload/job-title-upload.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { TranslationService } from '../../../services/translation.service';
 
@@ -217,6 +218,28 @@ export class JobTitleComponent implements OnInit, OnDestroy {
       to: Math.min(this.currentPage * this.pageSize, this.totalItems),
       total: this.totalItems
     };
+  }
+
+  uploadJobTitles(): void {
+    const dialogRef = this.dialogService.open(JobTitleUploadComponent, {
+      data: {},
+      width: '90vw',
+      maxWidth: '900px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        setTimeout(() => {
+          this.fetchJobTitles();
+        }, 500);
+      }
+    });
   }
 }
 

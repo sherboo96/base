@@ -1,0 +1,149 @@
+<div class="p-6 space-y-6">
+    <app-loading *ngIf="isLoading"></app-loading>
+
+    <div *ngIf="!isLoading && stats">
+        <!-- Debug: Check data availability -->
+        <!-- <pre>{{ stats | json }}</pre> -->
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 font-poppins">{{ 'sidemenu.dashboard' | translate }}</h1>
+            <p class="text-gray-500 text-sm mt-1">{{ 'dashboard.welcomeMessage' | translate }}</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Approved Courses -->
+            <div
+                class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start space-x-4 rtl:space-x-reverse transition-all duration-300 hover:shadow-md hover:-translate-y-1 group">
+                <div
+                    class="w-12 h-12 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
+                    <i class="material-icons text-2xl">check_circle</i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">{{ 'dashboard.approvedCourses' | translate }}</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ stats.approvedCoursesCount }}</h3>
+                </div>
+            </div>
+
+            <!-- Attended Courses -->
+            <div
+                class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start space-x-4 rtl:space-x-reverse transition-all duration-300 hover:shadow-md hover:-translate-y-1 group">
+                <div
+                    class="w-12 h-12 rounded-lg bg-green-50 text-green-500 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
+                    <i class="material-icons text-2xl">school</i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">{{ 'dashboard.attendedCourses' | translate }}</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ stats.attendedCoursesCount }}</h3>
+                </div>
+            </div>
+
+            <!-- Attended Hours -->
+            <div
+                class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start space-x-4 rtl:space-x-reverse transition-all duration-300 hover:shadow-md hover:-translate-y-1 group">
+                <div
+                    class="w-12 h-12 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-300">
+                    <i class="material-icons text-2xl">schedule</i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">{{ 'dashboard.attendedHours' | translate }}</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ stats.attendedHours }} <span
+                            class="text-xs font-normal text-gray-400">{{ 'courseTab.hours' | translate }}</span></h3>
+                </div>
+            </div>
+
+            <!-- Rank -->
+            <div
+                class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start space-x-4 rtl:space-x-reverse transition-all duration-300 hover:shadow-md hover:-translate-y-1 group">
+                <div
+                    class="w-12 h-12 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                    <i class="material-icons text-2xl">emoji_events</i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1">{{ 'dashboard.rank' | translate }}</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ getRankDisplay(stats.rank) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Approved Courses List -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-blue-500 text-sm">check_circle</i>
+                        {{ 'dashboard.approvedCoursesList' | translate }}
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">{{ 'course.courseName' | translate }}</th>
+                                <th scope="col" class="px-6 py-3">{{ 'course.code' | translate }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let course of stats.approvedCourses"
+                                class="bg-white border-b hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ course.name }}</td>
+                                <td class="px-6 py-4">{{ course.code }}</td>
+                            </tr>
+                            <tr *ngIf="!stats.approvedCourses || stats.approvedCourses.length === 0">
+                                <td colspan="2" class="px-6 py-8 text-center text-gray-400">
+                                    {{ 'common.noData' | translate }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attended Courses List -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-green-500 text-sm">school</i>
+                        {{ 'dashboard.attendedCoursesList' | translate }}
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">{{ 'course.courseName' | translate }}</th>
+                                <th scope="col" class="px-6 py-3">{{ 'course.code' | translate }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let course of stats.attendedCourses"
+                                class="bg-white border-b hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ course.name }}</td>
+                                <td class="px-6 py-4">{{ course.code }}</td>
+                            </tr>
+                            <tr *ngIf="!stats.attendedCourses || stats.attendedCourses.length === 0">
+                                <td colspan="2" class="px-6 py-8 text-center text-gray-400">
+                                    {{ 'common.noData' | translate }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="!isLoading && !stats" class="flex flex-col items-center justify-center p-12 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+            <i class="material-icons text-3xl">sentiment_dissatisfied</i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-1">{{ 'common.noData' | translate }}</h3>
+        <p class="text-gray-500 max-w-sm">{{ 'dashboard.noStatisticsAvailable' | translate }}</p>
+        <button (click)="loadStats()"
+            class="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center gap-2">
+            <i class="material-icons text-sm">refresh</i>
+            {{ 'common.refresh' | translate }}
+        </button>
+    </div>
+</div>

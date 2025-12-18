@@ -233,4 +233,15 @@ export class UserService {
   deleteUserRole(userId: number, roleId: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/UserRoles/${userId}/${roleId}`);
   }
+
+  uploadUsers(users: Array<{
+    fullName: string;
+    email: string;
+    adUsername?: string;
+    civilNo?: string;
+    organizationId: number;
+    loginMethod: number;
+  }>): Observable<any> {
+    return this.http.post(`${this.baseUrl}/Users/upload`, { users });
+  }
 }

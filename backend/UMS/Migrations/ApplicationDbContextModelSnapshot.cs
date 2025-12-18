@@ -727,6 +727,12 @@ namespace UMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("ShowDigitalLibraryInMenu")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowDigitalLibraryPublic")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("ShowForOtherOrganizations")
                         .HasColumnType("bit");
 
@@ -858,6 +864,119 @@ namespace UMS.Migrations
                     b.HasIndex("ParentDepartmentId");
 
                     b.ToTable("Departments");
+                });
+
+            modelBuilder.Entity("UMS.Models.DigitalLibraryFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DigitalLibraryItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("FileType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("PageCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DigitalLibraryItemId");
+
+                    b.ToTable("DigitalLibraryFiles");
+                });
+
+            modelBuilder.Entity("UMS.Models.DigitalLibraryItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PosterPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ShowPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.ToTable("DigitalLibraryItems");
                 });
 
             modelBuilder.Entity("UMS.Models.Event", b =>
@@ -1863,6 +1982,58 @@ namespace UMS.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("UMS.Models.UserDigitalLibraryProgress", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DigitalLibraryFileId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LastPositionSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DigitalLibraryFileId");
+
+                    b.HasIndex("UserId", "DigitalLibraryFileId")
+                        .IsUnique();
+
+                    b.ToTable("UserDigitalLibraryProgresses");
+                });
+
             modelBuilder.Entity("UMS.Models.UserRole", b =>
                 {
                     b.Property<string>("UserId")
@@ -2154,6 +2325,35 @@ namespace UMS.Migrations
                     b.Navigation("ParentDepartment");
                 });
 
+            modelBuilder.Entity("UMS.Models.DigitalLibraryFile", b =>
+                {
+                    b.HasOne("UMS.Models.DigitalLibraryItem", "DigitalLibraryItem")
+                        .WithMany("Files")
+                        .HasForeignKey("DigitalLibraryItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DigitalLibraryItem");
+                });
+
+            modelBuilder.Entity("UMS.Models.DigitalLibraryItem", b =>
+                {
+                    b.HasOne("UMS.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("UMS.Models.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Organization");
+                });
+
             modelBuilder.Entity("UMS.Models.Event", b =>
                 {
                     b.HasOne("UMS.Models.Location", "Location")
@@ -2302,6 +2502,25 @@ namespace UMS.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("UMS.Models.UserDigitalLibraryProgress", b =>
+                {
+                    b.HasOne("UMS.Models.DigitalLibraryFile", "DigitalLibraryFile")
+                        .WithMany()
+                        .HasForeignKey("DigitalLibraryFileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UMS.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DigitalLibraryFile");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("UMS.Models.UserRole", b =>
                 {
                     b.HasOne("UMS.Models.Role", "Role")
@@ -2366,6 +2585,11 @@ namespace UMS.Migrations
             modelBuilder.Entity("UMS.Models.CourseTabApproval", b =>
                 {
                     b.Navigation("EnrollmentApprovals");
+                });
+
+            modelBuilder.Entity("UMS.Models.DigitalLibraryItem", b =>
+                {
+                    b.Navigation("Files");
                 });
 
             modelBuilder.Entity("UMS.Models.Event", b =>

@@ -12,5 +12,7 @@ public class CourseTabDto
     public bool ShowInMenu { get; set; } = true;
     public bool ShowPublic { get; set; } = false;
     public bool ShowForOtherOrganizations { get; set; } = false; // Show this tab to other organizations (only for main organization)
+    public bool ShowDigitalLibraryInMenu { get; set; } = false; // Show this tab in Digital Library section for management
+    public bool ShowDigitalLibraryPublic { get; set; } = false; // Show this tab in Digital Library section for public
     public List<CourseTabApprovalDto>? Approvals { get; set; }
 }

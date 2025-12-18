@@ -26,6 +26,8 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   isCollapsed: boolean = false;
   courseTabs: CourseTab[] = [];
   publicCourseTabs: CourseTab[] = [];
+  digitalLibraryTabs: CourseTab[] = [];
+  digitalLibraryManagementTabs: CourseTab[] = [];
   coursesByTab: Map<number, Course[]> = new Map();
   publicCoursesByTab: Map<number, Course[]> = new Map();
   isLoadingCourseTabs = false;
@@ -48,10 +50,12 @@ export class SideMenuComponent implements OnInit, OnDestroy {
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.activeRoute = event.urlAfterRedirects;
-        // Reload course tabs when navigating to dashboard or course-related pages
+        // Reload course tabs when navigating to dashboard, course-related pages, or digital library pages
         if (event.urlAfterRedirects === '/dashboard' ||
           event.urlAfterRedirects.startsWith('/courses') ||
-          event.urlAfterRedirects.startsWith('/management/courses')) {
+          event.urlAfterRedirects.startsWith('/management/courses') ||
+          event.urlAfterRedirects.startsWith('/digital-library') ||
+          event.urlAfterRedirects.startsWith('/management/digital-library')) {
           this.reloadPermissions();
           setTimeout(() => {
             this.loadCourseTabs();
@@ -238,6 +242,47 @@ export class SideMenuComponent implements OnInit, OnDestroy {
         this.publicCourseTabs = [];
       }
 
+      // Fetch CourseTabs for "DIGITAL LIBRARY" section
+      const hasDigitalLibraryView = this.hasPermission('DIGITAL_LIBRARY_VIEW');
+      const hasDigitalLibraryManagementView = this.hasPermission('DIGITAL_LIBRARY_MANAGEMENT_VIEW');
+
+      if (hasDigitalLibraryView || hasDigitalLibraryManagementView || isSuperAdmin) {
+        // Fetch all tabs for the organization to filter locally for Digital Library
+        const allTabsResponse = await firstValueFrom(
+          this.courseTabService.getCourseTabs(1, 1000, undefined, userOrganizationId)
+        );
+
+        if (allTabsResponse && allTabsResponse.result) {
+          const allTabs = allTabsResponse.result as CourseTab[];
+
+          // Public Digital Library tabs (showDigitalLibraryPublic = true)
+          if (hasDigitalLibraryView || isSuperAdmin) {
+            this.digitalLibraryTabs = allTabs.filter(t =>
+              t.isActive !== false &&
+              !t.isDeleted &&
+              t.showDigitalLibraryPublic === true
+            );
+          } else {
+            this.digitalLibraryTabs = [];
+          }
+
+          // Management Digital Library tabs (showDigitalLibraryInMenu = true)
+          if (hasDigitalLibraryManagementView || isSuperAdmin) {
+            this.digitalLibraryManagementTabs = allTabs.filter(t =>
+              t.isActive !== false &&
+              !t.isDeleted &&
+              t.showDigitalLibraryInMenu === true
+            );
+          } else {
+            this.digitalLibraryManagementTabs = [];
+          }
+        }
+      } else {
+        this.digitalLibraryTabs = [];
+        this.digitalLibraryManagementTabs = [];
+      }
+      this.cdr.detectChanges();
+
       // Load courses for each course tab
       await this.loadCoursesForTabs();
     } catch (error) {
@@ -423,9 +468,22 @@ export class SideMenuComponent implements OnInit, OnDestroy {
 
   // Main Navigation
   navigateToDashboard() {
+    // Legacy method - redirect based on permissions
+    if (this.hasPermission('DASHBOARD_VIEW')) {
+      this.navigateToSystemDashboard();
+    } else {
+      this.navigateToUserDashboard();
+    }
+  }
+
+  navigateToSystemDashboard() {
     this.activeRoute = '/dashboard';
     this.router.navigate(['/dashboard']);
-    // Course tabs will reload automatically via router event subscription
+  }
+
+  navigateToUserDashboard() {
+    this.activeRoute = '/user-dashboard';
+    this.router.navigate(['/user-dashboard']);
   }
 
   // Management
@@ -578,6 +636,26 @@ export class SideMenuComponent implements OnInit, OnDestroy {
     return icon.startsWith('material-icons ');
   }
 
+  hasDigitalLibraryItems(): boolean {
+    return this.digitalLibraryTabs && this.digitalLibraryTabs.length > 0;
+  }
+
+  hasDigitalLibraryManagementItems(): boolean {
+    return this.digitalLibraryManagementTabs && this.digitalLibraryManagementTabs.length > 0;
+  }
+
+  navigateToDigitalLibrary(courseTab: CourseTab): void {
+    if (!courseTab.routeCode) return;
+    this.activeRoute = `/digital-library/${courseTab.routeCode}`;
+    this.router.navigate(['/digital-library', courseTab.routeCode]);
+  }
+
+  navigateToDigitalLibraryManagement(courseTab: CourseTab): void {
+    if (!courseTab.routeCode) return;
+    this.activeRoute = `/management/digital-library/${courseTab.routeCode}`;
+    this.router.navigate(['/management/digital-library', courseTab.routeCode]);
+  }
+
   trackByCourseTabId(index: number, courseTab: CourseTab): number {
     return courseTab?.id || index;
   }
@@ -625,6 +703,16 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   hasCourseTabsShowPublicPermission(): boolean {
     // Check specific permission first, then fallback to COURSE_TABS_VIEW
     return this.hasPermission('COURSE_TABS_SHOW_PUBLIC') || this.hasPermission('COURSE_TABS_VIEW');
+  }
+
+  hasDigitalLibraryViewPermission(): boolean {
+    // Check specific permission first, then fallback to DIGITAL_LIBRARY_VIEW
+    return this.hasPermission('DIGITAL_LIBRARY_VIEW');
+  }
+
+  hasDigitalLibraryManagementViewPermission(): boolean {
+    // Check specific permission first, then fallback to DIGITAL_LIBRARY_MANAGEMENT_VIEW
+    return this.hasPermission('DIGITAL_LIBRARY_MANAGEMENT_VIEW');
   }
 
   hasSystemAdministrationItems(): boolean {

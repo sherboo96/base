@@ -1,0 +1,65 @@
+.department-tree-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 20px;
+}
+
+.tree-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tree-item {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tree-node {
+  position: relative;
+}
+
+.tree-children {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-left: 24px;
+  border-left: 2px solid #e5e7eb;
+  padding-left: 16px;
+  margin-top: 4px;
+}
+
+.tree-node:hover {
+  .tree-children {
+    border-left-color: #9333ea;
+  }
+}
+
+// Spinner styles
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #9333ea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+

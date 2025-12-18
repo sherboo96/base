@@ -1,11 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LoadingService } from '../../services/loading.service';
-import { DashboardService, DashboardStatistics } from '../../services/dashboard.service';
+import { DashboardService, DashboardStatistics, UserDashboardStatistics } from '../../services/dashboard.service';
 import { ToastrService } from 'ngx-toastr';
 import { TranslateModule } from '@ngx-translate/core';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin, catchError, of } from 'rxjs';
 import { LoadingComponent } from '../../components/loading/loading.component';
 
 @Component({
@@ -17,14 +17,16 @@ import { LoadingComponent } from '../../components/loading/loading.component';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   statistics: DashboardStatistics | null = null;
+  userStatistics: UserDashboardStatistics | null = null;
   isLoading: boolean = false;
   refreshInterval: any;
 
   constructor(
     private loadingService: LoadingService,
     private dashboardService: DashboardService,
-    private toastr: ToastrService
-  ) {}
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit() {
     this.loadStatistics();
@@ -57,28 +59,52 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loadingService.show();
     }
 
-    this.dashboardService
-      .getStatistics()
+    forkJoin({
+      systemStats: this.dashboardService.getStatistics().pipe(
+        catchError(error => {
+          console.error('Error loading system statistics:', error);
+          return of({ statusCode: 500, message: 'Failed to load system statistics', result: null });
+        })
+      ),
+      userStats: this.dashboardService.getUserStatistics().pipe(
+        catchError(error => {
+          console.error('Error loading user statistics:', error);
+          return of({ statusCode: 500, message: 'Failed to load user statistics', result: null });
+        })
+      )
+    })
       .pipe(
         finalize(() => {
           this.isLoading = false;
           if (showGlobalLoader) {
             this.loadingService.hide();
           }
+          this.cdr.markForCheck();
         })
       )
       .subscribe({
         next: (response) => {
-          if (response.statusCode === 200 && response.result) {
-            this.statistics = response.result;
-          } else {
-            this.toastr.error(response.message || 'Failed to load dashboard statistics');
+          // Handle System Statistics
+          if (response.systemStats && response.systemStats.statusCode === 200 && response.systemStats.result) {
+            this.statistics = response.systemStats.result as any;
+          } else if (response.systemStats?.message) {
+            // Optionally show warning or just log
+            console.warn(response.systemStats.message);
           }
+
+          // Handle User Statistics
+          if (response.userStats && response.userStats.statusCode === 200 && response.userStats.result) {
+            this.userStatistics = response.userStats.result as any;
+          } else if (response.userStats?.message) {
+            console.warn(response.userStats.message);
+          }
+
+          this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Error loading dashboard statistics:', error);
-          this.toastr.error(error.error?.message || 'Failed to load dashboard statistics');
-        },
+          console.error('Unexpected error in dashboard forkJoin:', error);
+          this.toastr.error('An unexpected error occurred while loading dashboard data.');
+        }
       });
   }
 

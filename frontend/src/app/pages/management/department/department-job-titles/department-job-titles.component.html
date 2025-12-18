@@ -1,0 +1,108 @@
+<div class="p-4">
+  <div class="mb-4 flex items-center justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-textDark mb-2">
+        <i class="fas fa-id-card mr-2 text-accent"></i>
+        {{ 'department.jobTitles' | translate }}
+      </h3>
+      <p class="text-sm text-gray-600">
+        {{ 'department.department' | translate }}: 
+        <span class="font-semibold">{{ department?.nameEn }}</span>
+        <span *ngIf="department?.nameAr" class="text-gray-500 ml-2" dir="rtl">
+          ({{ department.nameAr }})
+        </span>
+      </p>
+    </div>
+    <button
+      (click)="close()"
+      class="text-gray-500 hover:text-gray-700 transition-colors"
+      [title]="'common.close' | translate"
+    >
+      <i class="fas fa-times text-xl"></i>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="py-8 flex flex-col items-center justify-center">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="mt-3 text-accent font-medium text-sm">
+        {{ 'jobTitle.loadingJobTitles' | translate }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && jobTitles.length === 0" class="py-12 flex flex-col items-center justify-center">
+    <div class="bg-white rounded-full p-4 mb-3 shadow-md">
+      <i class="fas fa-id-card text-4xl text-gray-300"></i>
+    </div>
+    <h3 class="text-xl font-bold text-textDark mb-1">
+      {{ 'department.noJobTitles' | translate }}
+    </h3>
+    <p class="text-sm text-gray-600 text-center max-w-md">
+      {{ 'department.noJobTitlesDescription' | translate }}
+    </p>
+  </div>
+
+  <!-- Job Titles List -->
+  <div *ngIf="!isLoading && jobTitles.length > 0" class="scroll-container">
+    <div class="space-y-2">
+      <div
+        *ngFor="let jobTitle of jobTitles"
+        class="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <p class="text-sm font-semibold text-textDark">
+                {{ jobTitle.nameEn }}
+              </p>
+              <p *ngIf="jobTitle.nameAr" class="text-sm font-semibold text-gray-600" dir="rtl">
+                ({{ jobTitle.nameAr }})
+              </p>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-500">
+              <span *ngIf="jobTitle.code">
+                <span class="text-gray-400">{{ 'jobTitle.code' | translate }}:</span> {{ jobTitle.code }}
+              </span>
+              <span *ngIf="jobTitle.description" class="text-gray-400">
+                {{ jobTitle.description }}
+              </span>
+            </div>
+          </div>
+          <span
+            [ngClass]="getStatusClass(jobTitle.isActive)"
+            class="px-2 py-1 text-xs font-semibold rounded-full"
+          >
+            {{ getStatusText(jobTitle.isActive) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .spinner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #9333ea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+

@@ -255,6 +255,40 @@
           {{ 'courseTab.showForOtherOrganizationsDescription' | translate }}
         </p>
       </div>
+
+      <!-- Show Digital Library In Menu -->
+      <div class="space-y-2">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="showDigitalLibraryInMenu"
+            class="text-accent focus:ring-accent rounded"
+          />
+          <span class="text-sm text-gray-700 font-poppins">
+            {{ 'sidemenu.digitalLibrary' | translate }} ({{ 'courseTab.showInMenu' | translate }})
+          </span>
+        </label>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.showDigitalLibraryInMenuDescription' | translate }}
+        </p>
+      </div>
+
+      <!-- Show Digital Library Public -->
+      <div class="space-y-2">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="showDigitalLibraryPublic"
+            class="text-accent focus:ring-accent rounded"
+          />
+          <span class="text-sm text-gray-700 font-poppins">
+            {{ 'sidemenu.digitalLibrary' | translate }} ({{ 'courseTab.showPublic' | translate }})
+          </span>
+        </label>
+        <p class="text-xs text-gray-500 font-poppins">
+          {{ 'courseTab.showDigitalLibraryPublicDescription' | translate }}
+        </p>
+      </div>
     </form>
   </div>
 
