@@ -37,6 +37,8 @@ export class EventFormComponent implements OnInit {
   imagePreview: string | null = null;
   selectedBadgeFile: File | null = null;
   badgePreview: string | null = null;
+  selectedAgendaFile: File | null = null;
+  agendaFileName: string | null = null;
   locations: Location[] = [];
 
   constructor(
@@ -57,6 +59,7 @@ export class EventFormComponent implements OnInit {
       code: ['', [Validators.required, Validators.minLength(2)]],
       poster: [''],
       badge: [''],
+      agenda: [''],
       date: [null],
       published: [false],
       locationId: [null],
@@ -89,6 +92,7 @@ export class EventFormComponent implements OnInit {
               code: event.code || '',
               poster: event.poster || '',
               badge: event.badge || '',
+              agenda: event.agenda || '',
               date: eventDate,
               published: event.published || false,
               locationId: event.locationId || null,
@@ -98,6 +102,9 @@ export class EventFormComponent implements OnInit {
             }
             if (event.badge) {
               this.badgePreview = this.attachmentService.getFileUrl(event.badge);
+            }
+            if (event.agenda) {
+              this.agendaFileName = event.agenda.split('/').pop() || 'agenda.pdf';
             }
           }
           
@@ -122,6 +129,7 @@ export class EventFormComponent implements OnInit {
             code: event.code || '',
             poster: event.poster || '',
             badge: event.badge || '',
+            agenda: event.agenda || '',
             date: eventDate,
             published: event.published || false,
             locationId: event.locationId || null,
@@ -131,6 +139,9 @@ export class EventFormComponent implements OnInit {
           }
           if (event.badge) {
             this.badgePreview = this.attachmentService.getFileUrl(event.badge);
+          }
+          if (event.agenda) {
+            this.agendaFileName = event.agenda.split('/').pop() || 'agenda.pdf';
           }
         }
       },
@@ -181,6 +192,25 @@ export class EventFormComponent implements OnInit {
     this.form.patchValue({ badge: '' });
   }
 
+  onAgendaSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type (PDF only)
+      if (file.type !== 'application/pdf') {
+        this.toastr.error(this.translationService.instant('event.agendaMustBePdf'));
+        return;
+      }
+      this.selectedAgendaFile = file;
+      this.agendaFileName = file.name;
+    }
+  }
+
+  removeAgenda(): void {
+    this.agendaFileName = null;
+    this.selectedAgendaFile = null;
+    this.form.patchValue({ agenda: '' });
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.toastr.error(this.translationService.instant('common.formInvalid'));
@@ -197,8 +227,12 @@ export class EventFormComponent implements OnInit {
       ? this.attachmentService.uploadFile(this.selectedBadgeFile).toPromise()
       : Promise.resolve(this.form.value.badge || null);
 
-    Promise.all([posterUploadPromise, badgeUploadPromise])
-      .then(([imagePath, badgePath]) => {
+    const agendaUploadPromise = this.selectedAgendaFile
+      ? this.attachmentService.uploadFile(this.selectedAgendaFile).toPromise()
+      : Promise.resolve(this.form.value.agenda || null);
+
+    Promise.all([posterUploadPromise, badgeUploadPromise, agendaUploadPromise])
+      .then(([imagePath, badgePath, agendaPath]) => {
         // Format date for API (ISO string or null)
         const dateValue = this.form.value.date ? new Date(this.form.value.date).toISOString() : null;
         
@@ -206,6 +240,7 @@ export class EventFormComponent implements OnInit {
           ...this.form.value,
           poster: imagePath || this.form.value.poster || null,
           badge: badgePath || this.form.value.badge || null,
+          agenda: agendaPath || this.form.value.agenda || null,
           date: dateValue,
         };
 

@@ -119,8 +119,8 @@ class APIService {
         
         let baseResponse = try decoder.decode(BaseResponse<[EventRegistration]>.self, from: data)
         
-        // Filter only approved registrations
-        return (baseResponse.result ?? []).filter { $0.status == .approved }
+        // Return all registrations (not just approved)
+        return baseResponse.result ?? []
     }
     
     func checkIn(barcode: String) async throws -> EventAttendee {
@@ -191,6 +191,137 @@ class APIService {
         return result
     }
     
+    // Approve registration
+    func approveRegistration(id: Int) async throws -> EventRegistration {
+        let url = URL(string: "\(baseURL)/EventRegistrations/\(id)/approve")!
+        let request = createRequest(url: url, method: "POST")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Approval failed")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventRegistration>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
+    // Reject registration
+    func rejectRegistration(id: Int) async throws -> EventRegistration {
+        let url = URL(string: "\(baseURL)/EventRegistrations/\(id)/reject")!
+        let request = createRequest(url: url, method: "POST")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Rejection failed")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventRegistration>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
+    // Update seat number
+    func updateSeatNumber(id: Int, seatNumber: String?) async throws -> EventRegistration {
+        let url = URL(string: "\(baseURL)/EventRegistrations/\(id)/seat-number")!
+        let requestBody = ["seatNumber": seatNumber ?? ""]
+        let body = try JSONSerialization.data(withJSONObject: requestBody)
+        
+        let request = createRequest(url: url, method: "PUT", body: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Seat number update failed")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventRegistration>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
+    // Send final approval email
+    func sendFinalApprovalEmail(id: Int) async throws -> EventRegistration {
+        let url = URL(string: "\(baseURL)/EventRegistrations/\(id)/send-final-approval")!
+        let request = createRequest(url: url, method: "POST")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Failed to send final approval email")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventRegistration>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
     func logout() {
         UserDefaults.standard.removeObject(forKey: "auth_token")
         UserDefaults.standard.removeObject(forKey: "user_info")
@@ -202,7 +333,7 @@ class APIService {
     
     // Validate token by making a test API call
     func validateToken() async -> Bool {
-        guard let token = token else {
+        guard token != nil else {
             return false
         }
         

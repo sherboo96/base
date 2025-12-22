@@ -119,10 +119,11 @@
               'input-error': hasError('departmentId'),
               'input-success': profileForm.get('departmentId')?.valid && profileForm.get('departmentId')?.touched
             }"
+            (change)="onDepartmentChange($any($event.target).value ? +$any($event.target).value : null)"
           >
-            <option value="">{{ 'profileCompletion.selectDepartment' | translate }}</option>
+            <option [value]="null">{{ 'profileCompletion.selectDepartment' | translate }}</option>
             <option *ngFor="let dept of departments" [value]="dept.id" [attr.data-id]="dept.id">
-              {{ dept.nameEn || dept.name }}
+              {{ dept.nameEn || dept.name }}{{ dept.nameAr ? ' (' + dept.nameAr + ')' : '' }}
             </option>
           </select>
         </div>
@@ -158,7 +159,7 @@
           >
             <option value="">{{ 'profileCompletion.selectJobTitle' | translate }}</option>
             <option *ngFor="let jobTitle of jobTitles" [value]="jobTitle.id" [attr.data-id]="jobTitle.id">
-              {{ jobTitle.nameEn || jobTitle.name }}
+              {{ jobTitle.nameEn || jobTitle.name }}{{ jobTitle.nameAr ? ' (' + jobTitle.nameAr + ')' : '' }}
             </option>
           </select>
         </div>

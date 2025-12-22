@@ -36,8 +36,10 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAll(
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 10,
-    [FromQuery] int? orgnization = null,
-    [FromQuery] int? department = null)
+    [FromQuery] string? search = null,
+    [FromQuery] int? organization = null,
+    [FromQuery] int? department = null,
+    [FromQuery] int? role = null)
     {
         var skip = (page - 1) * pageSize;
 
@@ -45,12 +47,35 @@ public class UsersController : ControllerBase
         var orgFilter = await _orgAccessService.GetOrganizationFilterAsync();
         
         // Use provided organization filter or apply user's organization restriction
-        var effectiveOrgFilter = orgnization ?? orgFilter;
+        var effectiveOrgFilter = organization ?? orgFilter;
 
+        // Build search filter
+        var hasSearch = !string.IsNullOrWhiteSpace(search);
+        var searchLower = hasSearch ? search.ToLower().Trim() : "";
+
+        // If role filter is provided, get user IDs with that role first
+        List<string> userIdsWithRole = null;
+        if (role.HasValue)
+        {
+            var usersWithRole = await _unitOfWork.UserRoles.GetAllAsync(
+                match: ur => ur.RoleId == role.Value
+            );
+            userIdsWithRole = usersWithRole.Select(ur => ur.UserId).ToList();
+        }
+
+        // Build filter expression
+        var hasRoleFilter = role.HasValue && userIdsWithRole != null && userIdsWithRole.Any();
         Expression<Func<User, bool>> filter = user => 
             !user.IsDeleted &&
             (!effectiveOrgFilter.HasValue || user.OrganizationId == effectiveOrgFilter.Value) &&
-            (!department.HasValue || user.DepartmentId == department.Value);
+            (!department.HasValue || user.DepartmentId == department.Value) &&
+            (!hasSearch ||
+             (user.FullName != null && user.FullName.ToLower().Contains(searchLower)) ||
+             (user.Email != null && user.Email.ToLower().Contains(searchLower)) ||
+             (user.UserName != null && user.UserName.ToLower().Contains(searchLower)) ||
+             (user.ADUsername != null && user.ADUsername.ToLower().Contains(searchLower)) ||
+             (user.CivilNo != null && user.CivilNo.ToLower().Contains(searchLower))) &&
+            (!hasRoleFilter || userIdsWithRole.Contains(user.Id));
 
         var total = await _unitOfWork.Users.CountAsync(filter);
         var data = await _unitOfWork.Users.GetAllAsync(

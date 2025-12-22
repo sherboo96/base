@@ -191,6 +191,10 @@
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">
                             <div class="flex items-center justify-end gap-1.5">
+                                <button (click)="exportOrganization(organization)" class="inline-flex items-center px-2 py-1 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'organization.export'|translate">
+                                    <i class="fas fa-download mr-1 text-xs"></i>
+                                    <span>{{'organization.export'|translate}}</span>
+                                </button>
                                 <button *ngIf="!organization.isMain" (click)="setAsMain(organization)" class="inline-flex items-center px-2 py-1 border-2 border-primary rounded-lg text-primary bg-white hover:bg-primary hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'organization.setMain'|translate">
                                     <i class="fas fa-flag mr-1 text-xs"></i>
                                     <span>{{'organization.setMain'|translate}}</span>

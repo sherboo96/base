@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -360,5 +361,123 @@ public class OrganizationsController : ControllerBase
             Message = "Main organization updated successfully.",
             Result = existing
         });
+    }
+
+    [HttpGet("{id:int}/export")]
+    public async Task<IActionResult> ExportOrganization(int id)
+    {
+        try
+        {
+            // Get organization
+            var organization = await _unitOfWork.Organizations.FindAsync(x => x.Id == id && !x.IsDeleted);
+            if (organization == null)
+            {
+                return NotFound(new BaseResponse<bool>
+                {
+                    StatusCode = 404,
+                    Message = "Organization not found.",
+                    Result = false
+                });
+            }
+
+            // Get all departments for this organization
+            var allDepartments = await _unitOfWork.Departments.GetAllAsync(
+                match: d => d.OrganizationId == id && !d.IsDeleted
+            );
+
+            // Get all job titles for departments in this organization
+            var departmentIds = allDepartments.Select(d => d.Id).ToList();
+            var allJobTitles = await _unitOfWork.JobTitles.GetAllAsync(
+                match: jt => jt.DepartmentId.HasValue && departmentIds.Contains(jt.DepartmentId.Value) && !jt.IsDeleted
+            );
+
+            // Build department tree with job titles
+            var departmentTree = BuildDepartmentTree(allDepartments.ToList(), null, allJobTitles.ToList());
+
+            // Build export data
+            var exportData = new
+            {
+                organization = new
+                {
+                    id = organization.Id,
+                    name = organization.Name,
+                    nameAr = organization.NameAr,
+                    code = organization.Code,
+                    domain = organization.Domain,
+                    isMain = organization.IsMain,
+                    defaultLoginMethod = organization.DefaultLoginMethod,
+                    isActive = organization.IsActive,
+                    createdOn = organization.CreatedOn
+                },
+                departments = departmentTree,
+                exportedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                version = "1.0"
+            };
+
+            // Serialize to JSON
+            var jsonContent = System.Text.Json.JsonSerializer.Serialize(exportData, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            });
+
+            // Convert to bytes
+            var jsonBytes = System.Text.Encoding.UTF8.GetBytes(jsonContent);
+
+            // Return as file download
+            var fileName = $"Organization_Export_{organization.Name.Replace(" ", "_")}_{DateTime.UtcNow:yyyy-MM-dd}.json";
+            return File(jsonBytes, "application/json; charset=utf-8", fileName);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new BaseResponse<bool>
+            {
+                StatusCode = 500,
+                Message = $"Error exporting organization: {ex.Message}",
+                Result = false
+            });
+        }
+    }
+
+    private List<object> BuildDepartmentTree(List<Department> allDepartments, int? parentId, List<JobTitle> allJobTitles)
+    {
+        return allDepartments
+            .Where(d => (d.ParentDepartmentId == null && parentId == null) || 
+                        (d.ParentDepartmentId == parentId))
+            .Select(dept =>
+            {
+                var children = BuildDepartmentTree(allDepartments, dept.Id, allJobTitles);
+                var jobTitles = allJobTitles
+                    .Where(jt => jt.DepartmentId == dept.Id)
+                    .Select(jt => new
+                    {
+                        id = jt.Id,
+                        nameEn = jt.NameEn,
+                        nameAr = jt.NameAr,
+                        code = jt.Code,
+                        description = jt.Description,
+                        isActive = jt.IsActive,
+                        createdOn = jt.CreatedOn
+                    })
+                    .ToList();
+
+                return new
+                {
+                    id = dept.Id,
+                    nameEn = dept.NameEn,
+                    nameAr = dept.NameAr,
+                    code = dept.Code,
+                    type = dept.Type,
+                    level = dept.Level,
+                    parentDepartmentId = dept.ParentDepartmentId,
+                    orderIndex = dept.OrderIndex,
+                    isActive = dept.IsActive,
+                    createdOn = dept.CreatedOn,
+                    children = children,
+                    jobTitles = jobTitles
+                };
+            })
+            .Cast<object>()
+            .ToList();
     }
 }

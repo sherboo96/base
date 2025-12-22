@@ -12,6 +12,7 @@ public class EventDto
     public string Code { get; set; }
     public string? Poster { get; set; }
     public string? Badge { get; set; } // Path to badge template file
+    public string? Agenda { get; set; } // Path to agenda PDF file
     public DateTime? Date { get; set; } // Event date
     public bool Published { get; set; } = false;
     public int? LocationId { get; set; }

@@ -17,6 +17,7 @@ import { AttachmentService } from '../../../../services/attachment.service';
 import { AdoptionUserService, AdoptionUser } from '../../../../services/adoption-user.service';
 import { ApprovalStepsDialogComponent } from '../../../../components/approval-steps-dialog/approval-steps-dialog.component';
 import { CourseAttendanceComponent } from '../course-attendance/course-attendance.component';
+import { CourseManualEnrollmentComponent } from '../course-manual-enrollment/course-manual-enrollment.component';
 
 @Component({
   selector: 'app-course-details',
@@ -149,7 +150,7 @@ export class CourseDetailsComponent implements OnInit {
         this.enrollments = Array.isArray(result) ? result : [];
         this.totalEnrollments = typeof total === 'number' ? total : 0;
         // Count approved enrollments
-        this.approvedEnrollmentsCount = this.enrollments.filter(e => e.status === EnrollmentStatus.Approve).length;
+        this.approvedEnrollmentsCount = this.enrollments.filter(e => this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve).length;
         
         // Load attendance records to check check-in status
         this.loadAttendanceForEnrollments();
@@ -262,7 +263,7 @@ export class CourseDetailsComponent implements OnInit {
         if (response && typeof response === 'object') {
           result = response.result || response.Result || [];
         }
-        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => e.status === EnrollmentStatus.Approve).length;
+        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve).length;
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -800,7 +801,7 @@ export class CourseDetailsComponent implements OnInit {
   }
 
   resendConfirmationEmail(enrollment: CourseEnrollment): void {
-    if (!enrollment.finalApproval || enrollment.status !== EnrollmentStatus.Approve) {
+    if (!enrollment.finalApproval || this.normalizeEnrollmentStatus(enrollment.status) !== EnrollmentStatus.Approve) {
       this.toastr.error(
         this.translationService.instant('course.cannotResendEmailForNonApproved'),
         this.translationService.instant('common.error')
@@ -808,14 +809,33 @@ export class CourseDetailsComponent implements OnInit {
       return;
     }
 
+    // Show loading indicator
+    this.loadingService.show();
+    
+    // Show info toast with loading message
+    this.toastr.info(
+      this.translationService.instant('course.sendingEmail'),
+      '',
+      { 
+        timeOut: 0, 
+        extendedTimeOut: 0,
+        disableTimeOut: true,
+        closeButton: false
+      }
+    );
+
     this.enrollmentService.resendConfirmationEmail(enrollment.id).subscribe({
       next: (response) => {
+        this.loadingService.hide();
+        this.toastr.clear(); // Clear the "sending" toast
         this.toastr.success(
           this.translationService.instant('course.emailSentSuccessfully'),
           this.translationService.instant('common.success')
         );
       },
       error: (error) => {
+        this.loadingService.hide();
+        this.toastr.clear(); // Clear the "sending" toast
         console.error('Error resending confirmation email:', error);
         this.toastr.error(
           error.error?.message || this.translationService.instant('course.failedToSendEmail'),
@@ -825,28 +845,70 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
+  // Helper function to normalize course status (handles string, number, or enum)
+  private normalizeCourseStatus(status?: CourseStatus | string | number): number {
+    if (!status) return CourseStatus.Draft;
+    if (typeof status === 'string') {
+      const statusMap: { [key: string]: number } = {
+        'Draft': CourseStatus.Draft,
+        'Published': CourseStatus.Published,
+        'RegistrationClosed': CourseStatus.RegistrationClosed,
+        'Active': CourseStatus.Active,
+        'Completed': CourseStatus.Completed,
+        'Canceled': CourseStatus.Canceled,
+        'Archived': CourseStatus.Archived,
+        'Rescheduled': CourseStatus.Rescheduled
+      };
+      return statusMap[status] ?? Number(status);
+    }
+    return Number(status);
+  }
+
   isCheckInAllowed(enrollment: CourseEnrollment): boolean {
     // Check enrollment approval status, course status, and time window
-    if (!this.course || enrollment.status !== EnrollmentStatus.Approve || !enrollment.finalApproval) {
+    if (!this.course) {
+      console.log('Check-in: Course not found');
+      return false;
+    }
+    
+    const enrollmentStatus = this.normalizeEnrollmentStatus(enrollment.status);
+    if (enrollmentStatus !== EnrollmentStatus.Approve || !enrollment.finalApproval) {
+      console.log('Check-in: Enrollment not approved', { status: enrollmentStatus, finalApproval: enrollment.finalApproval });
       return false;
     }
 
     // Course must be Active to allow check-in/check-out
-    if (this.course.status !== CourseStatus.Active) {
+    const courseStatusValue = this.normalizeCourseStatus(this.course.status);
+    if (courseStatusValue !== CourseStatus.Active) {
+      console.log('Check-in: Course not active', { status: this.course.status, normalized: courseStatusValue, expected: CourseStatus.Active });
       return false;
     }
 
-    if (!this.course.startDateTime || !this.course.endDateTime) return false;
+    if (!this.course.startDateTime || !this.course.endDateTime) {
+      console.log('Check-in: Course dates missing', { start: this.course.startDateTime, end: this.course.endDateTime });
+      return false;
+    }
 
     const now = new Date();
     const start = new Date(this.course.startDateTime);
     const end = new Date(this.course.endDateTime);
 
-    // Allow check-in 2 hours before course starts and 2 hours after course ends
-    const windowStart = new Date(start.getTime() - 2 * 60 * 60 * 1000);
-    const windowEnd = new Date(end.getTime() + 2 * 60 * 60 * 1000);
+    // Allow check-in 1 hour before course starts and until 1 hour after course ends
+    const windowStart = new Date(start.getTime() - 1 * 60 * 60 * 1000); // 1 hour before start
+    const windowEnd = new Date(end.getTime() + 1 * 60 * 60 * 1000); // 1 hour after end
 
-    return now >= windowStart && now <= windowEnd;
+    const isInWindow = now >= windowStart && now <= windowEnd;
+    if (!isInWindow) {
+      console.log('Check-in: Outside time window', {
+        now: now.toISOString(),
+        windowStart: windowStart.toISOString(),
+        windowEnd: windowEnd.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString()
+      });
+    }
+
+    return isInWindow;
   }
 
   hasCheckedIn(enrollment: CourseEnrollment): boolean {
@@ -860,7 +922,11 @@ export class CourseDetailsComponent implements OnInit {
   }
 
   isApprovedEnrollment(enrollment: CourseEnrollment): boolean {
-    return enrollment.status === EnrollmentStatus.Approve && enrollment.finalApproval === true;
+    return this.normalizeEnrollmentStatus(enrollment.status) === EnrollmentStatus.Approve && enrollment.finalApproval === true;
+  }
+
+  isPendingEnrollment(enrollment: CourseEnrollment): boolean {
+    return this.normalizeEnrollmentStatus(enrollment.status) === EnrollmentStatus.Pending;
   }
 
   canCheckIn(enrollment: CourseEnrollment): boolean {
@@ -889,7 +955,8 @@ export class CourseDetailsComponent implements OnInit {
     if (!this.course) {
       return this.translationService.instant('attendance.courseNotFound');
     }
-    if (this.course.status !== CourseStatus.Active) {
+    const courseStatusValue = this.normalizeCourseStatus(this.course.status);
+    if (courseStatusValue !== CourseStatus.Active) {
       return this.translationService.instant('attendance.courseNotActive');
     }
     if (!this.isCheckInAllowed(enrollment)) {
@@ -932,9 +999,27 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
-  getEnrollmentStatusClass(status?: EnrollmentStatus): string {
+  // Helper function to normalize enrollment status (handles string, number, or enum)
+  private normalizeEnrollmentStatus(status?: EnrollmentStatus | string | number): number {
+    if (!status) return EnrollmentStatus.Pending;
+    if (typeof status === 'string') {
+      const statusMap: { [key: string]: number } = {
+        'Pending': EnrollmentStatus.Pending,
+        'Approve': EnrollmentStatus.Approve,
+        'Reject': EnrollmentStatus.Reject,
+        'Excuse': EnrollmentStatus.Excuse
+      };
+      return statusMap[status] ?? Number(status);
+    }
+    return Number(status);
+  }
+
+  getEnrollmentStatusClass(status?: EnrollmentStatus | string | number): string {
     if (!status) return 'bg-gray-100 text-gray-800';
-    switch (status) {
+    
+    const statusValue = this.normalizeEnrollmentStatus(status);
+    
+    switch (statusValue) {
       case EnrollmentStatus.Approve:
         return 'bg-green-100 text-green-800';
       case EnrollmentStatus.Reject:
@@ -947,9 +1032,12 @@ export class CourseDetailsComponent implements OnInit {
     }
   }
 
-  getEnrollmentStatusText(status?: EnrollmentStatus): string {
+  getEnrollmentStatusText(status?: EnrollmentStatus | string | number): string {
     if (!status) return this.translationService.instant('course.pending');
-    switch (status) {
+    
+    const statusValue = this.normalizeEnrollmentStatus(status);
+    
+    switch (statusValue) {
       case EnrollmentStatus.Approve:
         return this.translationService.instant('course.approved');
       case EnrollmentStatus.Reject:
@@ -1016,8 +1104,28 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
-  getStatusClass(status: CourseStatus | undefined | null): string {
+  getStatusClass(status: CourseStatus | string | number | undefined | null): string {
     if (status === undefined || status === null) return 'bg-gray-100 text-gray-800';
+    
+    // Convert string enum to number if needed
+    let statusValue: number;
+    if (typeof status === 'string') {
+      // Map string enum names to numeric values
+      const statusMap: { [key: string]: number } = {
+        'Draft': CourseStatus.Draft,
+        'Published': CourseStatus.Published,
+        'RegistrationClosed': CourseStatus.RegistrationClosed,
+        'Active': CourseStatus.Active,
+        'Completed': CourseStatus.Completed,
+        'Canceled': CourseStatus.Canceled,
+        'Archived': CourseStatus.Archived,
+        'Rescheduled': CourseStatus.Rescheduled,
+      };
+      statusValue = statusMap[status] ?? Number(status);
+    } else {
+      statusValue = Number(status);
+    }
+
     const statusClasses: { [key: number]: string } = {
       [CourseStatus.Draft]: 'bg-gray-100 text-gray-800',
       [CourseStatus.Published]: 'bg-green-100 text-green-800',
@@ -1028,11 +1136,31 @@ export class CourseDetailsComponent implements OnInit {
       [CourseStatus.Archived]: 'bg-gray-100 text-gray-600',
       [CourseStatus.Rescheduled]: 'bg-yellow-100 text-yellow-800',
     };
-    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    return statusClasses[statusValue] || 'bg-gray-100 text-gray-800';
   }
 
-  getStatusText(status: CourseStatus | undefined | null): string {
+  getStatusText(status: CourseStatus | string | number | undefined | null): string {
     if (status === undefined || status === null) return 'Unknown';
+    
+    // Convert string enum to number if needed
+    let statusValue: number;
+    if (typeof status === 'string') {
+      // Map string enum names to numeric values
+      const statusMap: { [key: string]: number } = {
+        'Draft': CourseStatus.Draft,
+        'Published': CourseStatus.Published,
+        'RegistrationClosed': CourseStatus.RegistrationClosed,
+        'Active': CourseStatus.Active,
+        'Completed': CourseStatus.Completed,
+        'Canceled': CourseStatus.Canceled,
+        'Archived': CourseStatus.Archived,
+        'Rescheduled': CourseStatus.Rescheduled,
+      };
+      statusValue = statusMap[status] ?? Number(status);
+    } else {
+      statusValue = Number(status);
+    }
+
     const statusTexts: { [key: number]: string } = {
       [CourseStatus.Draft]: 'Draft',
       [CourseStatus.Published]: 'Published',
@@ -1043,7 +1171,7 @@ export class CourseDetailsComponent implements OnInit {
       [CourseStatus.Archived]: 'Archived',
       [CourseStatus.Rescheduled]: 'Rescheduled',
     };
-    return statusTexts[status] || 'Unknown';
+    return statusTexts[statusValue] || 'Unknown';
   }
 
   editCourse(): void {
@@ -1274,6 +1402,27 @@ export class CourseDetailsComponent implements OnInit {
         );
         this.loadingService.hide();
       },
+    });
+  }
+
+  openManualEnrollment(): void {
+    if (!this.course?.id) {
+      this.toastr.error(this.translationService.instant('course.courseNotFound'));
+      return;
+    }
+
+    const dialogRef = this.dialogService.open(CourseManualEnrollmentComponent, {
+      data: { courseId: this.course.id },
+      width: '900px',
+      height: '90vh',
+      maxHeight: '900px'
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Reload enrollments after successful enrollment
+        this.loadEnrollments();
+      }
     });
   }
 }

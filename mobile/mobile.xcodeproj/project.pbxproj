@@ -62,6 +62,7 @@
 		A1000031 /* mobile */ = {
 			isa = PBXGroup;
 			children = (
+				F1D124662EF5EF4E008C8D07 /* ViewModel */,
 				A1000033 /* Views */,
 				A1000034 /* Models */,
 				A1000035 /* Services */,
@@ -118,6 +119,13 @@
 				A1000026 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		F1D124662EF5EF4E008C8D07 /* ViewModel */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModel;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

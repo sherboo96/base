@@ -232,7 +232,7 @@
             >
               <option [value]="null">{{ 'course.selectLocation' | translate }}</option>
               <option *ngFor="let location of filteredLocations" [value]="location.id">
-                {{ location.name }}
+                {{ location.name }}{{ location.nameAr ? ' (' + location.nameAr + ')' : '' }}
               </option>
             </select>
           </div>

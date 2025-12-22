@@ -377,7 +377,26 @@ export class CourseComponent implements OnInit, OnDestroy {
     });
   }
 
-  getStatusClass(status: CourseStatus): string {
+  getStatusClass(status: CourseStatus | string | number): string {
+    // Convert string enum to number if needed
+    let statusValue: number;
+    if (typeof status === 'string') {
+      // Map string enum names to numeric values
+      const statusMap: { [key: string]: number } = {
+        'Draft': CourseStatus.Draft,
+        'Published': CourseStatus.Published,
+        'RegistrationClosed': CourseStatus.RegistrationClosed,
+        'Active': CourseStatus.Active,
+        'Completed': CourseStatus.Completed,
+        'Canceled': CourseStatus.Canceled,
+        'Archived': CourseStatus.Archived,
+        'Rescheduled': CourseStatus.Rescheduled,
+      };
+      statusValue = statusMap[status] ?? Number(status);
+    } else {
+      statusValue = Number(status);
+    }
+
     const statusClasses: { [key: number]: string } = {
       [CourseStatus.Draft]: 'bg-gray-100 text-gray-800',
       [CourseStatus.Published]: 'bg-green-100 text-green-800',
@@ -386,11 +405,31 @@ export class CourseComponent implements OnInit, OnDestroy {
       [CourseStatus.Completed]: 'bg-purple-100 text-purple-800',
       [CourseStatus.Canceled]: 'bg-red-100 text-red-800',
       [CourseStatus.Archived]: 'bg-gray-100 text-gray-600',
+      [CourseStatus.Rescheduled]: 'bg-yellow-100 text-yellow-800',
     };
-    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    return statusClasses[statusValue] || 'bg-gray-100 text-gray-800';
   }
 
-  getStatusText(status: CourseStatus): string {
+  getStatusText(status: CourseStatus | string | number): string {
+    // Convert string enum to number if needed
+    let statusValue: number;
+    if (typeof status === 'string') {
+      // Map string enum names to numeric values
+      const statusMap: { [key: string]: number } = {
+        'Draft': CourseStatus.Draft,
+        'Published': CourseStatus.Published,
+        'RegistrationClosed': CourseStatus.RegistrationClosed,
+        'Active': CourseStatus.Active,
+        'Completed': CourseStatus.Completed,
+        'Canceled': CourseStatus.Canceled,
+        'Archived': CourseStatus.Archived,
+        'Rescheduled': CourseStatus.Rescheduled,
+      };
+      statusValue = statusMap[status] ?? Number(status);
+    } else {
+      statusValue = Number(status);
+    }
+
     const statusTexts: { [key: number]: string } = {
       [CourseStatus.Draft]: 'Draft',
       [CourseStatus.Published]: 'Published',
@@ -399,8 +438,9 @@ export class CourseComponent implements OnInit, OnDestroy {
       [CourseStatus.Completed]: 'Completed',
       [CourseStatus.Canceled]: 'Canceled',
       [CourseStatus.Archived]: 'Archived',
+      [CourseStatus.Rescheduled]: 'Rescheduled',
     };
-    return statusTexts[status] || 'Unknown';
+    return statusTexts[statusValue] || 'Unknown';
   }
 
   viewCourseDetails(course: Course): void {

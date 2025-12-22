@@ -203,7 +203,7 @@ export class EventRegistrationComponent implements OnInit, OnDestroy {
           this.form.reset();
           // Scroll to top to show success message
           window.scrollTo({ top: 0, behavior: 'smooth' });
-          this.toastr.success('Registration successfully, stay tuned for the confirmation');
+          this.toastr.success('Registration successful! We will review your application and send you a confirmation email with your badge as soon as possible.');
         } else {
           this.toastr.error(response.message || 'Registration failed.');
           this.isSubmitting = false;

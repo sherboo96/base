@@ -22,6 +22,7 @@ public class CourseEnrollment : BaseModel
     public bool FinalApproval { get; set; } = false; // True when approved or rejected
     public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Pending; // Pending, Approve, Reject, Excuse
     public bool ConfirmationEmailSent { get; set; } = false; // True when confirmation email has been sent
+    public bool IsManualEnrollment { get; set; } = false; // True when enrolled manually (bypasses approval workflow)
     
     [JsonIgnore]
     public ICollection<CourseEnrollmentApproval> ApprovalSteps { get; set; } = new List<CourseEnrollmentApproval>();

@@ -13,6 +13,7 @@ public class CourseEnrollmentDto
     public bool IsActive { get; set; }
     public bool FinalApproval { get; set; } = false;
     public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Pending;
+    public bool IsManualEnrollment { get; set; } = false;
     public List<CourseEnrollmentApprovalDto>? ApprovalSteps { get; set; }
     public object? _Debug { get; set; } // Diagnostic info for troubleshooting approval steps
 }
@@ -34,5 +35,11 @@ public class UserEnrollmentDto
 public class CreateEnrollmentDto
 {
     public int CourseId { get; set; }
+}
+
+public class CreateManualEnrollmentDto
+{
+    public int CourseId { get; set; }
+    public string UserId { get; set; }
 }
 

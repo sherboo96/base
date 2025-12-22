@@ -105,4 +105,9 @@ export class OrganizationService {
   getLoginMethods(organizationId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${organizationId}/login-methods`);
   }
+
+  // Export organization with all departments and job titles
+  exportOrganization(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/export`, { responseType: 'blob' });
+  }
 }

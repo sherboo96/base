@@ -74,33 +74,13 @@ public class CourseAttendanceController : ControllerBase
         if (startTime == null || endTime == null) // Should check dates
              return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Course dates are undefined." });
 
-        // Logic: "Before From 2 hour and Update To 2 Hours too"
-        // I assume this applies to the *current* session or day. 
-        // If the course spans multiple days, we need logic to check if 'now' is within a valid session window.
-        // Assuming simple interpretation: The global start and end time of the course (which might be 1 day).
-        // If it is multiple days, usually StartDateTime/EndDateTime in Course model refers to the whole duration.
-        // If the user wants to check in *daily*, we might need a daily schedule.
-        // However, based on the prompt "time with in the From and To", I'll check against Course.StartDateTime/EndDateTime.
-        
-        DateTime validStart;
-        DateTime validEnd;
-
-        // Try to parse dates. Course dates are strings in the prompt's Course model interface?
-        // Wait, looking at Controller update in previous turn: `result.StartDateTime` (DateTime?). 
-        // In Model: `public string? StartDateTime`. Wait, let me check Course model type.
-        // In backend controller `CoursesController.cs`: `existing.StartDateTime = dto.StartDateTime`.
-        
-        // Let's check Course model definition backend.
-        // ... (Checking previous view_course_file not done yet)
-        
-        // I'll assume they are DateTime or nullable DateTime based on Emails using `.ToString()`.
-
-        var windowStart = course.StartDateTime?.AddHours(-2);
-        var windowEnd = course.EndDateTime?.AddHours(2);
+        // Allow check-in 1 hour before course starts and until 1 hour after course ends
+        var windowStart = course.StartDateTime?.AddHours(-1);
+        var windowEnd = course.EndDateTime?.AddHours(1);
 
         if (now < windowStart || now > windowEnd)
         {
-            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Check-in time is outside the allowed window (2 hours before start and 2 hours after end)." });
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Check-in time is outside the allowed window (1 hour before start and 1 hour after end)." });
         }
         
         // Check if already checked in and not checked out?
@@ -144,11 +124,15 @@ public class CourseAttendanceController : ControllerBase
         // Let's allow check out if it's reasonable. But strict to window is prompt's likely intent.
         
         var enrollment = await _context.CourseEnrollments.Include(e => e.Course).FirstOrDefaultAsync(e => e.Id == enrollmentId);
+        if (enrollment == null || enrollment.Course == null)
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Enrollment or course not found." });
+            
         var course = enrollment.Course;
         var now = DateTime.Now;
-         var windowEnd = course.EndDateTime?.AddHours(2);
+        // Check-out is allowed until 1 hour after course ends
+        var windowEnd = course.EndDateTime?.AddHours(1);
          
-         if (now > windowEnd)
+         if (windowEnd.HasValue && now > windowEnd)
          {
              // Maybe auto-close? Or allow late checkout?
              // Prompt says "Before From 2 hour and after To 2 Hours too".

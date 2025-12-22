@@ -553,28 +553,53 @@ export class CourseFormComponent implements OnInit {
   loadLocations(organizationId: number): void {
     this.locationService.getLocations(1, 1000, undefined, organizationId).subscribe({
       next: (response) => {
-        this.locations = response.result || [];
+        // Filter for active, non-deleted locations
+        this.locations = (response.result || []).filter(loc => loc.isActive && !loc.isDeleted);
         const category = this.form.get('category')?.value;
         this.filterLocationsByCategory(category);
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading locations:', error);
+        this.locations = [];
+        this.filteredLocations = [];
+        this.cdr.detectChanges();
       },
     });
   }
 
-  filterLocationsByCategory(category: LocationCategory): void {
-    if (!category) {
+  filterLocationsByCategory(category: LocationCategory | string | number | null | undefined): void {
+    if (!category && category !== 0) {
+      // Show all locations if no category is selected
       this.filteredLocations = this.locations;
+      this.cdr.detectChanges();
       return;
     }
-    this.filteredLocations = this.locations.filter(loc => loc.category === category);
+    
+    // Convert category to number for comparison
+    let categoryValue: number;
+    if (typeof category === 'string') {
+      // Handle string enum names like "Onsite", "Online", etc.
+      const enumKey = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      categoryValue = LocationCategory[enumKey as keyof typeof LocationCategory] ?? Number(category);
+    } else {
+      categoryValue = Number(category);
+    }
+    
+    // Filter locations by category - compare as numbers
+    this.filteredLocations = this.locations.filter(loc => {
+      const locCategory = typeof loc.category === 'string' 
+        ? LocationCategory[loc.category as keyof typeof LocationCategory] 
+        : Number(loc.category);
+      return Number(locCategory) === Number(categoryValue);
+    });
+    
     // Reset locationId if current selection is not in filtered list
     const currentLocationId = this.form.get('locationId')?.value;
     if (currentLocationId && !this.filteredLocations.find(l => l.id === currentLocationId)) {
       this.form.patchValue({ locationId: null });
     }
+    this.cdr.detectChanges();
   }
 
   loadInstructors(): void {

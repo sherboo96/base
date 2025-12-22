@@ -224,6 +224,7 @@ public class CourseEnrollmentsController : ControllerBase
                 IsActive = e.IsActive,
                 FinalApproval = e.FinalApproval,
                 Status = e.Status,
+                IsManualEnrollment = e.IsManualEnrollment,
                 User = new UserEnrollmentDto
                 {
                     Id = e.User.Id,
@@ -420,6 +421,7 @@ public class CourseEnrollmentsController : ControllerBase
                 IsActive = e.IsActive,
                 FinalApproval = e.FinalApproval,
                 Status = e.Status,
+                IsManualEnrollment = e.IsManualEnrollment,
                 Course = new CourseDto
                 {
                     Id = e.Course.Id,
@@ -617,6 +619,7 @@ public class CourseEnrollmentsController : ControllerBase
                     IsActive = existingEnrollment.IsActive,
                     FinalApproval = existingEnrollment.FinalApproval,
                     Status = existingEnrollment.Status,
+                    IsManualEnrollment = existingEnrollment.IsManualEnrollment,
                     User = new UserEnrollmentDto
                     {
                         Id = existingEnrollment.User.Id,
@@ -739,6 +742,7 @@ public class CourseEnrollmentsController : ControllerBase
             IsActive = enrollment.IsActive,
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
+            IsManualEnrollment = enrollment.IsManualEnrollment,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -758,6 +762,218 @@ public class CourseEnrollmentsController : ControllerBase
         {
             StatusCode = 201,
             Message = "Successfully enrolled in course.",
+            Result = enrollmentDto
+        });
+    }
+
+    [HttpPost("manual")]
+    public async Task<IActionResult> ManualEnroll([FromBody] CreateManualEnrollmentDto dto)
+    {
+        // Check if course exists
+        var course = await _context.Courses
+            .Include(c => c.CourseTab)
+            .FirstOrDefaultAsync(c => c.Id == dto.CourseId && !c.IsDeleted);
+
+        if (course == null)
+        {
+            return NotFound(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 404,
+                Message = "Course not found."
+            });
+        }
+
+        // Check if user exists
+        var user = await _context.Users
+            .Include(u => u.Organization)
+            .Include(u => u.Department)
+            .Include(u => u.JobTitle)
+            .FirstOrDefaultAsync(u => u.Id == dto.UserId && !u.IsDeleted);
+
+        if (user == null)
+        {
+            return NotFound(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 404,
+                Message = "User not found."
+            });
+        }
+
+        if (course.CourseTab == null)
+        {
+            return BadRequest(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 400,
+                Message = "Course tab not found for this course."
+            });
+        }
+
+        // Check if already enrolled
+        var existingEnrollment = await _context.CourseEnrollments
+            .FirstOrDefaultAsync(ce => ce.CourseId == dto.CourseId && ce.UserId == dto.UserId);
+
+        if (existingEnrollment != null && !existingEnrollment.IsDeleted)
+        {
+            return BadRequest(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 400,
+                Message = "User is already enrolled in this course."
+            });
+        }
+
+        // Check available seats - count only approved enrollments
+        var approvedEnrollmentCount = await _context.CourseEnrollments
+            .CountAsync(ce => ce.CourseId == dto.CourseId && !ce.IsDeleted && ce.IsActive && ce.Status == EnrollmentStatus.Approve);
+
+        var availableSeats = course.AvailableSeats - approvedEnrollmentCount;
+
+        if (availableSeats < 1)
+        {
+            return BadRequest(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 400,
+                Message = "No more seats available. The course is full."
+            });
+        }
+
+        // If enrollment exists but is soft-deleted, restore it
+        if (existingEnrollment != null && existingEnrollment.IsDeleted)
+        {
+            var oldApprovalSteps = await _context.CourseEnrollmentApprovals
+                .Where(a => a.CourseEnrollmentId == existingEnrollment.Id)
+                .ToListAsync();
+
+            if (oldApprovalSteps.Any())
+            {
+                _context.CourseEnrollmentApprovals.RemoveRange(oldApprovalSteps);
+            }
+
+            existingEnrollment.IsDeleted = false;
+            existingEnrollment.IsActive = true;
+            existingEnrollment.EnrollmentAt = DateTime.Now;
+            existingEnrollment.UpdatedAt = DateTime.Now;
+            existingEnrollment.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+            
+            // Manual enrollment: Set to Approved and bypass approval workflow
+            existingEnrollment.FinalApproval = true;
+            existingEnrollment.Status = EnrollmentStatus.Approve;
+            existingEnrollment.IsManualEnrollment = true;
+
+            await _context.SaveChangesAsync();
+
+            // Load related data for response
+            await _context.Entry(existingEnrollment)
+                .Reference(e => e.Course)
+                .LoadAsync();
+            await _context.Entry(existingEnrollment)
+                .Reference(e => e.User)
+                .LoadAsync();
+            await _context.Entry(existingEnrollment.User)
+                .Reference(u => u.Organization)
+                .LoadAsync();
+            await _context.Entry(existingEnrollment.User)
+                .Reference(u => u.Department)
+                .LoadAsync();
+            await _context.Entry(existingEnrollment.User)
+                .Reference(u => u.JobTitle)
+                .LoadAsync();
+
+            var restoredEnrollmentDto = new CourseEnrollmentDto
+            {
+                Id = existingEnrollment.Id,
+                CourseId = existingEnrollment.CourseId,
+                UserId = existingEnrollment.UserId,
+                EnrollmentAt = existingEnrollment.EnrollmentAt,
+                IsActive = existingEnrollment.IsActive,
+                FinalApproval = existingEnrollment.FinalApproval,
+                Status = existingEnrollment.Status,
+                IsManualEnrollment = existingEnrollment.IsManualEnrollment,
+                User = new UserEnrollmentDto
+                {
+                    Id = existingEnrollment.User.Id,
+                    FullName = existingEnrollment.User.FullName,
+                    Email = existingEnrollment.User.Email ?? "",
+                    UserName = existingEnrollment.User.UserName,
+                    OrganizationId = existingEnrollment.User.OrganizationId,
+                    OrganizationName = existingEnrollment.User.Organization?.Name,
+                    OrganizationIsMain = existingEnrollment.User.Organization?.IsMain,
+                    DepartmentId = existingEnrollment.User.DepartmentId,
+                    DepartmentName = existingEnrollment.User.Department != null ? (existingEnrollment.User.Department.NameEn ?? existingEnrollment.User.Department.NameAr) : null,
+                    JobTitle = existingEnrollment.User.JobTitle != null ? (existingEnrollment.User.JobTitle.NameEn ?? existingEnrollment.User.JobTitle.NameAr) : null
+                }
+            };
+
+            return Ok(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 200,
+                Message = "Enrollment restored successfully.",
+                Result = restoredEnrollmentDto
+            });
+        }
+
+        // Create new enrollment - Manual enrollment bypasses approval workflow
+        var enrollment = new CourseEnrollment
+        {
+            CourseId = dto.CourseId,
+            UserId = dto.UserId,
+            EnrollmentAt = DateTime.Now,
+            IsActive = true,
+            FinalApproval = true, // Manual enrollment is automatically approved
+            Status = EnrollmentStatus.Approve, // Set status to Approved
+            IsManualEnrollment = true, // Flag as manual enrollment
+            CreatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System"
+        };
+
+        _context.CourseEnrollments.Add(enrollment);
+        await _context.SaveChangesAsync();
+
+        // Manual enrollment bypasses approval steps - no CourseEnrollmentApproval records created
+
+        // Load related data for response
+        await _context.Entry(enrollment)
+            .Reference(e => e.Course)
+            .LoadAsync();
+        await _context.Entry(enrollment)
+            .Reference(e => e.User)
+            .LoadAsync();
+        await _context.Entry(enrollment.User)
+            .Reference(u => u.Organization)
+            .LoadAsync();
+        await _context.Entry(enrollment.User)
+            .Reference(u => u.Department)
+            .LoadAsync();
+        await _context.Entry(enrollment.User)
+            .Reference(u => u.JobTitle)
+            .LoadAsync();
+
+        var enrollmentDto = new CourseEnrollmentDto
+        {
+            Id = enrollment.Id,
+            CourseId = enrollment.CourseId,
+            UserId = enrollment.UserId,
+            EnrollmentAt = enrollment.EnrollmentAt,
+            IsActive = enrollment.IsActive,
+            FinalApproval = enrollment.FinalApproval,
+            Status = enrollment.Status,
+            User = new UserEnrollmentDto
+            {
+                Id = enrollment.User.Id,
+                FullName = enrollment.User.FullName,
+                Email = enrollment.User.Email ?? "",
+                UserName = enrollment.User.UserName,
+                OrganizationId = enrollment.User.OrganizationId,
+                OrganizationName = enrollment.User.Organization?.Name,
+                OrganizationIsMain = enrollment.User.Organization?.IsMain,
+                DepartmentId = enrollment.User.DepartmentId,
+                DepartmentName = enrollment.User.Department != null ? (enrollment.User.Department.NameEn ?? enrollment.User.Department.NameAr) : null,
+                JobTitle = enrollment.User.JobTitle != null ? (enrollment.User.JobTitle.NameEn ?? enrollment.User.JobTitle.NameAr) : null
+            }
+        };
+
+        return CreatedAtAction(nameof(GetEnrollmentsByCourse), new { courseId = dto.CourseId }, new BaseResponse<CourseEnrollmentDto>
+        {
+            StatusCode = 201,
+            Message = "User enrolled in course successfully.",
             Result = enrollmentDto
         });
     }
@@ -1491,6 +1707,7 @@ public class CourseEnrollmentsController : ControllerBase
             IsActive = enrollment.IsActive,
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
+            IsManualEnrollment = enrollment.IsManualEnrollment,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1596,6 +1813,7 @@ public class CourseEnrollmentsController : ControllerBase
             IsActive = enrollment.IsActive,
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
+            IsManualEnrollment = enrollment.IsManualEnrollment,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1720,6 +1938,7 @@ public class CourseEnrollmentsController : ControllerBase
             IsActive = enrollment.IsActive,
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
+            IsManualEnrollment = enrollment.IsManualEnrollment,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,

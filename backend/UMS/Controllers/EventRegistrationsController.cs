@@ -130,7 +130,7 @@ public class EventRegistrationsController : ControllerBase
             Phone = dto.Phone,
             Email = dto.Email,
             Barcode = barcode,
-            Status = EventRegistrationStatus.Approved, // Auto-approve on registration (especially for "Other" organization)
+            Status = EventRegistrationStatus.Draft, // Set to Draft - will be approved later
             EventId = dto.EventId,
             EventOrganizationId = eventOrganizationId,
             CreatedBy = "Public",
@@ -152,124 +152,52 @@ public class EventRegistrationsController : ControllerBase
 
         if (result != null)
         {
-            // Generate badge image
-            var badgeBytes = await GenerateBadgeImage(result);
-
             // Prepare event details for email
             var eventName = result.Event?.Name ?? "Event";
             var eventNameAr = result.Event?.NameAr;
-            var eventDate = result.Event?.Date;
-            var eventLocation = result.Event?.Location?.Name ?? "";
-            var eventLocationAr = result.Event?.Location?.NameAr ?? "";
             var eventPoster = result.Event?.Poster;
             var eventCode = result.Event?.Code;
 
-            // Generate event URL
-            var eventUrl = !string.IsNullOrWhiteSpace(eventCode)
-                ? $"https://otc.moo.gov.kw/events/{eventCode}"
-                : "https://share.google/RrKfGkA4qcxQ2VIQA"; // Hardcoded fallback
-
-            // For "Other" organization registrations, send approval email immediately (synchronously)
-            if (isOtherOrganization)
+            // Send "registration successful" email immediately (synchronously)
+            _logger.LogInformation($"Sending registration successful email. Email: {result.Email}, Name: {result.Name}");
+            try
             {
-                _logger.LogInformation($"Sending approval email for 'Other' organization registration. Email: {result.Email}, Name: {result.Name}");
-                try
-                {
-                    var emailSent = await _emailService.SendEventRegistrationConfirmationAsync(
-                        result.Email,
-                        result.Name,
-                        eventName,
-                        eventNameAr,
-                        eventDate,
-                        eventLocation,
-                        eventLocationAr,
-                        result.Barcode,
-                        badgeBytes,
-                        eventUrl,
-                        eventCode,
-                        eventPoster
-                    );
+                var emailSent = await _emailService.SendEventRegistrationSuccessfulAsync(
+                    result.Email,
+                    result.Name,
+                    eventName,
+                    eventNameAr,
+                    eventCode,
+                    eventPoster
+                );
 
-                    // Update email status in database (result is already tracked)
-                    if (emailSent)
-                    {
-                        result.EmailSent = true;
-                        result.EmailSentAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation($"Approval email sent successfully to {result.Email}");
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Failed to send approval email to {result.Email} - email service returned false");
-                    }
-                }
-                catch (Exception ex)
+                // Update email status in database (result is already tracked)
+                if (emailSent)
                 {
-                    // Log error but don't fail the registration
-                    _logger.LogError(ex, $"Error sending approval email for 'Other' organization registration to {result.Email}. Error: {ex.Message}");
+                    result.RegistrationSuccessfulEmailSent = true;
+                    result.RegistrationSuccessfulEmailSentAt = DateTime.UtcNow;
+                    // Keep old flag for backward compatibility
+                    result.EmailSent = true;
+                    result.EmailSentAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Registration successful email sent successfully to {result.Email}");
+                }
+                else
+                {
+                    _logger.LogWarning($"Failed to send registration successful email to {result.Email} - email service returned false");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                // For regular registrations, send confirmation email asynchronously (fire and forget)
-                // Capture values to avoid using disposed context
-                var emailForAsync = result.Email;
-                var nameForAsync = result.Name;
-                var barcodeForAsync = result.Barcode;
-                var registrationIdForAsync = result.Id;
-                
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        // Create a new scope for the async operation to avoid disposed context issues
-                        using var scope = _serviceProvider.CreateScope();
-                        var emailService = scope.ServiceProvider.GetRequiredService<EmailService>();
-                        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                        
-                        var emailSent = await emailService.SendEventRegistrationConfirmationAsync(
-                            emailForAsync,
-                            nameForAsync,
-                            eventName,
-                            eventNameAr,
-                            eventDate,
-                            eventLocation,
-                            eventLocationAr,
-                            barcodeForAsync,
-                            badgeBytes,
-                            eventUrl,
-                            eventCode,
-                            eventPoster
-                        );
-
-                        // Update email status in database using new context
-                        if (emailSent)
-                        {
-                            var reg = await context.EventRegistrations.FindAsync(registrationIdForAsync);
-                            if (reg != null)
-                            {
-                                reg.EmailSent = true;
-                                reg.EmailSentAt = DateTime.UtcNow;
-                                await context.SaveChangesAsync();
-                                _logger.LogInformation($"Confirmation email sent successfully to {emailForAsync}");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log error but don't fail the registration
-                        _logger.LogError(ex, $"Error sending confirmation email to {emailForAsync}: {ex.Message}");
-                    }
-                });
+                // Log error but don't fail the registration
+                _logger.LogError(ex, $"Error sending registration successful email to {result.Email}. Error: {ex.Message}");
             }
         }
 
         // Use the tracked entity for response (already loaded with related entities)
         var responseResult = result;
 
-        var responseMessage = isOtherOrganization 
-            ? "Registration successful. Organization added to Event Organizations. Approval email sent."
-            : "Registration successful and confirmation email sent.";
+        var responseMessage = "Registration successful. We will review your application and send you a confirmation email with your badge as soon as possible.";
 
         return CreatedAtAction(nameof(GetById), new { id = ((EventRegistration)entity).Id }, new BaseResponse<EventRegistrationDto>
         {
@@ -395,7 +323,7 @@ public class EventRegistrationsController : ControllerBase
         // Update status to Approved
         registration.Status = EventRegistrationStatus.Approved;
         registration.UpdatedAt = DateTime.UtcNow;
-        registration.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+        registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
 
         var updatedRegistration = await _unitOfWork.EventRegistrations.UpdateAsync(registration);
         await _unitOfWork.CompleteAsync();
@@ -435,6 +363,9 @@ public class EventRegistrationsController : ControllerBase
         // Update email status
         if (emailSent)
         {
+            registration.ConfirmationEmailSent = true;
+            registration.ConfirmationEmailSentAt = DateTime.UtcNow;
+            // Keep old flag for backward compatibility
             registration.EmailSent = true;
             registration.EmailSentAt = DateTime.UtcNow;
             await _unitOfWork.EventRegistrations.UpdateAsync(registration);
@@ -478,7 +409,7 @@ public class EventRegistrationsController : ControllerBase
         // Soft delete
         registration.IsDeleted = true;
         registration.UpdatedAt = DateTime.UtcNow;
-        registration.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+        registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
 
         await _unitOfWork.EventRegistrations.UpdateAsync(registration);
         await _unitOfWork.CompleteAsync();
@@ -556,10 +487,13 @@ public class EventRegistrationsController : ControllerBase
         // Update email status
         if (emailSent)
         {
+            registration.ConfirmationEmailSent = true;
+            registration.ConfirmationEmailSentAt = DateTime.UtcNow;
+            // Keep old flag for backward compatibility
             registration.EmailSent = true;
             registration.EmailSentAt = DateTime.UtcNow;
             registration.UpdatedAt = DateTime.UtcNow;
-            registration.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+            registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
             await _unitOfWork.EventRegistrations.UpdateAsync(registration);
             await _unitOfWork.CompleteAsync();
         }
@@ -576,6 +510,211 @@ public class EventRegistrationsController : ControllerBase
             Message = emailSent 
                 ? "Confirmation email resent successfully."
                 : "Failed to resend confirmation email.",
+            Result = MapToDto(updatedRegistration)
+        });
+    }
+
+    [HttpPost("{id}/send-final-approval")]
+    [Authorize]
+    public async Task<IActionResult> SendFinalApproval(int id)
+    {
+        var registration = await _unitOfWork.EventRegistrations.FindAsync(
+            x => x.Id == id && !x.IsDeleted,
+            new[] { "Event", "EventOrganization", "Event.Location" }
+        );
+
+        if (registration == null)
+        {
+            return NotFound(new BaseResponse<bool>
+            {
+                StatusCode = 404,
+                Message = "Registration not found.",
+                Result = false
+            });
+        }
+
+        if (registration.Status != EventRegistrationStatus.Approved)
+        {
+            return BadRequest(new BaseResponse<bool>
+            {
+                StatusCode = 400,
+                Message = "Final approval email can only be sent for approved registrations.",
+                Result = false
+            });
+        }
+
+        // Generate badge image
+        var badgeBytes = await GenerateBadgeImage(registration);
+
+        // Load agenda PDF if available
+        byte[]? agendaBytes = null;
+        string? agendaFileName = null;
+        
+        if (registration.Event != null && !string.IsNullOrEmpty(registration.Event.Agenda))
+        {
+            try
+            {
+                string agendaPath = registration.Event.Agenda;
+                if (agendaPath.StartsWith("/"))
+                {
+                    agendaPath = agendaPath.Substring(1);
+                }
+
+                var fullPath = System.IO.Path.Combine(_env.WebRootPath ?? System.IO.Path.Combine(_env.ContentRootPath, "wwwroot"), agendaPath);
+                
+                if (System.IO.File.Exists(fullPath))
+                {
+                    agendaBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+                    agendaFileName = System.IO.Path.GetFileName(fullPath);
+                    _logger.LogInformation($"Agenda PDF loaded: {agendaFileName}, Size: {agendaBytes.Length} bytes");
+                }
+                else
+                {
+                    _logger.LogWarning($"Agenda PDF not found at: {fullPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error loading agenda PDF for registration {id}");
+            }
+        }
+
+        // Prepare event details for email
+        var eventName = registration.Event?.Name ?? "Event";
+        var eventNameAr = registration.Event?.NameAr;
+        var eventDate = registration.Event?.Date;
+        var eventLocation = registration.Event?.Location?.Name ?? "";
+        var eventLocationAr = registration.Event?.Location?.NameAr ?? "";
+        var eventPoster = registration.Event?.Poster;
+        var eventCode = registration.Event?.Code;
+
+        // Generate event URL
+        var eventUrl = !string.IsNullOrWhiteSpace(eventCode)
+            ? $"https://otc.moo.gov.kw/events/{eventCode}"
+            : "https://otc.moo.gov.kw/events";
+
+        // Send final approval email with badge and agenda
+        var emailSent = await _emailService.SendEventFinalApprovalAsync(
+            registration.Email,
+            registration.Name,
+            eventName,
+            eventNameAr,
+            eventDate,
+            eventLocation,
+            eventLocationAr,
+            registration.Barcode,
+            badgeBytes,
+            agendaBytes,
+            agendaFileName,
+            registration.SeatNumber,
+            null, // shareLink
+            eventCode,
+            eventPoster
+        );
+
+        // Update email status
+        if (emailSent)
+        {
+            registration.FinalApprovalEmailSent = true;
+            registration.FinalApprovalEmailSentAt = DateTime.UtcNow;
+            // Keep old flag for backward compatibility
+            registration.EmailSent = true;
+            registration.EmailSentAt = DateTime.UtcNow;
+            registration.UpdatedAt = DateTime.UtcNow;
+            registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+            await _unitOfWork.EventRegistrations.UpdateAsync(registration);
+            await _unitOfWork.CompleteAsync();
+        }
+
+        // Reload to get updated email status
+        var updatedRegistration = await _unitOfWork.EventRegistrations.FindAsync(
+            x => x.Id == id && !x.IsDeleted,
+            new[] { "Event", "EventOrganization" }
+        );
+
+        return Ok(new BaseResponse<EventRegistrationDto>
+        {
+            StatusCode = 200,
+            Message = emailSent 
+                ? "Final approval email sent successfully with badge and agenda."
+                : "Failed to send final approval email.",
+            Result = MapToDto(updatedRegistration)
+        });
+    }
+
+    [HttpPut("{id}/seat-number")]
+    [Authorize]
+    public async Task<IActionResult> UpdateSeatNumber(int id, [FromBody] UpdateSeatNumberDto request)
+    {
+        var registration = await _unitOfWork.EventRegistrations.FindAsync(
+            x => x.Id == id && !x.IsDeleted
+        );
+
+        if (registration == null)
+        {
+            return NotFound(new BaseResponse<EventRegistrationDto>
+            {
+                StatusCode = 404,
+                Message = "Registration not found.",
+                Result = null
+            });
+        }
+
+        // Check for duplicate seat number if a seat number is being assigned
+        if (!string.IsNullOrWhiteSpace(request.SeatNumber))
+        {
+            var duplicateRegistration = await _unitOfWork.EventRegistrations.FindAsync(
+                x => x.EventId == registration.EventId 
+                    && x.Id != id 
+                    && !x.IsDeleted 
+                    && x.SeatNumber != null 
+                    && x.SeatNumber.Trim().ToLower() == request.SeatNumber.Trim().ToLower()
+            );
+
+            if (duplicateRegistration != null)
+            {
+                // Load the EventOrganization if it exists
+                string organizationName = null;
+                if (duplicateRegistration.EventOrganizationId.HasValue)
+                {
+                    var eventOrg = await _context.EventOrganizations
+                        .FirstOrDefaultAsync(eo => eo.Id == duplicateRegistration.EventOrganizationId.Value);
+                    organizationName = eventOrg?.Name;
+                }
+                
+                return BadRequest(new BaseResponse<object>
+                {
+                    StatusCode = 400,
+                    Message = $"Seat number '{request.SeatNumber}' is already assigned to another attendee.",
+                    Result = new
+                    {
+                        duplicateAttendeeName = duplicateRegistration.Name,
+                        duplicateAttendeeNameAr = duplicateRegistration.NameAr,
+                        duplicateAttendeeEmail = duplicateRegistration.Email,
+                        duplicateAttendeeOrganization = organizationName,
+                        seatNumber = request.SeatNumber
+                    }
+                });
+            }
+        }
+
+        registration.SeatNumber = request.SeatNumber;
+        registration.UpdatedAt = DateTime.UtcNow;
+        registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+
+        await _unitOfWork.EventRegistrations.UpdateAsync(registration);
+        await _unitOfWork.CompleteAsync();
+
+        // Reload to get updated data
+        var updatedRegistration = await _unitOfWork.EventRegistrations.FindAsync(
+            x => x.Id == id && !x.IsDeleted,
+            new[] { "Event", "EventOrganization" }
+        );
+
+        return Ok(new BaseResponse<EventRegistrationDto>
+        {
+            StatusCode = 200,
+            Message = "Seat number updated successfully.",
             Result = MapToDto(updatedRegistration)
         });
     }
@@ -612,7 +751,7 @@ public class EventRegistrationsController : ControllerBase
         // Update status to Rejected
         registration.Status = EventRegistrationStatus.Rejected;
         registration.UpdatedAt = DateTime.UtcNow;
-        registration.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+        registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
         
         var updatedRegistration = await _unitOfWork.EventRegistrations.UpdateAsync(registration);
         await _unitOfWork.CompleteAsync();
@@ -663,9 +802,16 @@ public class EventRegistrationsController : ControllerBase
             Phone = registration.Phone,
             Email = registration.Email,
             Barcode = registration.Barcode,
+            SeatNumber = registration.SeatNumber,
             Status = registration.Status,
             EmailSent = registration.EmailSent,
             EmailSentAt = registration.EmailSentAt,
+            RegistrationSuccessfulEmailSent = registration.RegistrationSuccessfulEmailSent,
+            RegistrationSuccessfulEmailSentAt = registration.RegistrationSuccessfulEmailSentAt,
+            ConfirmationEmailSent = registration.ConfirmationEmailSent,
+            ConfirmationEmailSentAt = registration.ConfirmationEmailSentAt,
+            FinalApprovalEmailSent = registration.FinalApprovalEmailSent,
+            FinalApprovalEmailSentAt = registration.FinalApprovalEmailSentAt,
             EventId = registration.EventId,
             Event = registration.Event != null ? new EventDto
             {

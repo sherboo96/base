@@ -1,9 +1,9 @@
 import Foundation
 
-enum EventRegistrationStatus: Int, Codable {
-    case draft = 0
-    case approved = 1
-    case rejected = 2
+enum EventRegistrationStatus: String, Codable {
+    case draft = "Draft"
+    case approved = "Approved"
+    case rejected = "Rejected"
 }
 
 struct EventRegistration: Codable, Identifiable {
@@ -13,7 +13,16 @@ struct EventRegistration: Codable, Identifiable {
     let phone: String
     let email: String
     let barcode: String?
+    let seatNumber: String?
     let status: EventRegistrationStatus?
+    let emailSent: Bool?
+    let emailSentAt: String?
+    let registrationSuccessfulEmailSent: Bool?
+    let registrationSuccessfulEmailSentAt: String?
+    let confirmationEmailSent: Bool?
+    let confirmationEmailSentAt: String?
+    let finalApprovalEmailSent: Bool?
+    let finalApprovalEmailSentAt: String?
     let eventId: Int
     let event: Event?
     let eventOrganizationId: Int?
@@ -21,6 +30,9 @@ struct EventRegistration: Codable, Identifiable {
     let attendees: [EventAttendee]?
     let isActive: Bool?
     let createdAt: String?
+    let createdBy: String?
+    let updatedAt: String?
+    let updatedBy: String?
     
     // Computed property to get latest check-in status
     var latestCheckIn: EventAttendee? {

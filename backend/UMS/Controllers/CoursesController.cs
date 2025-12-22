@@ -175,6 +175,16 @@ public class CoursesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CourseDto dto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new BaseResponse<CourseDto>
+            {
+                StatusCode = 400,
+                Message = "Invalid request data.",
+                Result = null
+            });
+        }
+
         // Get current user from token
         var currentUser = User.FindFirst(ClaimTypes.Name)?.Value 
                           ?? User.FindFirst("UserName")?.Value 
@@ -334,6 +344,16 @@ public class CoursesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] CourseDto dto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new BaseResponse<CourseDto>
+            {
+                StatusCode = 400,
+                Message = "Invalid request data.",
+                Result = null
+            });
+        }
+
         // Get current user from token
         var currentUser = User.FindFirst(ClaimTypes.Name)?.Value 
                           ?? User.FindFirst("UserName")?.Value 

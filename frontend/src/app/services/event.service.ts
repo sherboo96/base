@@ -39,6 +39,7 @@ export interface Event {
   code: string;
   poster?: string;
   badge?: string; // Path to badge template file
+  agenda?: string; // Path to agenda PDF file
   date?: string; // Event date (ISO string format)
   published: boolean;
   locationId?: number;

@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Text.Json;
 using UMS.Models;
 using UMS.Services;
 using Microsoft.Extensions.Logging;
@@ -86,6 +87,7 @@ builder.Logging.AddProvider(new DatabaseLoggerProvider(builder.Services.BuildSer
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 builder.Services.AddCors(options =>

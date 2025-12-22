@@ -55,6 +55,7 @@ export interface CourseEnrollment {
   isActive: boolean;
   finalApproval?: boolean;
   status?: EnrollmentStatus;
+  isManualEnrollment?: boolean;
   course?: {
     id: number;
     courseTitle: string;
@@ -104,6 +105,10 @@ export class EnrollmentService {
 
   enrollInCourse(courseId: number): Observable<any> {
     return this.http.post<any>(this.apiUrl, { courseId });
+  }
+
+  manualEnroll(courseId: number, userId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/manual`, { courseId, userId });
   }
 
   cancelEnrollment(enrollmentId: number): Observable<any> {

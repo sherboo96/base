@@ -142,7 +142,7 @@ public class EmailService
     /// <summary>
     /// Sends an email with attachment and inline images using SMTP
     /// </summary>
-    public async Task<bool> SendEmailWithAttachmentAsync(string to, string subject, string body, byte[] attachmentBytes, string attachmentFileName, string attachmentContentType, bool isHtml = true, byte[]? inlineImageBytes = null, string? inlineImageContentId = null, string? inlineImageContentType = null)
+    public async Task<bool> SendEmailWithAttachmentAsync(string to, string subject, string body, byte[]? attachmentBytes, string? attachmentFileName, string? attachmentContentType, bool isHtml = true, byte[]? inlineImageBytes = null, string? inlineImageContentId = null, string? inlineImageContentType = null)
     {
         try
         {
@@ -187,10 +187,13 @@ public class EmailService
                 message.AlternateViews.Add(alternateView);
             }
 
-            // Add attachment - don't dispose the stream, it will be disposed with the message
-            var attachmentStream = new MemoryStream(attachmentBytes);
-            var attachment = new Attachment(attachmentStream, attachmentFileName, attachmentContentType);
-            message.Attachments.Add(attachment);
+            // Add attachment only if provided - don't dispose the stream, it will be disposed with the message
+            if (attachmentBytes != null && !string.IsNullOrEmpty(attachmentFileName) && !string.IsNullOrEmpty(attachmentContentType))
+            {
+                var attachmentStream = new MemoryStream(attachmentBytes);
+                var attachment = new Attachment(attachmentStream, attachmentFileName, attachmentContentType);
+                message.Attachments.Add(attachment);
+            }
 
             await client.SendMailAsync(message);
             _logger.LogInformation($"Email with attachment sent successfully to {to}");
@@ -560,6 +563,419 @@ public class EmailService
                 "image/png",
                 false
             );
+        }
+    }
+
+    /// <summary>
+    /// Sends event registration successful email (without badge)
+    /// </summary>
+    public async Task<bool> SendEventRegistrationSuccessfulAsync(
+        string to,
+        string attendeeName,
+        string eventName,
+        string? eventNameAr,
+        string? eventCode = null,
+        string? eventPosterUrl = null)
+    {
+        try
+        {
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "event-registration-successful.html");
+            var template = await File.ReadAllTextAsync(templatePath);
+
+            // Build event URL: https://otc.moo.gov.kw/events/{eventcode}
+            var eventUrl = "";
+            if (!string.IsNullOrWhiteSpace(eventCode))
+            {
+                eventUrl = $"https://otc.moo.gov.kw/events/{eventCode}";
+            }
+            else
+            {
+                eventUrl = "https://otc.moo.gov.kw/events";
+            }
+
+            // Load event poster image if provided (for inline embedding)
+            byte[]? posterImageBytes = null;
+            string? posterContentId = null;
+            string? posterContentType = null;
+            
+            if (!string.IsNullOrWhiteSpace(eventPosterUrl))
+            {
+                try
+                {
+                    string posterPath = "";
+                    
+                    // If it's a full URL, try to extract the path
+                    if (eventPosterUrl.StartsWith("http://") || eventPosterUrl.StartsWith("https://"))
+                    {
+                        var uri = new Uri(eventPosterUrl);
+                        posterPath = uri.AbsolutePath.TrimStart('/');
+                    }
+                    else
+                    {
+                        // Remove leading slash if present
+                        posterPath = eventPosterUrl.TrimStart('/');
+                    }
+                    
+                    // Get the full file path
+                    string fullPath;
+                    if (!string.IsNullOrEmpty(_env.WebRootPath))
+                    {
+                        fullPath = Path.Combine(_env.WebRootPath, posterPath);
+                    }
+                    else
+                    {
+                        var wwwrootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                        fullPath = Path.Combine(wwwrootPath, posterPath);
+                    }
+                    
+                    // Check if file exists
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        posterImageBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+                        
+                        // Determine MIME type based on file extension
+                        var extension = Path.GetExtension(fullPath).ToLowerInvariant();
+                        posterContentType = extension switch
+                        {
+                            ".jpg" or ".jpeg" => MediaTypeNames.Image.Jpeg,
+                            ".png" => "image/png",
+                            ".gif" => MediaTypeNames.Image.Gif,
+                            ".webp" => "image/webp",
+                            _ => MediaTypeNames.Image.Jpeg
+                        };
+                        
+                        posterContentId = $"event-poster-{Guid.NewGuid()}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error reading event poster image for registration successful email. URL: {eventPosterUrl}");
+                }
+            }
+
+            // Replace placeholders - use cid: reference for inline image
+            var posterCid = posterContentId != null ? $"cid:{posterContentId}" : "";
+            
+            // If no poster, remove the entire poster section from template
+            var body = template;
+            if (string.IsNullOrEmpty(posterCid))
+            {
+                var posterSectionMarker = "<!-- Header - Event Poster -->";
+                var startIndex = body.IndexOf(posterSectionMarker);
+                if (startIndex >= 0)
+                {
+                    var trStart = body.IndexOf("<tr>", startIndex);
+                    if (trStart >= 0)
+                    {
+                        var trEnd = body.IndexOf("</tr>", trStart);
+                        if (trEnd >= 0)
+                        {
+                            var endIndex = trEnd + 5;
+                            if (endIndex < body.Length && body[endIndex] == '\n')
+                            {
+                                endIndex++;
+                            }
+                            body = body.Remove(startIndex, endIndex - startIndex);
+                        }
+                    }
+                }
+            }
+            
+            body = body
+                .Replace("{{EVENT_NAME}}", eventName)
+                .Replace("{{EVENT_NAME_AR}}", eventNameAr ?? eventName)
+                .Replace("{{EVENT_URL}}", eventUrl)
+                .Replace("{{EVENT_POSTER}}", posterCid)
+                .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
+
+            var subject = $"Registration Successful - {eventName}";
+
+            return await SendEmailWithAttachmentAsync(
+                to,
+                subject,
+                body,
+                null, // No badge attachment
+                null,
+                null,
+                true, // HTML email
+                posterImageBytes,
+                posterContentId,
+                posterContentType
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send event registration successful email to {to}");
+            // Fallback to simple email if template not found
+            var simpleBody = $"Dear {attendeeName},\n\nThank you for registering for {eventName}.\n\nYour registration request has been received successfully. We will review your application and send you a confirmation email with your badge as soon as possible.\n\nThank you!";
+            return await SendEmailAsync(to, $"Registration Successful - {eventName}", simpleBody, false);
+        }
+    }
+
+    /// <summary>
+    /// Sends event final approval email with badge and agenda attachments
+    /// </summary>
+    public async Task<bool> SendEventFinalApprovalAsync(
+        string to,
+        string attendeeName,
+        string eventName,
+        string? eventNameAr,
+        DateTime? eventDate,
+        string? eventLocation,
+        string? eventLocationAr,
+        string barcode,
+        byte[] badgeImageBytes,
+        byte[]? agendaPdfBytes,
+        string? agendaFileName,
+        string? seatNumber,
+        string? shareLink = null,
+        string? eventCode = null,
+        string? eventPosterUrl = null)
+    {
+        try
+        {
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "event-final-approval.html");
+            var template = await File.ReadAllTextAsync(templatePath);
+
+            // Format event date - English format: "Monday, 12th January 2026"
+            var eventDateText = "TBA";
+            if (eventDate.HasValue)
+            {
+                var date = eventDate.Value;
+                var dayName = date.ToString("dddd");
+                var day = date.Day;
+                var monthName = date.ToString("MMMM");
+                var year = date.Year;
+                var daySuffix = GetDaySuffix(day);
+                eventDateText = $"{dayName}, {day}{daySuffix} {monthName} {year}";
+            }
+
+            // Format event date - Arabic format: "الاثنين الموافق 12 يناير 2026م"
+            var eventDateTextAr = "سيتم الإعلان لاحقاً";
+            if (eventDate.HasValue)
+            {
+                var date = eventDate.Value;
+                var arCulture = new System.Globalization.CultureInfo("ar-KW");
+                var dayNameAr = date.ToString("dddd", arCulture);
+                var day = date.Day;
+                var monthNameAr = date.ToString("MMMM", arCulture);
+                var year = date.Year;
+                eventDateTextAr = $"{dayNameAr} الموافق {day} {monthNameAr} {year}م";
+            }
+
+            // Build event URL: https://otc.moo.gov.kw/events/{eventcode}
+            var eventUrl = "";
+            if (!string.IsNullOrWhiteSpace(eventCode))
+            {
+                eventUrl = $"https://otc.moo.gov.kw/events/{eventCode}";
+            }
+            else
+            {
+                eventUrl = "https://otc.moo.gov.kw/events";
+            }
+
+            // Load event poster image if provided (for inline embedding)
+            byte[]? posterImageBytes = null;
+            string? posterContentId = null;
+            string? posterContentType = null;
+            
+            if (!string.IsNullOrWhiteSpace(eventPosterUrl))
+            {
+                try
+                {
+                    string posterPath = "";
+                    
+                    if (eventPosterUrl.StartsWith("http://") || eventPosterUrl.StartsWith("https://"))
+                    {
+                        var uri = new Uri(eventPosterUrl);
+                        posterPath = uri.AbsolutePath.TrimStart('/');
+                    }
+                    else
+                    {
+                        posterPath = eventPosterUrl.TrimStart('/');
+                    }
+                    
+                    string fullPath;
+                    if (!string.IsNullOrEmpty(_env.WebRootPath))
+                    {
+                        fullPath = Path.Combine(_env.WebRootPath, posterPath);
+                    }
+                    else
+                    {
+                        var wwwrootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                        fullPath = Path.Combine(wwwrootPath, posterPath);
+                    }
+                    
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        posterImageBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+                        
+                        var extension = Path.GetExtension(fullPath).ToLowerInvariant();
+                        posterContentType = extension switch
+                        {
+                            ".jpg" or ".jpeg" => MediaTypeNames.Image.Jpeg,
+                            ".png" => "image/png",
+                            ".gif" => MediaTypeNames.Image.Gif,
+                            ".webp" => "image/webp",
+                            _ => MediaTypeNames.Image.Jpeg
+                        };
+                        
+                        posterContentId = $"event-poster-{Guid.NewGuid()}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error reading event poster image for final approval email. URL: {eventPosterUrl}");
+                }
+            }
+
+            // Replace placeholders
+            var posterCid = posterContentId != null ? $"cid:{posterContentId}" : "";
+            
+            var body = template;
+            if (string.IsNullOrEmpty(posterCid))
+            {
+                var posterSectionMarker = "<!-- Header - Event Poster -->";
+                var startIndex = body.IndexOf(posterSectionMarker);
+                if (startIndex >= 0)
+                {
+                    var trStart = body.IndexOf("<tr>", startIndex);
+                    if (trStart >= 0)
+                    {
+                        var trEnd = body.IndexOf("</tr>", trStart);
+                        if (trEnd >= 0)
+                        {
+                            var endIndex = trEnd + 5;
+                            if (endIndex < body.Length && body[endIndex] == '\n')
+                            {
+                                endIndex++;
+                            }
+                            body = body.Remove(startIndex, endIndex - startIndex);
+                        }
+                    }
+                }
+            }
+            
+            body = body
+                .Replace("{{EVENT_NAME}}", eventName)
+                .Replace("{{EVENT_NAME_AR}}", eventNameAr ?? eventName)
+                .Replace("{{EVENT_DATE}}", eventDateText)
+                .Replace("{{EVENT_DATE_AR}}", eventDateTextAr)
+                .Replace("{{EVENT_LOCATION}}", eventLocation ?? "")
+                .Replace("{{EVENT_LOCATION_AR}}", eventLocationAr ?? eventLocation ?? "")
+                .Replace("{{EVENT_URL}}", eventUrl)
+                .Replace("{{EVENT_POSTER}}", posterCid)
+                .Replace("{{SEAT_NUMBER}}", seatNumber ?? "TBA")
+                .Replace("{{SHARE_LINK}}", shareLink ?? "")
+                .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
+
+            var subject = $"Final Approval - {eventName} - Seat {seatNumber ?? "TBA"}";
+
+            // Send email with badge and agenda attachments
+            return await SendEmailWithMultipleAttachmentsAsync(
+                to,
+                subject,
+                body,
+                new List<(byte[] bytes, string fileName, string contentType)>
+                {
+                    (badgeImageBytes, $"badge-{barcode}.png", "image/png"),
+                    (agendaPdfBytes ?? Array.Empty<byte>(), agendaFileName ?? "agenda.pdf", "application/pdf")
+                },
+                posterImageBytes,
+                posterContentId,
+                posterContentType
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send event final approval email to {to}");
+            // Fallback to simple email
+            var simpleBody = $"Dear {attendeeName},\n\nYour registration for {eventName} has been approved.\n\nSeat Number: {seatNumber ?? "TBA"}\n\nPlease find your badge and agenda attached.\n\nThank you!";
+            return await SendEmailWithAttachmentAsync(
+                to,
+                $"Final Approval - {eventName}",
+                simpleBody,
+                badgeImageBytes,
+                $"badge-{barcode}.png",
+                "image/png",
+                false
+            );
+        }
+    }
+
+    /// <summary>
+    /// Sends an email with multiple attachments and inline images
+    /// </summary>
+    public async Task<bool> SendEmailWithMultipleAttachmentsAsync(
+        string to,
+        string subject,
+        string body,
+        List<(byte[] bytes, string fileName, string contentType)> attachments,
+        byte[]? inlineImageBytes = null,
+        string? inlineImageContentId = null,
+        string? inlineImageContentType = null)
+    {
+        try
+        {
+            var config = await GetSmtpConfigAsync();
+
+            if (string.IsNullOrEmpty(config.Host) || string.IsNullOrEmpty(config.FromEmail))
+            {
+                _logger.LogWarning("SMTP configuration is incomplete. Cannot send email.");
+                return false;
+            }
+
+            using var client = new SmtpClient(config.Host, config.Port)
+            {
+                EnableSsl = config.EnableSsl,
+                Credentials = new NetworkCredential(config.Username, config.Password)
+            };
+
+            using var message = new MailMessage
+            {
+                From = new MailAddress(config.FromEmail, config.FromName),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true,
+                BodyEncoding = Encoding.UTF8,
+                SubjectEncoding = Encoding.UTF8
+            };
+
+            message.To.Add(to);
+
+            // Create alternate view for HTML body with inline images
+            if (inlineImageBytes != null && !string.IsNullOrEmpty(inlineImageContentId))
+            {
+                var alternateView = AlternateView.CreateAlternateViewFromString(body, null, MediaTypeNames.Text.Html);
+                
+                var imageStream = new MemoryStream(inlineImageBytes);
+                var linkedResource = new LinkedResource(imageStream, inlineImageContentType ?? MediaTypeNames.Image.Jpeg)
+                {
+                    ContentId = inlineImageContentId
+                };
+                alternateView.LinkedResources.Add(linkedResource);
+                message.AlternateViews.Add(alternateView);
+            }
+
+            // Add all attachments
+            foreach (var (bytes, fileName, contentType) in attachments)
+            {
+                if (bytes != null && bytes.Length > 0 && !string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(contentType))
+                {
+                    var attachmentStream = new MemoryStream(bytes);
+                    var attachment = new Attachment(attachmentStream, fileName, contentType);
+                    message.Attachments.Add(attachment);
+                }
+            }
+
+            await client.SendMailAsync(message);
+            _logger.LogInformation($"Email with multiple attachments sent successfully to {to}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send email with multiple attachments to {to}");
+            return false;
         }
     }
 

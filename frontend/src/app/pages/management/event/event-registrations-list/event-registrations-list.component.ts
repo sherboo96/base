@@ -9,6 +9,7 @@ import { ToastrService } from 'ngx-toastr';
 import { TranslationService } from '../../../../services/translation.service';
 import { finalize } from 'rxjs/operators';
 import { EventBadgeComponent } from '../../../../components/event-badge/event-badge.component';
+import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dialog.component';
 
 @Component({
   selector: 'app-event-registrations-list',
@@ -159,6 +160,9 @@ import { EventBadgeComponent } from '../../../../components/event-badge/event-ba
                     <i class="fas fa-barcode mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.barcode' | translate }}
                   </th>
                   <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
+                    <i class="fas fa-chair mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.seatNumber' | translate }}
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                     <i class="fas fa-info-circle mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.status' | translate }}
                   </th>
                   <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
@@ -190,6 +194,29 @@ import { EventBadgeComponent } from '../../../../components/event-badge/event-ba
                 <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900 font-mono">
                   {{ registration.barcode || '-' }}
                 </td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                  <div class="flex items-center gap-2">
+                    <span *ngIf="registration.seatNumber" class="font-semibold text-accent">{{ registration.seatNumber }}</span>
+                    <button
+                      *ngIf="registration.seatNumber && registration.status === 1"
+                      (click)="editSeatNumber(registration)"
+                      class="inline-flex items-center justify-center px-1.5 py-1 border border-accent rounded text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-accent focus:ring-opacity-50 text-xs"
+                      [title]="'eventRegistration.editSeatNumber' | translate"
+                    >
+                      <i class="fas fa-edit text-xs"></i>
+                    </button>
+                    <button
+                      *ngIf="!registration.seatNumber && registration.status === 1"
+                      (click)="editSeatNumber(registration)"
+                      class="inline-flex items-center px-2 py-1 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md text-xs font-medium whitespace-nowrap"
+                      [title]="'eventRegistration.addSeatNumber' | translate"
+                    >
+                      <i class="fas fa-plus mr-1 text-xs"></i>
+                      <span>{{ 'eventRegistration.addSeatNumber' | translate }}</span>
+                    </button>
+                    <span *ngIf="!registration.seatNumber && registration.status !== 1" class="text-gray-400">-</span>
+                  </div>
+                </td>
                 <td class="px-4 py-3 whitespace-nowrap text-xs">
                   <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -204,23 +231,19 @@ import { EventBadgeComponent } from '../../../../components/event-badge/event-ba
                     <span *ngIf="registration.status === 2">{{ 'eventRegistration.statusRejected' | translate }}</span>
                   </span>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-xs">
-                  <div class="flex flex-col gap-1">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      [ngClass]="{
-                        'bg-green-100 text-green-800': registration.emailSent,
-                        'bg-gray-100 text-gray-800': !registration.emailSent
-                      }"
-                    >
-                      <i class="fas mr-1" [ngClass]="registration.emailSent ? 'fa-check-circle' : 'fa-times-circle'"></i>
-                      <span *ngIf="registration.emailSent">{{ 'eventRegistration.emailSent' | translate }}</span>
-                      <span *ngIf="!registration.emailSent">{{ 'eventRegistration.emailNotSent' | translate }}</span>
-                    </span>
-                    <span *ngIf="registration.emailSentAt" class="text-xs text-gray-500">
-                      {{ formatDateTime(registration.emailSentAt) }}
-                    </span>
-                  </div>
+                <td class="px-4 py-3 whitespace-nowrap text-xs" style="position: relative;">
+                  <button
+                    (click)="toggleEmailStatus(registration.id!, $event)"
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800 hover:bg-green-200': getTotalEmailsSent(registration) > 0,
+                      'bg-gray-100 text-gray-600 hover:bg-gray-200': getTotalEmailsSent(registration) === 0
+                    }"
+                    [title]="'eventRegistration.viewEmailStatus' | translate"
+                  >
+                    <i class="fas mr-1 text-xs" [ngClass]="getTotalEmailsSent(registration) > 0 ? 'fa-envelope-open' : 'fa-envelope'"></i>
+                    <span>{{ getTotalEmailsSent(registration) }}/3</span>
+                  </button>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-xs">
                   <div *ngIf="getLatestCheckIn(registration)" class="flex flex-col">
@@ -386,6 +409,14 @@ import { EventBadgeComponent } from '../../../../components/event-badge/event-ba
           <i class="fas fa-paper-plane text-purple-500"></i>
           <span>{{ 'eventRegistration.resendEmail' | translate }}</span>
         </button>
+        <button
+          *ngIf="registration.status === 1"
+          (click)="sendFinalApproval(registration); closeMenu()"
+          class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+        >
+          <i class="fas fa-check-circle text-green-500"></i>
+          <span>{{ 'eventRegistration.sendFinalApproval' | translate }}</span>
+        </button>
         <hr class="my-1 border-gray-200">
         <button
           (click)="deleteRegistration(registration); closeMenu()"
@@ -394,6 +425,79 @@ import { EventBadgeComponent } from '../../../../components/event-badge/event-ba
           <i class="fas fa-trash text-red-500"></i>
           <span>{{ 'common.delete' | translate }}</span>
         </button>
+      </ng-container>
+    </div>
+    
+    <!-- Email Status Tooltip -->
+    <div
+      *ngIf="openEmailStatusId && getCurrentRegistrationForEmailStatus()"
+      class="fixed bg-white rounded-lg shadow-xl border-2 border-gray-200 py-3 px-4 email-status-tooltip"
+      [style.top.px]="emailStatusPosition.top"
+      [style.right.px]="emailStatusPosition.right"
+      style="z-index: 99999; min-width: 280px;"
+    >
+      <ng-container *ngIf="getCurrentRegistrationForEmailStatus() as registration">
+        <div class="mb-2 pb-2 border-b border-gray-200">
+          <h4 class="text-sm font-semibold text-gray-900 font-poppins">
+            {{ 'eventRegistration.emailStatus' | translate }}
+          </h4>
+        </div>
+        <div class="space-y-2">
+          <!-- Registration Successful Email -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                [ngClass]="{
+                  'bg-green-100 text-green-800': registration.registrationSuccessfulEmailSent,
+                  'bg-gray-100 text-gray-600': !registration.registrationSuccessfulEmailSent
+                }"
+              >
+                <i class="fas mr-1 text-xs" [ngClass]="registration.registrationSuccessfulEmailSent ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                <span>{{ 'eventRegistration.registrationSuccessfulEmail' | translate }}</span>
+              </span>
+            </div>
+            <span *ngIf="registration.registrationSuccessfulEmailSentAt" class="text-xs text-gray-500">
+              {{ formatDateTime(registration.registrationSuccessfulEmailSentAt) }}
+            </span>
+          </div>
+          <!-- Confirmation Email -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                [ngClass]="{
+                  'bg-green-100 text-green-800': registration.confirmationEmailSent,
+                  'bg-gray-100 text-gray-600': !registration.confirmationEmailSent
+                }"
+              >
+                <i class="fas mr-1 text-xs" [ngClass]="registration.confirmationEmailSent ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                <span>{{ 'eventRegistration.confirmationEmail' | translate }}</span>
+              </span>
+            </div>
+            <span *ngIf="registration.confirmationEmailSentAt" class="text-xs text-gray-500">
+              {{ formatDateTime(registration.confirmationEmailSentAt) }}
+            </span>
+          </div>
+          <!-- Final Approval Email -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                [ngClass]="{
+                  'bg-green-100 text-green-800': registration.finalApprovalEmailSent,
+                  'bg-gray-100 text-gray-600': !registration.finalApprovalEmailSent
+                }"
+              >
+                <i class="fas mr-1 text-xs" [ngClass]="registration.finalApprovalEmailSent ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                <span>{{ 'eventRegistration.finalApprovalEmail' | translate }}</span>
+              </span>
+            </div>
+            <span *ngIf="registration.finalApprovalEmailSentAt" class="text-xs text-gray-500">
+              {{ formatDateTime(registration.finalApprovalEmailSentAt) }}
+            </span>
+          </div>
+        </div>
       </ng-container>
     </div>
   `,
@@ -412,6 +516,8 @@ export class EventRegistrationsListComponent implements OnInit {
   eventName: string;
   openMenuId: number | null = null;
   menuPosition: { top: number; right: number } = { top: 0, right: 0 };
+  openEmailStatusId: number | null = null;
+  emailStatusPosition: { top: number; right: number } = { top: 0, right: 0 };
   
   // Expose EventRegistrationStatus to template
   EventRegistrationStatus = EventRegistrationStatus;
@@ -439,6 +545,10 @@ export class EventRegistrationsListComponent implements OnInit {
     // Close menu if clicking outside the button or dropdown menu
     if (!target.closest('button[title*="More"]') && !target.closest('.fixed.w-48')) {
       this.closeMenu();
+    }
+    // Close email status tooltip if clicking outside
+    if (!target.closest('button[title*="Email Status"]') && !target.closest('.email-status-tooltip')) {
+      this.closeEmailStatus();
     }
   }
 
@@ -883,6 +993,150 @@ export class EventRegistrationsListComponent implements OnInit {
     });
   }
 
+  sendFinalApproval(registration: EventRegistration): void {
+    if (!registration.id) {
+      return;
+    }
+
+    // Show info toastr that email is being sent
+    const infoToast = this.toastr.info(
+      this.translationService.instant('eventRegistration.sendingFinalApproval'),
+      this.translationService.instant('eventRegistration.sendingEmail'),
+      { timeOut: 0, extendedTimeOut: 0, closeButton: true, disableTimeOut: true }
+    );
+
+    this.loadingService.show();
+    this.eventRegistrationService.sendFinalApproval(registration.id).subscribe({
+      next: (response) => {
+        // Close the info toastr
+        if (infoToast && infoToast.toastId) {
+          this.toastr.remove(infoToast.toastId);
+        }
+        
+        // Show success message
+        this.toastr.success(
+          response.message || this.translationService.instant('eventRegistration.sendFinalApprovalSuccess')
+        );
+        
+        // Update the local registration object with the updated email status
+        if (response.result) {
+          const index = this.registrations.findIndex(r => r.id === registration.id);
+          if (index !== -1) {
+            this.registrations[index].emailSent = response.result.emailSent;
+            this.registrations[index].emailSentAt = response.result.emailSentAt;
+            // Re-group registrations
+            this.groupRegistrationsByOrganization();
+            this.cdr.detectChanges();
+          }
+        }
+        
+        this.loadingService.hide();
+      },
+      error: (error) => {
+        // Close the info toastr
+        if (infoToast && infoToast.toastId) {
+          this.toastr.remove(infoToast.toastId);
+        }
+        
+        this.loadingService.hide();
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('eventRegistration.sendFinalApprovalError')
+        );
+      },
+    });
+  }
+
+  editSeatNumber(registration: EventRegistration): void {
+    if (!registration.id) {
+      return;
+    }
+
+    // Fetch fresh registration data from API to ensure we have the latest seat number
+    this.eventRegistrationService.getById(registration.id).subscribe({
+      next: (response) => {
+        if (response.result) {
+          const freshRegistration = response.result;
+          // Update local registration with fresh data
+          const index = this.registrations.findIndex(r => r.id === freshRegistration.id);
+          if (index !== -1) {
+            this.registrations[index] = { ...this.registrations[index], ...freshRegistration };
+          }
+          
+          // Get the seat number from the fresh API response
+          const seatNumberValue = freshRegistration.seatNumber;
+          const currentSeatNumber = (seatNumberValue && typeof seatNumberValue === 'string' && seatNumberValue.trim() !== '') 
+            ? seatNumberValue.trim() 
+            : '';
+          
+          const dialogRef = this.dialogService.open(SeatNumberDialogComponent, {
+            data: { 
+              currentSeatNumber: currentSeatNumber,
+              registrationId: freshRegistration.id
+            },
+            width: '500px',
+            enableClose: true,
+            closeButton: true,
+            resizable: false,
+            draggable: true,
+            size: 'md',
+          });
+
+          dialogRef.afterClosed$.subscribe((result) => {
+            if (result && typeof result === 'object') {
+              // API returned updated registration - update the local registration object directly
+              const updatedRegistration = result as EventRegistration;
+              const updateIndex = this.registrations.findIndex(r => r.id === updatedRegistration.id);
+              if (updateIndex !== -1) {
+                // Update the registration object with the API response
+                this.registrations[updateIndex] = { ...this.registrations[updateIndex], ...updatedRegistration };
+                // Re-group registrations to reflect changes
+                this.groupRegistrationsByOrganization();
+                this.cdr.detectChanges();
+              }
+            } else if (result === true) {
+              // Fallback - refresh all registrations if no data returned
+              this.fetchRegistrations();
+            }
+          });
+        }
+      },
+      error: () => {
+        // If API call fails, use the local registration data
+        const seatNumberValue = registration.seatNumber;
+        const currentSeatNumber = (seatNumberValue && typeof seatNumberValue === 'string' && seatNumberValue.trim() !== '') 
+          ? seatNumberValue.trim() 
+          : '';
+        
+        const dialogRef = this.dialogService.open(SeatNumberDialogComponent, {
+          data: { 
+            currentSeatNumber: currentSeatNumber,
+            registrationId: registration.id
+          },
+          width: '500px',
+          enableClose: true,
+          closeButton: true,
+          resizable: false,
+          draggable: true,
+          size: 'md',
+        });
+
+        dialogRef.afterClosed$.subscribe((result) => {
+          if (result && typeof result === 'object') {
+            const updatedRegistration = result as EventRegistration;
+            const updateIndex = this.registrations.findIndex(r => r.id === updatedRegistration.id);
+            if (updateIndex !== -1) {
+              this.registrations[updateIndex] = { ...this.registrations[updateIndex], ...updatedRegistration };
+              this.groupRegistrationsByOrganization();
+              this.cdr.detectChanges();
+            }
+          } else if (result === true) {
+            this.fetchRegistrations();
+          }
+        });
+      }
+    });
+  }
+
   groupRegistrationsByOrganization(): void {
     this.groupedRegistrations = {};
     this.organizationNames = [];
@@ -1055,6 +1309,39 @@ export class EventRegistrationsListComponent implements OnInit {
 
   closeMenu(): void {
     this.openMenuId = null;
+  }
+
+  toggleEmailStatus(registrationId: number, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.openEmailStatusId === registrationId) {
+      this.closeEmailStatus();
+    } else {
+      this.openEmailStatusId = registrationId;
+      const button = event.currentTarget as HTMLElement;
+      const rect = button.getBoundingClientRect();
+      // Calculate position - show tooltip below the button
+      this.emailStatusPosition = {
+        top: rect.bottom + 5,
+        right: window.innerWidth - rect.right
+      };
+    }
+  }
+
+  closeEmailStatus(): void {
+    this.openEmailStatusId = null;
+  }
+
+  getTotalEmailsSent(registration: EventRegistration): number {
+    let count = 0;
+    if (registration.registrationSuccessfulEmailSent) count++;
+    if (registration.confirmationEmailSent) count++;
+    if (registration.finalApprovalEmailSent) count++;
+    return count;
+  }
+
+  getCurrentRegistrationForEmailStatus(): EventRegistration | null {
+    if (!this.openEmailStatusId) return null;
+    return this.registrations.find(r => r.id === this.openEmailStatusId) || null;
   }
 
   getCurrentRegistration(): EventRegistration | null {

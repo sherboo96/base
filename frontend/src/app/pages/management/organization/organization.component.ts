@@ -378,4 +378,38 @@ export class OrganizationComponent implements OnInit, OnDestroy {
         return 'bg-gray-100 text-gray-800';
     }
   }
+
+  exportOrganization(organization: Organization): void {
+    this.loadingService.show();
+    
+    this.organizationService.exportOrganization(organization.id).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Extract filename from Content-Disposition header if available, otherwise use default
+        const orgName = organization.name.replace(/\s+/g, '_');
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.download = `Organization_Export_${orgName}_${dateStr}.json`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.toastr.success(
+          this.translationService.instant('organization.exportSuccess', { name: organization.name })
+        );
+        this.loadingService.hide();
+      },
+      error: (error) => {
+        console.error('Error exporting organization:', error);
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('organization.exportError')
+        );
+        this.loadingService.hide();
+      }
+    });
+  }
 }

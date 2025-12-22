@@ -73,10 +73,28 @@ export class UserService {
     private storageService: StorageService
   ) {}
 
-  getUsers(page: number, pageSize: number): Observable<UserResponse> {
-    return this.http.get<UserResponse>(
-      `${this.baseUrl}/Users?page=${page}&pageSize=${pageSize}`
-    );
+  getUsers(
+    page: number, 
+    pageSize: number, 
+    search?: string, 
+    organizationId?: number, 
+    departmentId?: number, 
+    roleId?: number
+  ): Observable<UserResponse> {
+    let params = `page=${page}&pageSize=${pageSize}`;
+    if (search) {
+      params += `&search=${encodeURIComponent(search)}`;
+    }
+    if (organizationId) {
+      params += `&organization=${organizationId}`;
+    }
+    if (departmentId) {
+      params += `&department=${departmentId}`;
+    }
+    if (roleId) {
+      params += `&role=${roleId}`;
+    }
+    return this.http.get<UserResponse>(`${this.baseUrl}/Users?${params}`);
   }
 
   createUser(user: {

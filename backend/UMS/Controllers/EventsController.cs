@@ -168,6 +168,7 @@ public class EventsController : ControllerBase
             Code = dto.Code,
             Poster = dto.Poster,
             Badge = dto.Badge,
+            Agenda = dto.Agenda,
             Date = dto.Date,
             Published = dto.Published,
             LocationId = dto.LocationId,
@@ -264,6 +265,7 @@ public class EventsController : ControllerBase
         existing.Code = dto.Code;
         existing.Poster = dto.Poster;
         existing.Badge = dto.Badge;
+        existing.Agenda = dto.Agenda;
         existing.Date = dto.Date;
         existing.Published = dto.Published;
         existing.LocationId = dto.LocationId;
@@ -355,6 +357,7 @@ public class EventsController : ControllerBase
             Code = eventEntity.Code,
             Poster = eventEntity.Poster,
             Badge = eventEntity.Badge,
+            Agenda = eventEntity.Agenda,
             Date = eventEntity.Date,
             Published = eventEntity.Published,
             LocationId = eventEntity.LocationId,

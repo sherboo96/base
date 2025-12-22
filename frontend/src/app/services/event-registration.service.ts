@@ -16,9 +16,16 @@ export interface EventRegistration {
   phone: string;
   email: string;
   barcode?: string;
+  seatNumber?: string;
   status?: EventRegistrationStatus;
   emailSent?: boolean;
   emailSentAt?: string;
+  registrationSuccessfulEmailSent?: boolean;
+  registrationSuccessfulEmailSentAt?: string;
+  confirmationEmailSent?: boolean;
+  confirmationEmailSentAt?: string;
+  finalApprovalEmailSent?: boolean;
+  finalApprovalEmailSentAt?: string;
   eventId: number;
   event?: any;
   eventOrganizationId?: number;
@@ -135,6 +142,22 @@ export class EventRegistrationService {
     return this.http.post<EventRegistrationResponse>(
       `${this.baseUrl}/${id}/resend-email`,
       {}
+    );
+  }
+
+  // Send final approval email with badge and agenda
+  sendFinalApproval(id: number): Observable<EventRegistrationResponse> {
+    return this.http.post<EventRegistrationResponse>(
+      `${this.baseUrl}/${id}/send-final-approval`,
+      {}
+    );
+  }
+
+  // Update seat number
+  updateSeatNumber(id: number, seatNumber: string | null): Observable<EventRegistrationResponse> {
+    return this.http.put<EventRegistrationResponse>(
+      `${this.baseUrl}/${id}/seat-number`,
+      { seatNumber }
     );
   }
 

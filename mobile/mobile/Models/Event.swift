@@ -1,6 +1,6 @@
 import Foundation
 
-struct Event: Codable, Identifiable {
+struct Event: Codable, Identifiable, Hashable {
     let id: Int?
     let name: String
     let nameAr: String?
@@ -17,13 +17,13 @@ struct Event: Codable, Identifiable {
     let createdAt: String?
 }
 
-struct Location: Codable {
+struct Location: Codable, Hashable {
     let id: Int?
     let name: String?
     let nameAr: String?
 }
 
-struct EventSpeaker: Codable {
+struct EventSpeaker: Codable, Hashable {
     let id: Int?
     let name: String
     let nameAr: String?

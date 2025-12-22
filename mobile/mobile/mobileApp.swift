@@ -38,6 +38,7 @@ struct mobileApp: App {
                     LoginView(isAuthenticated: $isAuthenticated)
                 }
             }
+            .preferredColorScheme(.light)
             .task {
                 // Validate token on app launch
                 if APIService.shared.isAuthenticated {

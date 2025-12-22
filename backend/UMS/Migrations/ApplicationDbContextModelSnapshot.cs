@@ -530,6 +530,9 @@ namespace UMS.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsManualEnrollment")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -987,6 +990,9 @@ namespace UMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Agenda")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Badge")
                         .HasColumnType("nvarchar(max)");
 
@@ -1139,6 +1145,12 @@ namespace UMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("ConfirmationEmailSent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ConfirmationEmailSentAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
@@ -1161,6 +1173,12 @@ namespace UMS.Migrations
                     b.Property<int?>("EventOrganizationId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("FinalApprovalEmailSent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("FinalApprovalEmailSentAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -1176,6 +1194,15 @@ namespace UMS.Migrations
 
                     b.Property<string>("Phone")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("RegistrationSuccessfulEmailSent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("RegistrationSuccessfulEmailSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SeatNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")

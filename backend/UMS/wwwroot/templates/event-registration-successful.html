@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registration Successful</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, Helvetica, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:20px 0;">
+    <tr>
+      <td align="center">
+
+        <!-- Email Container -->
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header - Event Poster -->
+          <tr>
+            <td style="padding:0;text-align:center;">
+              <img src="{{EVENT_POSTER}}" alt="{{EVENT_NAME}}" style="width:100%;max-width:600px;height:auto;display:block;margin:0;" />
+            </td>
+          </tr>
+
+          <!-- Arabic Section -->
+          <tr>
+            <td style="padding:28px;color:#333333;font-size:14px;line-height:1.8;direction:rtl;text-align:right;">
+
+              <p><strong>عزيزنا الضيف،</strong></p>
+
+              <p>
+                نشكركم لتسجيلكم حضور
+                <strong>{{EVENT_NAME_AR}}</strong>.
+              </p>
+
+              <p>
+                تم استلام طلب التسجيل الخاص بكم بنجاح. سيتم مراجعة طلبكم وإرسال رسالة تأكيد مع شارة الحضور الخاصة بكم في أقرب وقت ممكن.
+              </p>
+
+              <p style="margin-bottom:12px;">
+                لمزيد من الاستفسار:
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="{{EVENT_URL}}" style="display:inline-block;padding:12px 24px;background:#0B4C5F;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;text-align:center;">
+                      زيارة موقع الفعالية
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin-top:24px;">
+                مع أطيب التحيات،<br />
+                <strong>لجنة تنظيم الفعالية</strong><br />
+                وزارة النفط<br />
+                دولة الكويت
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="height:1px;background:#e5e7eb;"></td>
+          </tr>
+
+          <!-- English Section -->
+          <tr>
+            <td style="padding:28px;color:#333333;font-size:14px;line-height:1.7;direction:ltr;text-align:left;">
+
+              <p><strong>Dear Guest,</strong></p>
+
+              <p>
+                Thank you for registering to attend
+                <strong>{{EVENT_NAME}}</strong>.
+              </p>
+
+              <p>
+                Your registration request has been received successfully. We will review your application and send you a confirmation email with your badge as soon as possible.
+              </p>
+
+              <p style="margin-bottom:12px;">
+                For further inquiries, please visit:
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="{{EVENT_URL}}" style="display:inline-block;padding:12px 24px;background:#0B4C5F;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;text-align:center;">
+                      Visit Event Website
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin-top:24px;">
+                With best regards,<br />
+                <strong>Event Organizing Committee</strong><br />
+                Ministry of Oil<br />
+                State of Kuwait
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9fafb;padding:14px;text-align:center;font-size:12px;color:#6b7280;">
+              © {{YEAR}} Ministry of Oil – State of Kuwait. All rights reserved.
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+

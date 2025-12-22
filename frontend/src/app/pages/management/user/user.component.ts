@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { UserService } from '../../../services/user.service';
+import { OrganizationService } from '../../../services/organization.service';
+import { DepartmentService } from '../../../services/department.service';
 import { DialogService, DialogConfig } from '@ngneat/dialog';
 import { LoadingService } from '../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
@@ -22,13 +24,23 @@ import { DeleteConfirmationDialogComponent } from '../../../components/delete-co
 export class UserComponent implements OnInit {
   users: any[] = [];
   searchTerm = '';
+  filterOrganization: number | null = null;
+  filterDepartment: number | null = null;
+  filterRole: number | null = null;
   currentPage = 1;
   pageSize = 10;
   totalItems = 0;
   Math = Math;
+  
+  // Filter options
+  organizations: any[] = [];
+  departments: any[] = [];
+  roles: any[] = [];
 
   constructor(
     private userService: UserService,
+    private organizationService: OrganizationService,
+    private departmentService: DepartmentService,
     private dialogService: DialogService,
     public loadingService: LoadingService,
     private toastr: ToastrService,
@@ -36,13 +48,53 @@ export class UserComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadFilterOptions();
     this.loadUsers();
+  }
+
+  loadFilterOptions(): void {
+    // Load organizations
+    this.organizationService.getOrganizations(1, 1000).subscribe({
+      next: (response) => {
+        this.organizations = response.result || [];
+      },
+      error: (error) => {
+        console.error('Error loading organizations:', error);
+      }
+    });
+
+    // Load departments
+    this.departmentService.getAllDepartments().subscribe({
+      next: (response) => {
+        this.departments = response.result || response || [];
+      },
+      error: (error) => {
+        console.error('Error loading departments:', error);
+      }
+    });
+
+    // Load roles
+    this.userService.getRoles(1, 1000).subscribe({
+      next: (response) => {
+        this.roles = response.result || [];
+      },
+      error: (error) => {
+        console.error('Error loading roles:', error);
+      }
+    });
   }
 
   loadUsers(): void {
     console.log('Loading users - Page:', this.currentPage, 'PageSize:', this.pageSize);
     this.loadingService.show();
-    this.userService.getUsers(this.currentPage, this.pageSize).subscribe({
+    this.userService.getUsers(
+      this.currentPage, 
+      this.pageSize, 
+      this.searchTerm || undefined,
+      this.filterOrganization || undefined,
+      this.filterDepartment || undefined,
+      this.filterRole || undefined
+    ).subscribe({
       next: (response) => {
         console.log('Users loaded:', response.result.length, 'users');
         this.users = response.result;
@@ -58,6 +110,54 @@ export class UserComponent implements OnInit {
   }
 
   onSearch(): void {
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
+  applyFilters(): void {
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.filterOrganization = null;
+    this.filterDepartment = null;
+    this.filterRole = null;
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(this.searchTerm || this.filterOrganization || this.filterDepartment || this.filterRole);
+  }
+
+  onOrganizationChange(): void {
+    // When organization changes, reload departments for that organization
+    if (this.filterOrganization) {
+      this.departmentService.getAllDepartments(this.filterOrganization).subscribe({
+        next: (response) => {
+          this.departments = response.result || response || [];
+          // Reset department filter if it's not in the new list
+          if (this.filterDepartment && !this.departments.find(d => d.id === this.filterDepartment)) {
+            this.filterDepartment = null;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading departments:', error);
+        }
+      });
+    } else {
+      // Load all departments if no organization selected
+      this.departmentService.getAllDepartments().subscribe({
+        next: (response) => {
+          this.departments = response.result || response || [];
+        },
+        error: (error) => {
+          console.error('Error loading departments:', error);
+        }
+      });
+    }
     this.currentPage = 1;
     this.loadUsers();
   }
