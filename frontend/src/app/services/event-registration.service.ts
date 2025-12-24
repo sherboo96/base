@@ -15,6 +15,7 @@ export interface EventRegistration {
   nameAr?: string;
   phone: string;
   email: string;
+  jobTitle?: string;
   barcode?: string;
   seatNumber?: string;
   status?: EventRegistrationStatus;

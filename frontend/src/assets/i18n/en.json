@@ -1627,6 +1627,8 @@
         "nameAr": "Name (Arabic)",
         "phone": "Phone",
         "email": "Email",
+        "jobTitle": "Job Title",
+        "jobTitlePlaceholder": "Enter your job title",
         "organization": "Organization",
         "barcode": "Barcode",
         "namePlaceholder": "Enter your full name",

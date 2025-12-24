@@ -157,6 +157,9 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                     <i class="fas fa-envelope mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.email' | translate }}
                   </th>
                   <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
+                    <i class="fas fa-briefcase mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.jobTitle' | translate }}
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                     <i class="fas fa-barcode mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.barcode' | translate }}
                   </th>
                   <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
@@ -191,6 +194,9 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                 <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
                   {{ registration.email }}
                 </td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                  {{ registration.jobTitle || '-' }}
+                </td>
                 <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900 font-mono">
                   {{ registration.barcode || '-' }}
                 </td>
@@ -198,7 +204,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                   <div class="flex items-center gap-2">
                     <span *ngIf="registration.seatNumber" class="font-semibold text-accent">{{ registration.seatNumber }}</span>
                     <button
-                      *ngIf="registration.seatNumber && registration.status === 1"
+                      *ngIf="registration.seatNumber && normalizeStatus(registration.status) === 1"
                       (click)="editSeatNumber(registration)"
                       class="inline-flex items-center justify-center px-1.5 py-1 border border-accent rounded text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-accent focus:ring-opacity-50 text-xs"
                       [title]="'eventRegistration.editSeatNumber' | translate"
@@ -206,7 +212,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                       <i class="fas fa-edit text-xs"></i>
                     </button>
                     <button
-                      *ngIf="!registration.seatNumber && registration.status === 1"
+                      *ngIf="!registration.seatNumber && normalizeStatus(registration.status) === 1"
                       (click)="editSeatNumber(registration)"
                       class="inline-flex items-center px-2 py-1 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md text-xs font-medium whitespace-nowrap"
                       [title]="'eventRegistration.addSeatNumber' | translate"
@@ -214,21 +220,21 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                       <i class="fas fa-plus mr-1 text-xs"></i>
                       <span>{{ 'eventRegistration.addSeatNumber' | translate }}</span>
                     </button>
-                    <span *ngIf="!registration.seatNumber && registration.status !== 1" class="text-gray-400">-</span>
+                    <span *ngIf="!registration.seatNumber && normalizeStatus(registration.status) !== 1" class="text-gray-400">-</span>
                   </div>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-xs">
                   <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                     [ngClass]="{
-                      'bg-yellow-100 text-yellow-800': registration.status === 0,
-                      'bg-green-100 text-green-800': registration.status === 1,
-                      'bg-red-100 text-red-800': registration.status === 2
+                      'bg-yellow-100 text-yellow-800': normalizeStatus(registration.status) === 0,
+                      'bg-green-100 text-green-800': normalizeStatus(registration.status) === 1,
+                      'bg-red-100 text-red-800': normalizeStatus(registration.status) === 2
                     }"
                   >
-                    <span *ngIf="registration.status === 0">{{ 'eventRegistration.statusDraft' | translate }}</span>
-                    <span *ngIf="registration.status === 1">{{ 'eventRegistration.statusApproved' | translate }}</span>
-                    <span *ngIf="registration.status === 2">{{ 'eventRegistration.statusRejected' | translate }}</span>
+                    <span *ngIf="normalizeStatus(registration.status) === 0">{{ 'eventRegistration.statusDraft' | translate }}</span>
+                    <span *ngIf="normalizeStatus(registration.status) === 1">{{ 'eventRegistration.statusApproved' | translate }}</span>
+                    <span *ngIf="normalizeStatus(registration.status) === 2">{{ 'eventRegistration.statusRejected' | translate }}</span>
                   </span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-xs" style="position: relative;">
@@ -272,7 +278,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                   <div class="flex items-center justify-end gap-2">
                     <!-- Approve Button -->
                     <button
-                      *ngIf="registration.status === 0"
+                      *ngIf="normalizeStatus(registration.status) === 0"
                       (click)="approveRegistration(registration)"
                       class="inline-flex items-center px-3 py-1.5 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
                       [title]="'eventRegistration.approve' | translate"
@@ -282,13 +288,23 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                     </button>
                     <!-- Reject Button -->
                     <button
-                      *ngIf="registration.status === 0"
+                      *ngIf="normalizeStatus(registration.status) === 0"
                       (click)="rejectRegistration(registration)"
                       class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
                       [title]="'eventRegistration.reject' | translate"
                     >
                       <i class="fas fa-times mr-1 text-xs"></i>
                       <span>{{ 'eventRegistration.reject' | translate }}</span>
+                    </button>
+                    <!-- Send Final Approval Button -->
+                    <button
+                      *ngIf="normalizeStatus(registration.status) === 1"
+                      (click)="sendFinalApproval(registration)"
+                      class="inline-flex items-center px-3 py-1.5 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
+                      [title]="'eventRegistration.sendFinalApproval' | translate"
+                    >
+                      <i class="fas fa-paper-plane mr-1 text-xs"></i>
+                      <span>{{ 'eventRegistration.sendFinalApproval' | translate }}</span>
                     </button>
                     <!-- 3 Dots Menu -->
                     <div class="relative">
@@ -402,7 +418,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
           <span>{{ 'eventRegistration.printBadge' | translate }}</span>
         </button>
         <button
-          *ngIf="registration.status === 1"
+          *ngIf="normalizeStatus(registration.status) === 1"
           (click)="resendEmail(registration); closeMenu()"
           class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
         >
@@ -410,7 +426,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
           <span>{{ 'eventRegistration.resendEmail' | translate }}</span>
         </button>
         <button
-          *ngIf="registration.status === 1"
+          *ngIf="normalizeStatus(registration.status) === 1"
           (click)="sendFinalApproval(registration); closeMenu()"
           class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
         >
@@ -1360,6 +1376,23 @@ export class EventRegistrationsListComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  // Helper function to normalize status (handles string, number, or enum)
+  normalizeStatus(status?: EventRegistrationStatus | string | number): number {
+    if (status === null || status === undefined) return EventRegistrationStatus.Draft;
+    if (typeof status === 'string') {
+      const statusMap: { [key: string]: number } = {
+        'Draft': EventRegistrationStatus.Draft,
+        'Approved': EventRegistrationStatus.Approved,
+        'Rejected': EventRegistrationStatus.Rejected,
+        '0': EventRegistrationStatus.Draft,
+        '1': EventRegistrationStatus.Approved,
+        '2': EventRegistrationStatus.Rejected
+      };
+      return statusMap[status] ?? Number(status) ?? EventRegistrationStatus.Draft;
+    }
+    return Number(status) ?? EventRegistrationStatus.Draft;
   }
 }
 

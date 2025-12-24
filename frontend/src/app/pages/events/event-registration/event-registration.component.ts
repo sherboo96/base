@@ -65,6 +65,7 @@ export class EventRegistrationComponent implements OnInit, OnDestroy {
       nameAr: [''], // Optional field
       phone: ['', [Validators.required, Validators.pattern(/^[0-9+\-\s()]+$/)]],
       email: ['', [Validators.required, Validators.email]],
+      jobTitle: ['', [Validators.required]], // Required field
       eventOrganizationId: [null, [Validators.required]],
       otherOrganization: [''],
     });
@@ -186,6 +187,7 @@ export class EventRegistrationComponent implements OnInit, OnDestroy {
       nameAr: this.form.value.nameAr || null, // Optional field
       phone: this.form.value.phone,
       email: this.form.value.email,
+      jobTitle: this.form.value.jobTitle || null, // Optional field
       eventId: this.event.id!,
       eventOrganizationId: isOtherSelected ? null : (this.form.value.eventOrganizationId || null),
     };

@@ -1572,6 +1572,8 @@
         "nameAr": "الاسم (بالعربية)",
         "phone": "الهاتف",
         "email": "البريد الإلكتروني",
+        "jobTitle": "المسمى الوظيفي",
+        "jobTitlePlaceholder": "أدخل المسمى الوظيفي",
         "organization": "المنظمة",
         "barcode": "الرمز الشريطي",
         "namePlaceholder": "أدخل اسمك الكامل",

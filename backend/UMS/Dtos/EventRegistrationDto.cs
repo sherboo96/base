@@ -10,6 +10,7 @@ public class EventRegistrationDto
     public string? NameAr { get; set; }
     public string Phone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? JobTitle { get; set; }
     public string? Barcode { get; set; }
     public string? SeatNumber { get; set; } // Seat number for the event
     public EventRegistrationStatus Status { get; set; } = EventRegistrationStatus.Draft;

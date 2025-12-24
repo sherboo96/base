@@ -10,6 +10,7 @@ public class EventRegistration : BaseModel
     public string? NameAr { get; set; }
     public string Phone { get; set; }
     public string Email { get; set; }
+    public string? JobTitle { get; set; }
     public string Barcode { get; set; } // Unique barcode for check-in
     public string? SeatNumber { get; set; } // Seat number for the event
     public EventRegistrationStatus Status { get; set; } = EventRegistrationStatus.Draft; // Default to Draft

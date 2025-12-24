@@ -129,6 +129,7 @@ public class EventRegistrationsController : ControllerBase
             NameAr = dto.NameAr,
             Phone = dto.Phone,
             Email = dto.Email,
+            JobTitle = dto.JobTitle,
             Barcode = barcode,
             Status = EventRegistrationStatus.Draft, // Set to Draft - will be approved later
             EventId = dto.EventId,
@@ -801,6 +802,7 @@ public class EventRegistrationsController : ControllerBase
             NameAr = registration.NameAr,
             Phone = registration.Phone,
             Email = registration.Email,
+            JobTitle = registration.JobTitle,
             Barcode = registration.Barcode,
             SeatNumber = registration.SeatNumber,
             Status = registration.Status,

@@ -316,8 +316,44 @@
           </div>
         </div>
 
+        <!-- Job Title -->
+        <div class="space-y-2">
+          <label
+            for="jobTitle"
+            class="block text-sm font-medium text-gray-700 font-poppins"
+            [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'"
+          >
+            {{ 'eventRegistration.jobTitle' | translate }} <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input
+              id="jobTitle"
+              type="text"
+              formControlName="jobTitle"
+              [placeholder]="'eventRegistration.jobTitlePlaceholder' | translate"
+              [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+              [style.text-align]="currentLang === 'ar' ? 'right' : 'left'"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins placeholder-gray-400"
+              [class.border-red-500]="form.get('jobTitle')?.invalid && form.get('jobTitle')?.touched"
+            />
+          </div>
+          <div
+            *ngIf="form.get('jobTitle')?.invalid && form.get('jobTitle')?.touched"
+            class="flex items-start text-sm text-red-600 gap-1"
+            [ngClass]="currentLang === 'ar' ? 'flex-row-reverse justify-end' : ''"
+            [dir]="currentLang === 'ar' ? 'rtl' : 'ltr'"
+          >
+            <i class="fas fa-exclamation-circle mt-0.5" [ngClass]="currentLang === 'ar' ? 'ml-1' : 'mr-1'"></i>
+            <div [ngClass]="currentLang === 'ar' ? 'text-right' : 'text-left'">
+              <span *ngIf="form.get('jobTitle')?.errors?.['required']" class="block">
+                {{ 'common.thisFieldRequired' | translate }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Event Organization -->
-        <div class="space-y-2 md:col-span-2">
+        <div class="space-y-2">
           <label
             for="eventOrganizationId"
             class="block text-sm font-medium text-gray-700 font-poppins"
