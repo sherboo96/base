@@ -59,17 +59,32 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
     <div class="p-8 max-h-[90vh] flex flex-col w-full">
       <!-- Header Section -->
       <div class="mb-8">
-        <div class="flex items-center space-x-3">
-          <div class="p-2 bg-accent/10 rounded-lg">
-            <i class="fas fa-users text-accent text-xl"></i>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex items-center space-x-3">
+            <div class="p-2 bg-accent/10 rounded-lg">
+              <i class="fas fa-users text-accent text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-textDark font-poppins">
+                {{ 'event.registrations' | translate }}
+              </h2>
+              <p class="text-sm text-gray-600 mt-1 font-poppins">
+                {{ 'event.registrationsDescription' | translate }}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 class="text-2xl font-bold text-textDark font-poppins">
-              {{ 'event.registrations' | translate }}
-            </h2>
-            <p class="text-sm text-gray-600 mt-1 font-poppins">
-              {{ 'event.registrationsDescription' | translate }}
-            </p>
+          <!-- Status Counts -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-2 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+              <i class="fas fa-file-alt text-yellow-600 text-sm"></i>
+              <span class="text-xs font-semibold text-yellow-800 font-poppins">{{ 'eventRegistration.statusDraft' | translate }}:</span>
+              <span class="text-sm font-bold text-yellow-900 font-poppins">{{ getDraftCount() }}</span>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 bg-green-50 border-2 border-green-200 rounded-lg">
+              <i class="fas fa-check-circle text-green-600 text-sm"></i>
+              <span class="text-xs font-semibold text-green-800 font-poppins">{{ 'eventRegistration.statusApproved' | translate }}:</span>
+              <span class="text-sm font-bold text-green-900 font-poppins">{{ getApprovedCount() }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -848,27 +863,8 @@ export class EventRegistrationsListComponent implements OnInit {
           response.message || this.translationService.instant('eventRegistration.approveSuccess')
         );
         
-        // Update the local registration object with the updated status
-        if (response.result) {
-          const index = this.registrations.findIndex(r => r.id === registration.id);
-          if (index !== -1) {
-            // Update all properties from response, ensuring status is set correctly
-            this.registrations[index] = { ...this.registrations[index], ...response.result };
-            // Explicitly set status to ensure it's the correct enum value (number)
-            this.registrations[index].status = response.result.status ?? EventRegistrationStatus.Approved;
-            // Ensure status is a number, not a string
-            if (typeof this.registrations[index].status === 'string') {
-              this.registrations[index].status = parseInt(this.registrations[index].status as any, 10) as EventRegistrationStatus;
-            }
-            // Update email status
-            this.registrations[index].emailSent = response.result.emailSent;
-            this.registrations[index].emailSentAt = response.result.emailSentAt;
-            // Re-group registrations
-            this.groupRegistrationsByOrganization();
-            // Trigger change detection
-            this.cdr.detectChanges();
-          }
-        }
+        // Reload registrations to get updated data
+        this.fetchRegistrations();
       },
       error: (error) => {
         // Close the info toastr
@@ -896,24 +892,8 @@ export class EventRegistrationsListComponent implements OnInit {
         this.toastr.success(
           response.message || this.translationService.instant('eventRegistration.rejectSuccess')
         );
-        // Update the local registration object with the updated status
-        if (response.result) {
-          const index = this.registrations.findIndex(r => r.id === registration.id);
-          if (index !== -1) {
-            // Update all properties from response, ensuring status is set correctly
-            this.registrations[index] = { ...this.registrations[index], ...response.result };
-            // Explicitly set status to ensure it's the correct enum value (number)
-            this.registrations[index].status = response.result.status ?? EventRegistrationStatus.Rejected;
-            // Ensure status is a number, not a string
-            if (typeof this.registrations[index].status === 'string') {
-              this.registrations[index].status = parseInt(this.registrations[index].status as any, 10) as EventRegistrationStatus;
-            }
-            // Trigger change detection
-            this.cdr.detectChanges();
-            // Re-group registrations
-            this.groupRegistrationsByOrganization();
-          }
-        }
+        // Reload registrations to get updated data
+        this.fetchRegistrations();
       },
       error: (error) => {
         this.loadingService.hide();
@@ -1177,6 +1157,20 @@ export class EventRegistrationsListComponent implements OnInit {
 
   getOrganizationCount(orgName: string): number {
     return this.groupedRegistrations[orgName]?.length || 0;
+  }
+
+  getDraftCount(): number {
+    return this.registrations.filter(r => 
+      this.normalizeStatus(r.status) === EventRegistrationStatus.Draft &&
+      (!r.eventOrganization || !r.eventOrganization.isMain)
+    ).length;
+  }
+
+  getApprovedCount(): number {
+    return this.registrations.filter(r => 
+      this.normalizeStatus(r.status) === EventRegistrationStatus.Approved &&
+      (!r.eventOrganization || !r.eventOrganization.isMain)
+    ).length;
   }
 
   exportToExcel(statusFilter?: EventRegistrationStatus): void {

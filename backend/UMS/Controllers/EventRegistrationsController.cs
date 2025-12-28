@@ -106,6 +106,7 @@ public class EventRegistrationsController : ControllerBase
                 {
                     Name = orgName,
                     NameAr = orgName, // Use same name for Arabic if not provided
+                    IsMain = false, // New organizations are not main by default
                     IsActive = true,
                     CreatedBy = "Public",
                     CreatedOn = DateTime.UtcNow
@@ -827,7 +828,8 @@ public class EventRegistrationsController : ControllerBase
             {
                 Id = registration.EventOrganization.Id,
                 Name = registration.EventOrganization.Name,
-                NameAr = registration.EventOrganization.NameAr
+                NameAr = registration.EventOrganization.NameAr,
+                IsMain = registration.EventOrganization.IsMain
             } : null,
             Attendees = registration.Attendees?.Select(a => new EventAttendeeDto
             {

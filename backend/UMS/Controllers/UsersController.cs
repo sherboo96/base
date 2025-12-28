@@ -159,10 +159,14 @@ public class UsersController : ControllerBase
         // Handle different login methods
         if (dto.LoginMethod == LoginMethod.Credentials)
         {
+            // Get organization code for password generation
+            var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == dto.OrganizationId);
+            string orgCode = organization?.Code ?? "MOO"; // Default to MOO if organization not found
+            
             // Generate temporary password if not provided
             string tempPassword = !string.IsNullOrEmpty(dto.TemporaryPassword) 
                 ? dto.TemporaryPassword 
-                : PasswordGenerator.GeneratePassword(12);
+                : PasswordGenerator.GeneratePassword(orgCode);
             
             newUser.TemporaryPassword = tempPassword;
             newUser.IsTemporaryPassword = true;
@@ -583,7 +587,11 @@ public class UsersController : ControllerBase
                 // Handle different login methods
                 if (userDto.LoginMethod == (int)LoginMethod.Credentials)
                 {
-                    string tempPassword = PasswordGenerator.GeneratePassword(12);
+                    // Get organization code for password generation
+                    var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == userDto.OrganizationId);
+                    string orgCode = organization?.Code ?? "MOO"; // Default to MOO if organization not found
+                    
+                    string tempPassword = PasswordGenerator.GeneratePassword(orgCode);
                     newUser.TemporaryPassword = tempPassword;
                     newUser.IsTemporaryPassword = true;
                     
@@ -689,8 +697,12 @@ public class UsersController : ControllerBase
             });
         }
 
+        // Get organization code for password generation
+        var organization = await _unitOfWork.Organizations.FindAsync(o => o.Id == user.OrganizationId);
+        string orgCode = organization?.Code ?? "MOO"; // Default to MOO if organization not found
+
         // Generate new temporary password
-        string newPassword = PasswordGenerator.GeneratePassword(12);
+        string newPassword = PasswordGenerator.GeneratePassword(orgCode);
         user.TemporaryPassword = newPassword;
         user.IsTemporaryPassword = true;
 

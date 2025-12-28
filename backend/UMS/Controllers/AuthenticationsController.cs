@@ -567,8 +567,9 @@ public class AuthenticationsController : ControllerBase
             
             if (loginMethod == LoginMethod.Credentials)
             {
-                // For Credentials method, generate a temporary password
-                var tempPassword = PasswordGenerator.GeneratePassword(12);
+                // For Credentials method, generate a temporary password using organization code
+                string orgCode = organization.Code ?? "MOO"; // Default to MOO if code is null
+                var tempPassword = PasswordGenerator.GeneratePassword(orgCode);
                 newUser.TemporaryPassword = tempPassword;
                 newUser.IsTemporaryPassword = true;
                 result = await _userManager.CreateAsync(newUser, tempPassword);

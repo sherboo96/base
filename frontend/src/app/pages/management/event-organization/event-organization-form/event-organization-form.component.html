@@ -60,6 +60,24 @@
             />
         </div>
 
+        <!-- Is Main -->
+        <div class="space-y-2">
+            <div class="flex items-center gap-3">
+                <input
+                    id="isMain"
+                    type="checkbox"
+                    formControlName="isMain"
+                    class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2"
+                />
+                <label for="isMain" class="block text-sm font-medium text-gray-700 font-poppins cursor-pointer">
+                    {{'eventOrganization.isMain'|translate}}
+                </label>
+            </div>
+            <p class="text-xs text-gray-500 font-poppins">
+                {{'eventOrganization.isMainDescription'|translate}}
+            </p>
+        </div>
+
         <!-- Form Actions -->
         <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button

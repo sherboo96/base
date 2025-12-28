@@ -47,6 +47,7 @@ export interface Event {
   speakerIds?: number[];
   speakers?: EventSpeaker[];
   isActive?: boolean;
+  registrationCount?: number; // Number of registered people for this event
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;

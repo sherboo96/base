@@ -20,6 +20,7 @@ public class EventDto
     public List<int> SpeakerIds { get; set; } = new();
     public List<EventSpeakerDto> Speakers { get; set; } = new();
     public bool IsActive { get; set; } = true;
+    public int RegistrationCount { get; set; } = 0; // Number of registered people for this event
     public DateTime CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

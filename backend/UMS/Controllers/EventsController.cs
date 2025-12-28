@@ -347,6 +347,16 @@ public class EventsController : ControllerBase
 
     private EventDto MapToDto(Event eventEntity)
     {
+        // Count registrations for this event (only active, non-deleted registrations)
+        // Exclude registrations from the main EventOrganization
+        // Include registrations with null EventOrganizationId (no organization assigned)
+        var registrationCount = (from r in _context.EventRegistrations
+                                where r.EventId == eventEntity.Id && !r.IsDeleted && r.IsActive
+                                join o in _context.EventOrganizations on r.EventOrganizationId equals o.Id into orgJoin
+                                from org in orgJoin.DefaultIfEmpty()
+                                where org == null || !org.IsMain
+                                select r).Count();
+
         return new EventDto
         {
             Id = eventEntity.Id,
@@ -365,6 +375,7 @@ public class EventsController : ControllerBase
             SpeakerIds = eventEntity.Speakers?.Select(s => s.Id).ToList() ?? new List<int>(),
             Speakers = eventEntity.Speakers?.Select(s => _mapper.Map<EventSpeakerDto>(s)).ToList() ?? new List<EventSpeakerDto>(),
             IsActive = eventEntity.IsActive,
+            RegistrationCount = registrationCount,
             CreatedAt = eventEntity.CreatedOn,
             CreatedBy = eventEntity.CreatedBy,
             UpdatedAt = eventEntity.UpdatedAt,

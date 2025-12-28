@@ -149,11 +149,20 @@ export class UserFormComponent implements OnInit {
   }
 
   generateTemporaryPassword(): void {
-    // Generate password in format MOO@YYYY + random suffix (e.g., MOO@2025A3)
+    // Get organization code from selected organization
+    const organizationId = this.form.get('organizationId')?.value;
+    const organization = this.organizations.find(org => org.id == organizationId);
+    const orgCode = organization?.code || 'MOO'; // Default to MOO if organization not found
+    
+    // Generate password in format {OrgCode}@{YYYY}{3 random lowercase alphanumeric chars}
     const currentYear = new Date().getFullYear();
-    // Add random alphanumeric suffix (2 characters) to make it unique each time
-    const randomSuffix = Math.random().toString(36).substring(2, 4).toUpperCase();
-    const password = `MOO@${currentYear}${randomSuffix}`;
+    // Generate 3 random lowercase alphanumeric characters (lowercase letters and numbers)
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let randomSuffix = '';
+    for (let i = 0; i < 3; i++) {
+      randomSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const password = `${orgCode}@${currentYear}${randomSuffix}`;
     this.generatedPassword = password;
     this.form.patchValue({ temporaryPassword: password });
     this.cdr.detectChanges();
@@ -367,6 +376,11 @@ export class UserFormComponent implements OnInit {
       if (!this.isEdit) {
         this.form.patchValue({ loginMethod: '' });
         this.selectedLoginMethod = 0;
+        // Clear temporary password when organization changes
+        this.form.patchValue({ temporaryPassword: '' });
+      } else if (this.selectedLoginMethod === 3) {
+        // If editing and login method is Credentials, regenerate password with new organization code
+        this.generateTemporaryPassword();
       }
     } else {
       this.selectedOrganization = null;

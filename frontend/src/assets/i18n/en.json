@@ -1741,7 +1741,9 @@
         "deleteMessage": "Are you sure you want to delete \"{{name}}\"?",
         "deleteWarning": "This action cannot be undone. All associated data will be permanently deleted.",
         "deleteSuccess": "Organization deleted successfully",
-        "deleteError": "Failed to delete organization"
+        "deleteError": "Failed to delete organization",
+        "isMain": "Is Main",
+        "isMainDescription": "Mark this organization as the main event organization. Only one organization can be main at a time."
     },
     "eventSpeaker": {
         "title": "Event Speakers",

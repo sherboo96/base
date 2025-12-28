@@ -41,6 +41,7 @@ export class EventOrganizationFormComponent implements OnInit {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       nameAr: [''],
+      isMain: [false],
     });
   }
 
@@ -51,6 +52,7 @@ export class EventOrganizationFormComponent implements OnInit {
       this.form.patchValue({
         name: org.name || '',
         nameAr: org.nameAr || '',
+        isMain: org.isMain || false,
       });
     }
   }

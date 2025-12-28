@@ -7,6 +7,7 @@ export interface EventOrganization {
   id?: number;
   name: string;
   nameAr?: string;
+  isMain?: boolean; // Only one organization can be main
   isActive?: boolean;
   createdAt?: string;
   createdBy?: string;

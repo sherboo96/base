@@ -118,6 +118,9 @@
                         <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                             <i class="fas fa-toggle-on mr-1.5 text-accent text-xs"></i>{{'common.status'|translate}}
                         </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
+                            <i class="fas fa-users mr-1.5 text-accent text-xs"></i>{{'event.registrations'|translate}}
+                        </th>
                         <th scope="col" class="px-4 py-2.5 text-right text-xs font-bold text-darkGray uppercase tracking-wider">
                             <i class="fas fa-cog mr-1.5 text-accent text-xs"></i>{{'common.actions'|translate}}
                         </th>
@@ -179,6 +182,12 @@
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span [class]="getStatusClass(event.published)" class="px-2 py-0.5 text-xs font-semibold rounded-full">
                                 {{getStatusText(event.published)}}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                <i class="fas fa-users mr-1.5 text-xs"></i>
+                                {{event.registrationCount || 0}}
                             </span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">

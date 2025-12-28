@@ -120,6 +120,18 @@ public class EventOrganizationsController : ControllerBase
                           ?? User.Identity?.Name
                           ?? "System";
 
+        // If setting as main, unset ALL event organizations with IsMain = true (including deleted ones)
+        if (dto.IsMain)
+        {
+            var allMainOrganizations = await _unitOfWork.EventOrganizations.GetAllAsync(match: x => x.IsMain);
+            foreach (var org in allMainOrganizations)
+            {
+                org.IsMain = false;
+                org.UpdatedAt = DateTime.Now;
+                await _unitOfWork.EventOrganizations.UpdateAsync(org);
+            }
+        }
+
         var entity = await _unitOfWork.EventOrganizations.AddAsync(dto);
         await _unitOfWork.CompleteAsync();
 
@@ -150,6 +162,18 @@ public class EventOrganizationsController : ControllerBase
                 Message = "Event organization not found.",
                 Result = null
             });
+        }
+
+        // If setting as main, unset ALL other event organizations with IsMain = true (excluding current one)
+        if (dto.IsMain && !existing.IsMain)
+        {
+            var allMainOrganizations = await _unitOfWork.EventOrganizations.GetAllAsync(match: x => x.IsMain && x.Id != id);
+            foreach (var org in allMainOrganizations)
+            {
+                org.IsMain = false;
+                org.UpdatedAt = DateTime.Now;
+                await _unitOfWork.EventOrganizations.UpdateAsync(org);
+            }
         }
 
         dto.Id = id;
@@ -197,6 +221,7 @@ public class EventOrganizationsController : ControllerBase
             Id = organization.Id,
             Name = organization.Name,
             NameAr = organization.NameAr,
+            IsMain = organization.IsMain,
             IsActive = organization.IsActive,
             CreatedAt = organization.CreatedOn,
             CreatedBy = organization.CreatedBy,

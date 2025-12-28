@@ -85,6 +85,9 @@
                         <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                             <i class="fas fa-building mr-1.5 text-accent text-xs"></i>{{'eventOrganization.name'|translate}}
                         </th>
+                        <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
+                            <i class="fas fa-star mr-1.5 text-accent text-xs"></i>{{'eventOrganization.isMain'|translate}}
+                        </th>
                         <th scope="col" class="px-4 py-2.5 text-right text-xs font-bold text-darkGray uppercase tracking-wider">
                             <i class="fas fa-cog mr-1.5 text-accent text-xs"></i>{{'common.actions'|translate}}
                         </th>
@@ -95,6 +98,15 @@
                         <td class="px-4 py-3 whitespace-nowrap">
                             <div class="text-xs text-gray-900 font-medium">{{org.name}}</div>
                             <div *ngIf="org.nameAr" class="text-xs text-gray-500" dir="rtl">{{org.nameAr}}</div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span *ngIf="org.isMain" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-star mr-1 text-xs"></i>
+                                {{'common.yes'|translate}}
+                            </span>
+                            <span *ngIf="!org.isMain" class="text-gray-400 text-xs">
+                                {{'common.no'|translate}}
+                            </span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">
                             <div class="flex items-center justify-end gap-1.5">
