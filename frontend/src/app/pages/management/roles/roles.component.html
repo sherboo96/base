@@ -111,6 +111,9 @@
                             <i class="fas fa-globe mr-2 text-accent"></i>{{ 'role.organizationScope' | translate }}
                         </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+                            <i class="fas fa-star mr-2 text-accent"></i>{{ 'role.isDefault' | translate }} / {{ 'role.isFallback' | translate }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
                             <i class="fas fa-toggle-on mr-2 text-accent"></i>{{ 'role.status' | translate }}
                         </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-textDark uppercase tracking-wider">
@@ -136,6 +139,17 @@
                 }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                                 {{ role.applyToAllOrganizations ? ('role.allOrganizations' | translate) : ('role.ownOrganization' | translate) }}
                             </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <span *ngIf="role.isDefault" class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    <i class="fas fa-star mr-1"></i>{{ 'role.isDefault' | translate }}
+                                </span>
+                                <span *ngIf="role.isFallback" class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    <i class="fas fa-shield-alt mr-1"></i>{{ 'role.isFallback' | translate }}
+                                </span>
+                                <span *ngIf="!role.isDefault && !role.isFallback" class="text-xs text-gray-400">-</span>
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <label class="relative inline-flex items-center cursor-pointer">

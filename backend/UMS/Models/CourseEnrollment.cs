@@ -11,6 +11,12 @@ public enum EnrollmentStatus
     Excuse = 4
 }
 
+public enum EnrollmentType
+{
+    Onsite = 1,
+    Online = 2
+}
+
 public class CourseEnrollment : BaseModel
 {
     public int Id { get; set; }
@@ -23,6 +29,9 @@ public class CourseEnrollment : BaseModel
     public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Pending; // Pending, Approve, Reject, Excuse
     public bool ConfirmationEmailSent { get; set; } = false; // True when confirmation email has been sent
     public bool IsManualEnrollment { get; set; } = false; // True when enrolled manually (bypasses approval workflow)
+    public string? QuestionAnswers { get; set; } // JSON object storing answers to course enrollment questions
+    public string? LocationDocumentPath { get; set; } // Path to uploaded signed location document
+    public EnrollmentType? EnrollmentType { get; set; } // Onsite or Online enrollment type
     
     [JsonIgnore]
     public ICollection<CourseEnrollmentApproval> ApprovalSteps { get; set; } = new List<CourseEnrollmentApproval>();

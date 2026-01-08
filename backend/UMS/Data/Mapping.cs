@@ -92,6 +92,9 @@ public class Mapping: Profile
         // CourseContent
         CreateMap<CourseContent, CourseContentDto>().ReverseMap();
 
+        // CourseQuestion
+        CreateMap<CourseQuestion, CourseQuestionDto>().ReverseMap();
+
         // Structure
         CreateMap<Structure, StructureDto>()
             .ForMember(dest => dest.AssignedUsers, opt => opt.MapFrom(src => src.StructureUsers))

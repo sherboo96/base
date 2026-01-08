@@ -12,7 +12,6 @@ export interface AdoptionUser {
   id: number;
   name: string;
   nameAr: string;
-  attendance: AttendanceType;
   email: string;
   bio?: string;
   organizationId: number;

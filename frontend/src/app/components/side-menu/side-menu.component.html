@@ -522,6 +522,22 @@
                     </span>
                 </a>
             </li>
+            <li *ngIf="hasPermission('PUBLIC_CONFIG_VIEW')">
+                <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
+                    [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':isActiveRoute('/management/public'),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!isActiveRoute('/management/public')}"
+                    (click)="navigateToPublic()"
+                    [title]="isCollapsed?('sidemenu.public'|translate):''">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-accent/10 group-hover:text-accent transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md flex-shrink-0"
+                        [ngClass]="{'bg-accent/10 text-accent':isActiveRoute('/management/public')}">
+                        <i class="material-icons text-lg">public</i>
+                    </div>
+                    <span
+                        class="text-sm text-left rtl:text-right font-poppins transition-all duration-300 whitespace-nowrap overflow-hidden"
+                        [ngClass]="{'ml-3 rtl:ml-0 rtl:mr-3 opacity-100 max-w-full':!isCollapsed,'ml-0 mr-0 opacity-0 max-w-0':isCollapsed,'text-accent':isActiveRoute('/management/public'),'text-gray-700':!isActiveRoute('/management/public')}">
+                        {{'sidemenu.public'|translate}}
+                    </span>
+                </a>
+            </li>
             <li *ngIf="hasPermission('LOGS_VIEW')">
                 <a class="py-1.5 flex items-center cursor-pointer rounded-lg transition-all duration-200 group rtl:flex-row-reverse"
                     [ngClass]="{'px-4':!isCollapsed,'px-2 justify-center':isCollapsed,'bg-accent/10 text-accent shadow-sm border-l-4 rtl:border-l-0 rtl:border-r-4 border-accent':isActiveRoute('/management/logs'),'hover:bg-gray-50 border-l-4 rtl:border-l-0 rtl:border-r-4 border-transparent':!isActiveRoute('/management/logs')}"

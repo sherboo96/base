@@ -138,12 +138,13 @@ export class CourseFormComponent implements OnInit {
       startDateTime: [null],
       endDateTime: [null],
       availableSeats: [0, [Validators.required, Validators.min(0)]],
+      availableOnlineSeats: [0, [Validators.min(0)]],
       price: [0, [Validators.min(0)]],
       kpiWeight: [0, [Validators.min(0)]],
       digitLibraryAvailability: [false],
       certificateAvailable: [false],
       courseTabId: [null, Validators.required],
-      organizationId: [null, Validators.required],
+      organizationId: [{ value: null, disabled: false }, Validators.required],
       learningOutcomes: this.fb.array([]),
       courseContents: this.fb.array([]),
       instructorIds: [[]],
@@ -167,9 +168,14 @@ export class CourseFormComponent implements OnInit {
       this.showCourseTabField = false;
       
       if (this.dialogRef.data?.defaultCourseTabId) {
+        const defaultTabId = this.dialogRef.data.defaultCourseTabId;
         this.form.patchValue({
-          courseTabId: this.dialogRef.data.defaultCourseTabId,
+          courseTabId: defaultTabId,
         });
+        // Generate code if course tab is already available
+        if (this.courseTabs.length > 0) {
+          this.generateCodeForCourseTab(defaultTabId);
+        }
       }
     }
 
@@ -227,15 +233,20 @@ export class CourseFormComponent implements OnInit {
       }
     }
     
-    // Watch category changes to filter locations
-    this.form.get('category')?.valueChanges.subscribe(category => {
-      this.filterLocationsByCategory(category);
+    // Watch category changes – reload locations for the selected organization (backend will filter)
+    this.form.get('category')?.valueChanges.subscribe(() => {
+      const orgId = this.form.get('organizationId')?.value;
+      if (orgId) {
+        this.loadLocations(orgId);
+      }
     });
 
     // Watch organization changes to load locations, departments, and segments
     this.form.get('organizationId')?.valueChanges.subscribe(orgId => {
       if (orgId) {
         this.loadLocations(orgId);
+        // Enable location control when an organization is selected
+        this.form.get('locationId')?.enable({ emitEvent: false });
         
         // Find organization from multiple sources - try synchronously first
         let foundOrg = null;
@@ -283,16 +294,247 @@ export class CourseFormComponent implements OnInit {
       } else {
         this.selectedOrganization = null;
         this.isMainOrg = false; // Reset when no organization selected
+        // Disable and reset location when no organization is selected
+        this.form.get('locationId')?.reset();
+        this.form.get('locationId')?.disable({ emitEvent: false });
         this.cdr.markForCheck();
         this.cdr.detectChanges();
       }
     });
 
-    // Initialize location filter
-    const category = this.form.get('category')?.value;
-    if (category) {
-      this.filterLocationsByCategory(category);
+    // Initialize locations and location control state for current organization (if any)
+    const initialOrgId = this.form.get('organizationId')?.value;
+    const locationControl = this.form.get('locationId');
+    if (initialOrgId) {
+      this.loadLocations(initialOrgId);
+      locationControl?.enable({ emitEvent: false });
+    } else {
+      this.filteredLocations = [];
+      locationControl?.disable({ emitEvent: false });
     }
+
+    // Watch course tab changes to auto-generate code (only in add mode)
+    if (!this.isEdit) {
+      this.form.get('courseTabId')?.valueChanges.subscribe(courseTabId => {
+        this.generateCodeForCourseTab(courseTabId);
+      });
+    }
+  }
+
+  private lastGeneratedCode: string = '';
+
+  /**
+   * Formats a datetime string to local time format (YYYY-MM-DDTHH:mm:ss)
+   * Preserves the local time instead of converting to UTC
+   * Handles datetime-local input format (YYYY-MM-DDTHH:mm) which is already in local time
+   */
+  private formatLocalDateTime(dateTime: string | Date): string {
+    if (!dateTime) {
+      return '';
+    }
+    
+    // If it's a string in datetime-local format (YYYY-MM-DDTHH:mm), append seconds
+    if (typeof dateTime === 'string' && dateTime.includes('T') && !dateTime.includes('Z')) {
+      // datetime-local format: YYYY-MM-DDTHH:mm
+      // Add seconds if not present
+      if (dateTime.split(':').length === 2) {
+        return `${dateTime}:00`;
+      }
+      return dateTime;
+    }
+    
+    // If it's a Date object or ISO string, extract local time components
+    const date = new Date(dateTime);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
+    // Get local date/time components (not UTC)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    // Return in format: YYYY-MM-DDTHH:mm:ss (local time, no timezone indicator)
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+
+  /**
+   * Converts an API datetime (usually ISO, often UTC) to a value suitable for
+   * a datetime-local input: YYYY-MM-DDTHH:mm in the user's local time.
+   */
+  private toLocalInputDateTime(dateTime: string | Date): string {
+    if (!dateTime) {
+      return '';
+    }
+
+    const date = new Date(dateTime);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    // datetime-local expects no seconds and local time
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  /**
+   * Normalizes course.language from API (string or number) to CourseLanguage enum value.
+   */
+  private normalizeCourseLanguage(value: any): CourseLanguage | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return value as CourseLanguage;
+    }
+
+    const str = String(value).trim();
+    if (str === 'English' || str === '0') {
+      return CourseLanguage.English;
+    }
+    if (str === 'Arabic' || str === '1') {
+      return CourseLanguage.Arabic;
+    }
+
+    const num = Number(str);
+    return isNaN(num) ? null : (num as CourseLanguage);
+  }
+
+  /**
+   * Normalizes course.status from API (string or number) to CourseStatus enum value.
+   */
+  private normalizeCourseStatus(value: any): CourseStatus | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return value as CourseStatus;
+    }
+
+    const str = String(value).trim();
+    // Match by enum key names if backend sends "Draft", "Active", etc.
+    if (CourseStatus[str as keyof typeof CourseStatus] !== undefined) {
+      return CourseStatus[str as keyof typeof CourseStatus] as CourseStatus;
+    }
+
+    const num = Number(str);
+    return isNaN(num) ? null : (num as CourseStatus);
+  }
+
+  /**
+   * Normalizes targetUserType from API (string enum name or number) to TargetUserType enum value.
+   */
+  private normalizeTargetUserType(value: any): TargetUserType | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return value as TargetUserType;
+    }
+
+    const str = String(value).trim();
+    // Map string enum names to numeric values
+    const enumMap: { [key: string]: TargetUserType } = {
+      'ForOurOrganization': TargetUserType.ForOurOrganization,
+      'All': TargetUserType.All,
+      'SpecificDepartments': TargetUserType.SpecificDepartments,
+      'SpecificOrganizations': TargetUserType.SpecificOrganizations,
+      'SpecificSegments': TargetUserType.SpecificSegments,
+      'AllUsersOfOrganization': TargetUserType.AllUsersOfOrganization,
+      'SpecificOrganizationSegment': TargetUserType.SpecificOrganizationSegment
+    };
+
+    if (enumMap[str] !== undefined) {
+      return enumMap[str];
+    }
+
+    // Try to parse as number
+    const num = Number(str);
+    return isNaN(num) ? null : (num as TargetUserType);
+  }
+
+  /**
+   * Normalizes course.category from API (string like "Onsite") to LocationCategory enum value.
+   */
+  private normalizeLocationCategory(value: any): LocationCategory | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return value as LocationCategory;
+    }
+
+    const str = String(value).trim();
+
+    // Exact matches for API strings
+    if (str === 'Onsite') {
+      return LocationCategory.Onsite;
+    }
+    if (str === 'Online') {
+      return LocationCategory.Online;
+    }
+    if (str === 'OutSite') {
+      return LocationCategory.OutSite;
+    }
+    if (str === 'Abroad') {
+      return LocationCategory.Abroad;
+    }
+
+    // Case-insensitive fallback
+    const lower = str.toLowerCase();
+    if (lower === 'onsite' || lower === 'on-site') {
+      return LocationCategory.Onsite;
+    }
+    if (lower === 'online') {
+      return LocationCategory.Online;
+    }
+    if (lower === 'outsite' || lower === 'out-site' || lower === 'out site') {
+      return LocationCategory.OutSite;
+    }
+    if (lower === 'abroad') {
+      return LocationCategory.Abroad;
+    }
+
+    const num = Number(str);
+    return isNaN(num) ? null : (num as LocationCategory);
+  }
+
+  /**
+   * Generates a course code from the course tab's English name with a random suffix
+   * Format: {COURSETABNAME}{RANDOM4DIGITS}
+   * Example: "Safety Training" -> "SAFETYTRAINING1234"
+   */
+  private generateCodeFromCourseTabName(name: string): string {
+    if (!name) return '';
+    
+    // Convert to uppercase, remove spaces and special characters, keep only alphanumeric
+    let code = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '') // Remove all non-alphanumeric characters
+      .trim();
+    
+    // If empty after cleaning, use a fallback
+    if (!code) {
+      code = 'COURSE';
+    }
+    
+    // Generate random 4-digit number (1000-9999)
+    const randomNumber = Math.floor(Math.random() * 9000) + 1000;
+    
+    // Combine course tab name with random number
+    return `${code}${randomNumber}`;
   }
 
   patchFormWithCourse(course: Course): void {
@@ -302,13 +544,16 @@ export class CourseFormComponent implements OnInit {
       courseTitleAr: course.courseTitleAr || '',
       description: course.description || '',
       descriptionAr: course.descriptionAr || '',
-      language: course.language,
-      status: course.status,
-      category: course.category,
+      // Normalize enum-like fields: backend may send string names, we map them to numeric enums
+      language: this.normalizeCourseLanguage(course.language),
+      status: this.normalizeCourseStatus(course.status),
+      category: this.normalizeLocationCategory(course.category),
       locationId: course.locationId,
-      startDateTime: course.startDateTime ? new Date(course.startDateTime).toISOString().slice(0, 16) : null,
-      endDateTime: course.endDateTime ? new Date(course.endDateTime).toISOString().slice(0, 16) : null,
+      // Show date/time in local time in datetime-local input format (YYYY-MM-DDTHH:mm)
+      startDateTime: course.startDateTime ? this.toLocalInputDateTime(course.startDateTime) : null,
+      endDateTime: course.endDateTime ? this.toLocalInputDateTime(course.endDateTime) : null,
       availableSeats: course.availableSeats,
+      availableOnlineSeats: course.availableOnlineSeats ?? 0,
       price: course.price,
       kpiWeight: course.kpiWeight,
       digitLibraryAvailability: course.digitLibraryAvailability,
@@ -316,9 +561,7 @@ export class CourseFormComponent implements OnInit {
       courseTabId: course.courseTabId,
       organizationId: course.organizationId,
       instructorIds: course.instructorIds || [],
-      targetUserType: course.targetUserType !== null && course.targetUserType !== undefined 
-        ? (typeof course.targetUserType === 'string' ? parseInt(course.targetUserType, 10) : course.targetUserType)
-        : null,
+      targetUserType: this.normalizeTargetUserType(course.targetUserType),
       targetDepartmentIds: course.targetDepartmentIds || [],
       targetDepartmentRole: course.targetDepartmentRole || null, // DEPRECATED: Keep for backward compatibility
       targetDepartmentRoles: course.targetDepartmentRoles || {},
@@ -367,12 +610,35 @@ export class CourseFormComponent implements OnInit {
     // Load locations, departments, and segments for the organization
     if (course.organizationId) {
       this.loadLocations(course.organizationId);
+      
+      // Ensure selectedOrganization is set before loading target user data
+      if (!this.selectedOrganization && this.organizations.length > 0) {
+        this.selectedOrganization = this.organizations.find(org => org.id === course.organizationId);
+      }
+      if (!this.selectedOrganization && course.organization) {
+        this.selectedOrganization = course.organization;
+      }
+      if (this.selectedOrganization) {
+        this.isMainOrg = this.selectedOrganization.isMain === true;
+      }
+      
+      // Load target user data based on target user type
+      const targetUserType = this.form.get('targetUserType')?.value;
+      if (targetUserType !== null && targetUserType !== undefined) {
+        // Use setTimeout to ensure form is fully patched and organization is set
+        setTimeout(() => {
+          this.loadDataForTargetUserType(targetUserType, course.organizationId);
+          this.cdr.detectChanges();
+        }, 300);
+      } else {
+        // If no target user type, load departments and segments for the organization
       if (this.selectedOrganization?.isMain) {
         this.loadDepartments(course.organizationId);
         this.loadSegments(course.organizationId);
       } else {
         // Load segments for non-main organizations too
         this.loadSegments(course.organizationId);
+        }
       }
     }
   }
@@ -429,12 +695,45 @@ export class CourseFormComponent implements OnInit {
       this.courseTabService.getCourseTabs(1, 1000).subscribe({
         next: (response) => {
           this.courseTabs = response.result || [];
+          // If course tab is already selected and we're in add mode, generate code
+          if (!this.isEdit) {
+            const selectedTabId = this.form.get('courseTabId')?.value;
+            if (selectedTabId) {
+              this.generateCodeForCourseTab(selectedTabId);
+            }
+          }
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Error loading course tabs:', error);
         },
       });
+    } else {
+      // Course tabs already loaded, check if we need to generate code
+      if (!this.isEdit) {
+        const selectedTabId = this.form.get('courseTabId')?.value;
+        if (selectedTabId) {
+          this.generateCodeForCourseTab(selectedTabId);
+        }
+      }
+    }
+  }
+
+  /**
+   * Generates code for a selected course tab (only in add mode)
+   */
+  private generateCodeForCourseTab(courseTabId: number | null): void {
+    if (!courseTabId || this.isEdit) return;
+    
+    const selectedTab = this.courseTabs.find(tab => tab.id === courseTabId);
+    if (selectedTab && selectedTab.name) {
+      const generatedCode = this.generateCodeFromCourseTabName(selectedTab.name);
+      // Only auto-fill if code is empty or was previously auto-generated
+      const currentCode = this.form.get('code')?.value;
+      if (!currentCode || currentCode === this.lastGeneratedCode) {
+        this.form.patchValue({ code: generatedCode });
+        this.lastGeneratedCode = generatedCode;
+      }
     }
   }
 
@@ -477,6 +776,7 @@ export class CourseFormComponent implements OnInit {
         this.selectedOrganization = this.organizations[0];
         this.isMainOrg = this.organizations[0].isMain === true; // Update explicit property
         this.organizationDisabled = true;
+        this.form.get('organizationId')?.disable({ emitEvent: false });
         // Load locations for this organization
         this.loadLocations(this.organizations[0].id);
         if (this.organizations[0].isMain) {
@@ -496,6 +796,7 @@ export class CourseFormComponent implements OnInit {
                 this.isMainOrg = userOrg.isMain === true; // Update explicit property
                 if (this.organizations.length === 1) {
                   this.organizationDisabled = true;
+                  this.form.get('organizationId')?.disable({ emitEvent: false });
                 }
                 this.loadLocations(userOrganizationId);
                 if (userOrg.isMain) {
@@ -551,12 +852,14 @@ export class CourseFormComponent implements OnInit {
   }
 
   loadLocations(organizationId: number): void {
-    this.locationService.getLocations(1, 1000, undefined, organizationId).subscribe({
+    const filterCategory = this.getCategoryFilterString();
+
+    this.locationService.getLocations(1, 1000, undefined, organizationId, filterCategory).subscribe({
       next: (response) => {
         // Filter for active, non-deleted locations
         this.locations = (response.result || []).filter(loc => loc.isActive && !loc.isDeleted);
-        const category = this.form.get('category')?.value;
-        this.filterLocationsByCategory(category);
+        // Backend already filtered by organization and category (if provided)
+        this.filteredLocations = [...this.locations];
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -568,38 +871,31 @@ export class CourseFormComponent implements OnInit {
     });
   }
 
-  filterLocationsByCategory(category: LocationCategory | string | number | null | undefined): void {
-    if (!category && category !== 0) {
-      // Show all locations if no category is selected
-      this.filteredLocations = this.locations;
-      this.cdr.detectChanges();
-      return;
+  /**
+   * Returns the backend filterCategory string based on the selected category enum
+   * API expects strings like "Onsite", "Online", "OutSite", "Abroad"
+   */
+  private getCategoryFilterString(): string | undefined {
+    const category = this.form.get('category')?.value;
+    if (category === null || category === undefined || category === '') {
+      return undefined;
     }
     
-    // Convert category to number for comparison
-    let categoryValue: number;
-    if (typeof category === 'string') {
-      // Handle string enum names like "Onsite", "Online", etc.
-      const enumKey = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
-      categoryValue = LocationCategory[enumKey as keyof typeof LocationCategory] ?? Number(category);
-    } else {
-      categoryValue = Number(category);
+    // Category may be number or string representation of the enum value
+    const value = typeof category === 'string' ? Number(category) : category;
+
+    switch (value) {
+      case LocationCategory.Onsite:
+        return 'Onsite';
+      case LocationCategory.Online:
+        return 'Online';
+      case LocationCategory.OutSite:
+        return 'OutSite';
+      case LocationCategory.Abroad:
+        return 'Abroad';
+      default:
+        return undefined;
     }
-    
-    // Filter locations by category - compare as numbers
-    this.filteredLocations = this.locations.filter(loc => {
-      const locCategory = typeof loc.category === 'string' 
-        ? LocationCategory[loc.category as keyof typeof LocationCategory] 
-        : Number(loc.category);
-      return Number(locCategory) === Number(categoryValue);
-    });
-    
-    // Reset locationId if current selection is not in filtered list
-    const currentLocationId = this.form.get('locationId')?.value;
-    if (currentLocationId && !this.filteredLocations.find(l => l.id === currentLocationId)) {
-      this.form.patchValue({ locationId: null });
-    }
-    this.cdr.detectChanges();
   }
 
   loadInstructors(): void {
@@ -861,43 +1157,25 @@ export class CourseFormComponent implements OnInit {
   }
   
   get isMainOrganization(): boolean {
-    // First check if selectedOrganization is set and is main
-    if (this.selectedOrganization?.isMain === true) {
-      return true;
+    // Determine main/non-main strictly from the organizations list used in this popup.
+    // This ensures Add Course and Edit Course behave consistently.
+    const rawOrgId = this.form.get('organizationId')?.value;
+    if (rawOrgId === null || rawOrgId === undefined || rawOrgId === '' || !this.organizations || this.organizations.length === 0) {
+      return false;
     }
-    
-    // Fallback: check form's organizationId and find organization from multiple sources
-    const orgId = this.form.get('organizationId')?.value;
-    if (orgId) {
-      let foundOrg = null;
-      
-      // First try dialog data organizations (most reliable source, available immediately)
-      if (this.dialogRef.data?.organizations && this.dialogRef.data.organizations.length > 0) {
-        foundOrg = this.dialogRef.data.organizations.find((o: any) => o.id === orgId);
-      }
-      
-      // If not found, try organizations array
-      if (!foundOrg && this.organizations.length > 0) {
-        foundOrg = this.organizations.find(o => o.id === orgId);
-      }
-      
-      // If still not found and we're in edit mode, try course organization
-      if (!foundOrg && this.isEdit && this.dialogRef.data?.course?.organization) {
-        const courseOrg = this.dialogRef.data.course.organization;
-        if (courseOrg.id === orgId) {
-          foundOrg = courseOrg;
-        }
-      }
-      
-      // If found, update selectedOrganization and return isMain status
-      if (foundOrg) {
-        const needsUpdate = !this.selectedOrganization || this.selectedOrganization.id !== orgId;
-        if (needsUpdate) {
-          this.selectedOrganization = foundOrg;
-          this.isMainOrg = foundOrg.isMain === true; // Update explicit property
-        }
-        return foundOrg.isMain === true;
-      }
+
+    // organizationId from the form can be a string; normalize to number for comparison
+    const orgId = typeof rawOrgId === 'string' ? Number(rawOrgId) : rawOrgId;
+    if (isNaN(orgId)) {
+      return false;
+    }
+
+    const org = this.organizations.find(o => Number(o.id) === Number(orgId));
+    if (org) {
+      // Keep selectedOrganization in sync for other logic that relies on it.
+      this.selectedOrganization = org;
+      this.isMainOrg = org.isMain === true;
+      return org.isMain === true;
     }
     
     return false;
@@ -905,27 +1183,29 @@ export class CourseFormComponent implements OnInit {
   
   
   get showDepartmentSelection(): boolean {
-    if (!this.isMainOrg) return false;
+    if (!this.isMainOrganization) return false;
     const targetUserType = this.form.get('targetUserType')?.value;
-    const typeValue = typeof targetUserType === 'string' ? parseInt(targetUserType, 10) : targetUserType;
-    return typeValue === TargetUserType.SpecificDepartments;
+    if (targetUserType === null || targetUserType === undefined) return false;
+    const normalizedType = this.normalizeTargetUserType(targetUserType);
+    return normalizedType === TargetUserType.SpecificDepartments;
   }
   
   get showOrganizationSelection(): boolean {
-    if (!this.isMainOrg) return false;
+    if (!this.isMainOrganization) return false;
     const targetUserType = this.form.get('targetUserType')?.value;
-    const typeValue = typeof targetUserType === 'string' ? parseInt(targetUserType, 10) : targetUserType;
-    return typeValue === TargetUserType.SpecificOrganizations;
+    if (targetUserType === null || targetUserType === undefined) return false;
+    const normalizedType = this.normalizeTargetUserType(targetUserType);
+    return normalizedType === TargetUserType.SpecificOrganizations;
   }
   
   get showSegmentSelection(): boolean {
     const targetUserType = this.form.get('targetUserType')?.value;
     if (targetUserType === null || targetUserType === undefined) return false;
-    const typeValue = typeof targetUserType === 'string' ? parseInt(targetUserType, 10) : targetUserType;
-    if (this.isMainOrg) {
-      return typeValue === TargetUserType.SpecificSegments;
+    const normalizedType = this.normalizeTargetUserType(targetUserType);
+    if (this.isMainOrganization) {
+      return normalizedType === TargetUserType.SpecificSegments;
     } else {
-      return typeValue === TargetUserType.SpecificOrganizationSegment;
+      return normalizedType === TargetUserType.SpecificOrganizationSegment;
     }
   }
 
@@ -942,12 +1222,12 @@ export class CourseFormComponent implements OnInit {
     formData.name = formData.courseTitle;
     formData.nameAr = formData.courseTitleAr || '';
 
-    // Format dates for API
+    // Format dates for API - convert to local time string (not UTC)
     if (formData.startDateTime) {
-      formData.startDateTime = new Date(formData.startDateTime).toISOString();
+      formData.startDateTime = this.formatLocalDateTime(formData.startDateTime);
     }
     if (formData.endDateTime) {
-      formData.endDateTime = new Date(formData.endDateTime).toISOString();
+      formData.endDateTime = this.formatLocalDateTime(formData.endDateTime);
     }
 
     // Handle locationId - convert empty string or 0 to null
@@ -966,6 +1246,13 @@ export class CourseFormComponent implements OnInit {
       name: content.name || '',
       nameAr: content.nameAr || ''
     }));
+
+    // Ensure availableOnlineSeats is a non-negative number
+    if (formData.availableOnlineSeats === null || formData.availableOnlineSeats === undefined) {
+      formData.availableOnlineSeats = 0;
+    } else {
+      formData.availableOnlineSeats = Number(formData.availableOnlineSeats) || 0;
+    }
 
     // Handle target user fields
     const isMain = this.isMainOrganization;

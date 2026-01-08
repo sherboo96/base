@@ -79,7 +79,12 @@ public class CoursesController : ControllerBase
                 ? (!organizationId.HasValue || x.OrganizationId == organizationId.Value)
                 : (!effectiveOrgFilter.HasValue || x.OrganizationId == effectiveOrgFilter.Value)) &&
             (!courseTabId.HasValue || x.CourseTabId == courseTabId.Value) &&
-            (!status.HasValue || x.Status == status.Value) &&
+            // Status filtering logic:
+            // - If a status filter is provided (including Completed), return courses with that exact status
+            // - If no status filter is provided, exclude completed courses by default
+            (status.HasValue 
+                ? x.Status == status.Value  // When filtering by status, return courses with that status (including Completed if selected)
+                : x.Status != CourseStatus.Completed) &&  // Default: exclude completed courses when no filter is applied
             (!startDateFrom.HasValue || (x.StartDateTime.HasValue && x.StartDateTime.Value.Date >= startDateFrom.Value.Date)) &&
             (!startDateTo.HasValue || (x.StartDateTime.HasValue && x.StartDateTime.Value.Date <= startDateTo.Value.Date)) &&
             (!endDateFrom.HasValue || (x.EndDateTime.HasValue && x.EndDateTime.Value.Date >= endDateFrom.Value.Date)) &&
@@ -164,11 +169,26 @@ public class CoursesController : ControllerBase
         if (item == null)
             return NotFound(new BaseResponse<CourseDto> { StatusCode = 404, Message = "Course not found." });
 
+        var courseDto = MapToDto(item);
+        
+        // Count online and onsite enrollments
+        var onlineEnrollmentsCount = await _context.CourseEnrollments
+            .CountAsync(ce => ce.CourseId == id && !ce.IsDeleted && ce.IsActive 
+                && ce.Status == EnrollmentStatus.Approve && ce.EnrollmentType == EnrollmentType.Online);
+        
+        var onsiteEnrollmentsCount = await _context.CourseEnrollments
+            .CountAsync(ce => ce.CourseId == id && !ce.IsDeleted && ce.IsActive 
+                && ce.Status == EnrollmentStatus.Approve 
+                && (ce.EnrollmentType == null || ce.EnrollmentType == EnrollmentType.Onsite));
+        
+        courseDto.OnlineEnrollmentsCount = onlineEnrollmentsCount;
+        courseDto.OnsiteEnrollmentsCount = onsiteEnrollmentsCount;
+
         return Ok(new BaseResponse<CourseDto>
         {
             StatusCode = 200,
             Message = "Course retrieved successfully.",
-            Result = MapToDto(item)
+            Result = courseDto
         });
     }
 
@@ -209,6 +229,7 @@ public class CoursesController : ControllerBase
             StartDateTime = dto.StartDateTime,
             EndDateTime = dto.EndDateTime,
             AvailableSeats = dto.AvailableSeats,
+            AvailableOnlineSeats = dto.AvailableOnlineSeats,
             Price = dto.Price,
             KpiWeight = dto.KpiWeight,
             DigitLibraryAvailability = dto.DigitLibraryAvailability,
@@ -222,6 +243,7 @@ public class CoursesController : ControllerBase
             TargetDepartmentRoles = dto.TargetDepartmentRoles != null && dto.TargetDepartmentRoles.Any() ? JsonSerializer.Serialize(dto.TargetDepartmentRoles) : null,
             TargetOrganizationIds = dto.TargetOrganizationIds != null && dto.TargetOrganizationIds.Any() ? JsonSerializer.Serialize(dto.TargetOrganizationIds) : null,
             TargetSegmentIds = dto.TargetSegmentIds != null && dto.TargetSegmentIds.Any() ? JsonSerializer.Serialize(dto.TargetSegmentIds) : null,
+            Questions = dto.Questions,
             CreatedBy = currentUser
         };
 
@@ -298,6 +320,7 @@ public class CoursesController : ControllerBase
                         CourseId = createdId,
                         AdoptionUserId = adoptionUserDto.AdoptionUserId,
                         AdoptionType = adoptionUserDto.AdoptionType,
+                        AttendanceType = adoptionUserDto.AttendanceType,
                         CreatedBy = currentUser
                     };
                     await _context.CourseAdoptionUsers.AddAsync(courseAdoptionUser);
@@ -384,6 +407,7 @@ public class CoursesController : ControllerBase
         existing.StartDateTime = dto.StartDateTime;
         existing.EndDateTime = dto.EndDateTime;
         existing.AvailableSeats = dto.AvailableSeats;
+        existing.AvailableOnlineSeats = dto.AvailableOnlineSeats;
         existing.Price = dto.Price;
         existing.KpiWeight = dto.KpiWeight;
         existing.DigitLibraryAvailability = dto.DigitLibraryAvailability;
@@ -397,6 +421,7 @@ public class CoursesController : ControllerBase
         existing.TargetDepartmentRoles = dto.TargetDepartmentRoles != null && dto.TargetDepartmentRoles.Any() ? JsonSerializer.Serialize(dto.TargetDepartmentRoles) : null;
         existing.TargetOrganizationIds = dto.TargetOrganizationIds != null && dto.TargetOrganizationIds.Any() ? JsonSerializer.Serialize(dto.TargetOrganizationIds) : null;
         existing.TargetSegmentIds = dto.TargetSegmentIds != null && dto.TargetSegmentIds.Any() ? JsonSerializer.Serialize(dto.TargetSegmentIds) : null;
+        existing.Questions = dto.Questions;
         existing.UpdatedAt = DateTime.Now;
         existing.UpdatedBy = currentUser;
 
@@ -495,6 +520,7 @@ public class CoursesController : ControllerBase
                         CourseId = id,
                         AdoptionUserId = adoptionUserDto.AdoptionUserId,
                         AdoptionType = adoptionUserDto.AdoptionType,
+                        AttendanceType = adoptionUserDto.AttendanceType,
                         CreatedBy = currentUser
                     };
                     await _context.CourseAdoptionUsers.AddAsync(courseAdoptionUser);
@@ -684,6 +710,7 @@ public class CoursesController : ControllerBase
             StartDateTime = course.StartDateTime,
             EndDateTime = course.EndDateTime,
             AvailableSeats = course.AvailableSeats,
+            AvailableOnlineSeats = course.AvailableOnlineSeats,
             Price = course.Price,
             KpiWeight = course.KpiWeight,
             DigitLibraryAvailability = course.DigitLibraryAvailability,
@@ -752,10 +779,10 @@ public class CoursesController : ControllerBase
                     NameAr = cau.AdoptionUser.NameAr,
                     Email = cau.AdoptionUser.Email,
                     Bio = cau.AdoptionUser.Bio,
-                    Attendance = cau.AdoptionUser.Attendance,
                     OrganizationId = cau.AdoptionUser.OrganizationId
                 } : null,
-                AdoptionType = cau.AdoptionType
+                AdoptionType = cau.AdoptionType,
+                AttendanceType = cau.AttendanceType
             }).ToList() ?? new List<CourseAdoptionUserDto>(),
             CourseContacts = course.CourseContacts?.Select(cc => new CourseContactDto
             {

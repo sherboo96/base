@@ -480,4 +480,100 @@ public class OrganizationsController : ControllerBase
             .Cast<object>()
             .ToList();
     }
+
+    [HttpPost("bulk-upload")]
+    public async Task<IActionResult> BulkUpload([FromBody] List<BulkOrganizationUploadDto> organizations)
+    {
+        if (organizations == null || organizations.Count == 0)
+        {
+            return BadRequest(new BaseResponse<BulkOrganizationUploadResponse>
+            {
+                StatusCode = 400,
+                Message = "No organizations provided.",
+                Result = new BulkOrganizationUploadResponse
+                {
+                    TotalProcessed = 0,
+                    SuccessfullyAdded = 0,
+                    Skipped = 0
+                }
+            });
+        }
+
+        var response = new BulkOrganizationUploadResponse
+        {
+            TotalProcessed = organizations.Count
+        };
+
+        // Get current user for CreatedBy
+        var currentUser = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value 
+                          ?? User.FindFirst("UserName")?.Value 
+                          ?? User.FindFirst("username")?.Value
+                          ?? User.Identity?.Name 
+                          ?? "System";
+
+        // Get all existing domains to check for duplicates
+        var existingOrganizations = await _unitOfWork.Organizations.GetAllAsync();
+        var existingDomains = existingOrganizations
+            .Where(o => !string.IsNullOrWhiteSpace(o.Domain))
+            .Select(o => o.Domain.ToLower().Trim())
+            .ToHashSet();
+
+        foreach (var orgDto in organizations)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(orgDto.NameEn) || 
+                    string.IsNullOrWhiteSpace(orgDto.Code) || 
+                    string.IsNullOrWhiteSpace(orgDto.Domain))
+                {
+                    response.Errors.Add($"Organization with code '{orgDto.Code}' is missing required fields (name_en, code, or domain).");
+                    continue;
+                }
+
+                // Check if domain already exists (case-insensitive)
+                var domainLower = orgDto.Domain.ToLower().Trim();
+                if (existingDomains.Contains(domainLower))
+                {
+                    response.Skipped++;
+                    response.SkippedDomains.Add(orgDto.Domain);
+                    continue;
+                }
+
+                // Create new organization
+                var organization = new Organization
+                {
+                    Name = orgDto.NameEn.Trim(),
+                    NameAr = !string.IsNullOrWhiteSpace(orgDto.NameAr) ? orgDto.NameAr.Trim() : orgDto.NameEn.Trim(),
+                    Code = orgDto.Code.Trim(),
+                    Domain = orgDto.Domain.Trim(),
+                    IsMain = false,
+                    AllowedLoginMethods = null,
+                    DefaultLoginMethod = LoginMethod.OTPVerification,
+                    CreatedBy = currentUser,
+                    CreatedOn = DateTime.UtcNow,
+                    IsActive = true,
+                    IsDeleted = false
+                };
+
+                await _unitOfWork.Organizations.AddAsync(organization);
+                await _unitOfWork.CompleteAsync();
+
+                // Add to existing domains set to prevent duplicates within the same batch
+                existingDomains.Add(domainLower);
+                response.SuccessfullyAdded++;
+            }
+            catch (Exception ex)
+            {
+                response.Errors.Add($"Error processing organization '{orgDto.Code}': {ex.Message}");
+            }
+        }
+
+        return Ok(new BaseResponse<BulkOrganizationUploadResponse>
+        {
+            StatusCode = 200,
+            Message = $"Bulk upload completed. Added: {response.SuccessfullyAdded}, Skipped: {response.Skipped}, Errors: {response.Errors.Count}",
+            Result = response
+        });
+    }
 }

@@ -614,7 +614,7 @@ public class AuthenticationsController : ControllerBase
             }
 
             // Find and assign default role for the organization
-            // Priority: 1) Organization-specific default role, 2) Global default role (ApplyToAllOrganizations)
+            // Priority: 1) Organization-specific default role, 2) Global default role (ApplyToAllOrganizations), 3) Fallback role
             // First try to find organization-specific default role
             var defaultRole = await _unitOfWork.Roles.FindAsync(
                 r => !r.IsDeleted && 
@@ -628,11 +628,32 @@ public class AuthenticationsController : ControllerBase
             {
                 defaultRole = await _unitOfWork.Roles.FindAsync(
                     r => !r.IsDeleted && 
-                         r.IsDefault && 
                          r.IsActive &&
-                         r.ApplyToAllOrganizations &&
-                         (!r.OrganizationId.HasValue || r.OrganizationId == null)
+                         r.IsFallback
                 );
+            }
+
+            // If no default role found, try fallback role
+            if (defaultRole == null)
+            {
+                // First try organization-specific fallback role
+                defaultRole = await _unitOfWork.Roles.FindAsync(
+                    r => !r.IsDeleted && 
+                         r.IsFallback && 
+                         r.IsActive
+                );
+                
+                // If no organization-specific fallback, try global fallback role
+                if (defaultRole == null)
+                {
+                    defaultRole = await _unitOfWork.Roles.FindAsync(
+                        r => !r.IsDeleted && 
+                             r.IsFallback && 
+                             r.IsActive &&
+                             r.ApplyToAllOrganizations &&
+                             (!r.OrganizationId.HasValue || r.OrganizationId == null)
+                    );
+                }
             }
 
             if (defaultRole != null)

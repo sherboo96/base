@@ -12,6 +12,8 @@ import {
   Organization,
   OrganizationService,
   OrganizationResponse,
+  BulkOrganizationUpload,
+  BulkOrganizationUploadResponse,
 } from '../../../services/organization.service';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingService } from '../../../services/loading.service';
@@ -20,6 +22,7 @@ import { finalize } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { DialogService, DialogConfig } from '@ngneat/dialog';
+import { OrganizationBulkUploadComponent } from './organization-bulk-upload/organization-bulk-upload.component';
 import { OrganizationFormComponent } from './organization-form/organization-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { TranslationService } from '../../../services/translation.service';
@@ -409,6 +412,108 @@ export class OrganizationComponent implements OnInit, OnDestroy {
           error.error?.message || this.translationService.instant('organization.exportError')
         );
         this.loadingService.hide();
+      }
+    });
+  }
+
+  openBulkUploadDialog(): void {
+    const dialogRef = this.dialogService.open(OrganizationBulkUploadComponent, {
+      data: {},
+      width: '90vw',
+      maxWidth: '900px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'lg',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Reload organizations after successful upload
+        this.fetchOrganizations();
+      }
+    });
+  }
+
+  handleBulkUpload(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const jsonContent = JSON.parse(e.target.result);
+        
+        // Handle both single object and array
+        let organizations: BulkOrganizationUpload[] = [];
+        if (Array.isArray(jsonContent)) {
+          organizations = jsonContent;
+        } else {
+          // Single object, wrap in array
+          organizations = [jsonContent];
+        }
+
+        // Validate and transform the data to match backend DTO format (camelCase)
+        const transformedOrgs: BulkOrganizationUpload[] = organizations.map((org: any) => ({
+          nameEn: org.name_en || org.nameEn || org.name || '',
+          nameAr: org.name_ar || org.nameAr || '',
+          code: org.code || '',
+          domain: org.domain || ''
+        }));
+
+        // Validate required fields
+        const invalidOrgs = transformedOrgs.filter(org => 
+          !org.nameEn || !org.code || !org.domain
+        );
+
+        if (invalidOrgs.length > 0) {
+          this.toastr.error(
+            this.translationService.instant('organization.bulkUploadInvalidData')
+          );
+          return;
+        }
+
+        // Proceed with upload
+        this.uploadOrganizations(transformedOrgs);
+      } catch (error: any) {
+        console.error('Error parsing JSON:', error);
+        this.toastr.error(
+          this.translationService.instant('organization.bulkUploadParseError')
+        );
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  uploadOrganizations(organizations: BulkOrganizationUpload[]): void {
+    this.loadingService.show();
+    this.organizationService.bulkUploadOrganizations(organizations).subscribe({
+      next: (response: any) => {
+        const result: BulkOrganizationUploadResponse = response.result || response;
+        this.loadingService.hide();
+        
+        let message = this.translationService.instant('organization.bulkUploadSuccess', {
+          added: result.successfullyAdded,
+          skipped: result.skipped,
+          total: result.totalProcessed
+        });
+
+        if (result.skippedDomains && result.skippedDomains.length > 0) {
+          message += `\n${this.translationService.instant('organization.skippedDomains')}: ${result.skippedDomains.join(', ')}`;
+        }
+
+        if (result.errors && result.errors.length > 0) {
+          message += `\n${this.translationService.instant('organization.errors')}: ${result.errors.length}`;
+          console.error('Bulk upload errors:', result.errors);
+        }
+
+        this.toastr.success(message, '', { timeOut: 5000 });
+        this.fetchOrganizations(); // Refresh the list
+      },
+      error: (error: any) => {
+        this.loadingService.hide();
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('organization.bulkUploadError')
+        );
       }
     });
   }

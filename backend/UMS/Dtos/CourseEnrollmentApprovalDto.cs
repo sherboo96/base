@@ -19,6 +19,7 @@ public class ApproveEnrollmentStepDto
     public int CourseEnrollmentId { get; set; }
     public int CourseTabApprovalId { get; set; }
     public string? Comments { get; set; }
+    public EnrollmentType? EnrollmentType { get; set; } // Onsite or Online enrollment type (for final step)
 }
 
 public class RejectEnrollmentStepDto

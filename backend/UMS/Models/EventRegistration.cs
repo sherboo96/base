@@ -26,6 +26,8 @@ public class EventRegistration : BaseModel
     public Event Event { get; set; }
     public int? EventOrganizationId { get; set; }
     public EventOrganization? EventOrganization { get; set; }
+    public bool IsManual { get; set; } = false; // Flag to indicate manual registration (no email sent)
+    public VipStatus VipStatus { get; set; } = VipStatus.Attendee; // VIP status: Attendee, VIP, or VVIP
 
     [JsonIgnore]
     public ICollection<EventAttendee> Attendees { get; set; } = new List<EventAttendee>();

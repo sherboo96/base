@@ -109,6 +109,12 @@ public class LocationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] LocationDto dto)
     {
+        // Ensure Category is valid
+        if (!Enum.IsDefined(typeof(LocationCategory), dto.Category))
+        {
+            return BadRequest(new BaseResponse<Location> { StatusCode = 400, Message = "Invalid location category." });
+        }
+        
         var entity = await _unitOfWork.Locations.AddAsync(dto);
         await _unitOfWork.CompleteAsync();
         
@@ -123,6 +129,12 @@ public class LocationsController : ControllerBase
     {
         var existing = await _unitOfWork.Locations.FindAsync(x => x.Id == id && !x.IsDeleted);
         if (existing == null) return NotFound(new BaseResponse<Location> { StatusCode = 404, Message = "Location not found." });
+
+        // Ensure Category is valid
+        if (!Enum.IsDefined(typeof(LocationCategory), dto.Category))
+        {
+            return BadRequest(new BaseResponse<Location> { StatusCode = 400, Message = "Invalid location category." });
+        }
 
         existing.Name = dto.Name;
         existing.NameAr = dto.NameAr;

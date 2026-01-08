@@ -10,6 +10,7 @@ public class Role: BaseModel
     public int? OrganizationId { get; set; } // Organization this role belongs to (nullable for roles that apply to all organizations)
     public Organization? Organization { get; set; }
     public bool IsDefault { get; set; } = false; // If true, this role is assigned by default to new users in the organization
+    public bool IsFallback { get; set; } = false; // If true, this role is used as fallback when organization has no default role
 
     [JsonIgnore]
     public ICollection<RolePermission> RolePermissions { get; set; }

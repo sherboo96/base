@@ -26,6 +26,7 @@ public class UnitOfWork : IUnitOfWork
         Institutions = new BaseRepository<Institution, InstitutionDto>(_context, _mapper);
         Instructors = new BaseRepository<Instructor, InstructorDto>(_context, _mapper);
         SystemConfigurations = new BaseRepository<SystemConfiguration, SystemConfigurationDto>(_context, _mapper);
+        Publics = new BaseRepository<Public, PublicDto>(_context, _mapper);
         Locations = new BaseRepository<Location, LocationDto>(_context, _mapper);
         Segments = new SegmentRepository(_context, _mapper);
         AdoptionUsers = new BaseRepository<AdoptionUser, AdoptionUserDto>(_context, _mapper);
@@ -33,6 +34,7 @@ public class UnitOfWork : IUnitOfWork
         Courses = new BaseRepository<Course, CourseDto>(_context, _mapper);
         CourseTabApprovals = new BaseRepository<CourseTabApproval, CourseTabApprovalDto>(_context, _mapper);
         CourseEnrollmentApprovals = new BaseRepository<CourseEnrollmentApproval, CourseEnrollmentApprovalDto>(_context, _mapper);
+        CourseQuestions = new BaseRepository<CourseQuestion, CourseQuestionDto>(_context, _mapper);
         Events = new BaseRepository<Event, EventDto>(_context, _mapper);
         EventSpeakers = new BaseRepository<EventSpeaker, EventSpeakerDto>(_context, _mapper);
         EventOrganizations = new BaseRepository<EventOrganization, EventOrganizationDto>(_context, _mapper);
@@ -53,6 +55,7 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<Institution, InstitutionDto> Institutions { get; private set; }
     public IBaseRepository<Instructor, InstructorDto> Instructors { get; private set; }
     public IBaseRepository<SystemConfiguration, SystemConfigurationDto> SystemConfigurations { get; private set; }
+    public IBaseRepository<Public, PublicDto> Publics { get; private set; }
     public IBaseRepository<Location, LocationDto> Locations { get; private set; }
     public ISegmentRepository Segments { get; private set; }
     public IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; private set; }
@@ -60,6 +63,7 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<Course, CourseDto> Courses { get; private set; }
     public IBaseRepository<CourseTabApproval, CourseTabApprovalDto> CourseTabApprovals { get; private set; }
     public IBaseRepository<CourseEnrollmentApproval, CourseEnrollmentApprovalDto> CourseEnrollmentApprovals { get; private set; }
+    public IBaseRepository<CourseQuestion, CourseQuestionDto> CourseQuestions { get; private set; }
     public IBaseRepository<Event, EventDto> Events { get; private set; }
     public IBaseRepository<EventSpeaker, EventSpeakerDto> EventSpeakers { get; private set; }
     public IBaseRepository<EventOrganization, EventOrganizationDto> EventOrganizations { get; private set; }

@@ -345,6 +345,49 @@ this.apiService.getData('endpoint').subscribe({
 });
 ```
 
+### CRITICAL: Always Reload View After API Operations
+**MANDATORY RULE:** When integrating any API call in the frontend that modifies data (CREATE, UPDATE, DELETE), you MUST reload the view to display the updated API response.
+
+**Pattern to Follow:**
+```typescript
+// After successful API operation (create, update, delete)
+this.service.createOrUpdate(data).subscribe({
+  next: (response) => {
+    this.toastr.success('Operation successful');
+    this.loadingService.hide();
+    // ALWAYS reload data to display updated API response
+    this.loadData(); // or this.fetchData(), this.refreshData(), etc.
+  },
+  error: (error) => {
+    this.toastr.error('Operation failed');
+    this.loadingService.hide();
+  }
+});
+```
+
+**For Dialog Operations:**
+```typescript
+const dialogRef = this.dialogService.open(FormComponent, { data: {...} });
+
+dialogRef.afterClosed$.subscribe((result) => {
+  if (result) {
+    // ALWAYS reload data after dialog closes with success
+    this.loadData(); // Reload to display updated API response
+  }
+});
+```
+
+**Why This Rule Exists:**
+- Ensures UI always reflects the latest server state
+- Prevents stale data from being displayed
+- Ensures any server-side transformations are visible
+- Maintains data consistency between frontend and backend
+- Critical for multi-user environments
+
+**Exceptions:**
+- Read-only operations (GET requests) don't need reload if data is already fresh
+- Real-time updates via WebSockets/SignalR (data updates automatically)
+
 ### Authentication:
 - Store JWT token in localStorage via `StorageService`
 - Token automatically added by `AuthInterceptor`

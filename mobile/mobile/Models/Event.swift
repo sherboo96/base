@@ -14,6 +14,7 @@ struct Event: Codable, Identifiable, Hashable {
     let location: Location?
     let speakers: [EventSpeaker]?
     let isActive: Bool?
+    let registrationCount: Int?
     let createdAt: String?
 }
 

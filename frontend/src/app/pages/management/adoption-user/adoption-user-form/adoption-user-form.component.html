@@ -68,30 +68,6 @@
                 </div>
             </div>
 
-            <!-- Attendance -->
-            <div class="space-y-2">
-                <label for="attendance" class="block text-sm font-medium text-textDark font-poppins">
-                    {{ 'adoptionUser.attendance' | translate }}
-                    <span class="text-red-500">*</span>
-                </label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-calendar-check text-gray-400"></i>
-                    </div>
-                    <select id="attendance" formControlName="attendance" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-10 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white">
-                        <option [value]="1">{{ 'adoptionUser.attendance.optional' | translate }}</option>
-                        <option [value]="2">{{ 'adoptionUser.attendance.mandatory' | translate }}</option>
-                    </select>
-                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <i class="fas fa-chevron-down text-gray-400"></i>
-                    </div>
-                </div>
-                <div *ngIf="form.get('attendance')?.invalid && form.get('attendance')?.touched" class="flex items-center text-sm text-red-600">
-                    <i class="fas fa-exclamation-circle mr-1"></i>
-                    {{ 'adoptionUser.attendanceRequired' | translate }}
-                </div>
-            </div>
-
             <!-- Organization -->
             <div class="space-y-2">
                 <label for="organizationId" class="block text-sm font-medium text-textDark font-poppins">

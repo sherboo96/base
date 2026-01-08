@@ -135,6 +135,7 @@ public class EventRegistrationsController : ControllerBase
             Status = EventRegistrationStatus.Draft, // Set to Draft - will be approved later
             EventId = dto.EventId,
             EventOrganizationId = eventOrganizationId,
+            VipStatus = dto.VipStatus, // Set VIP status
             CreatedBy = "Public",
             UpdatedBy = "System",
             UpdatedAt = DateTime.UtcNow
@@ -209,13 +210,133 @@ public class EventRegistrationsController : ControllerBase
         });
     }
 
+    // Manual registration endpoint - requires authentication, does not send email, generates QR
+    [HttpPost("manual")]
+    [Authorize]
+    public async Task<IActionResult> CreateManual([FromBody] EventRegistrationDto dto)
+    {
+        _logger.LogInformation($"Received manual registration request. EventId: {dto.EventId}, Name: {dto.Name}, Email: {dto.Email}");
+
+        // Validate event exists
+        var eventEntity = await _unitOfWork.Events.FindAsync(
+            x => x.Id == dto.EventId && !x.IsDeleted
+        );
+
+        if (eventEntity == null)
+        {
+            return BadRequest(new BaseResponse<EventRegistrationDto>
+            {
+                StatusCode = 400,
+                Message = "Event not found.",
+                Result = null
+            });
+        }
+
+        // Check if email already registered for this event (if email provided)
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+        {
+            var existingRegistration = await _unitOfWork.EventRegistrations.FindAsync(
+                x => x.EventId == dto.EventId && x.Email == dto.Email && !x.IsDeleted
+            );
+
+            if (existingRegistration != null)
+            {
+                return BadRequest(new BaseResponse<EventRegistrationDto>
+                {
+                    StatusCode = 400,
+                    Message = "Email already registered for this event.",
+                    Result = null
+                });
+            }
+        }
+
+        // Generate unique barcode using event code
+        var barcode = GenerateBarcode(eventEntity.Code);
+
+        // Handle "Other" organization - create new EventOrganization if provided
+        int? eventOrganizationId = dto.EventOrganizationId;
+        bool isOtherOrganization = !string.IsNullOrWhiteSpace(dto.OtherOrganization);
+
+        if (isOtherOrganization)
+        {
+            var orgName = dto.OtherOrganization.Trim();
+
+            // Check if organization with same name already exists
+            var existingOrg = await _unitOfWork.EventOrganizations.FindAsync(
+                x => x.Name.ToLower() == orgName.ToLower() && !x.IsDeleted
+            );
+
+            if (existingOrg == null)
+            {
+                // Create new EventOrganization
+                var newOrg = new EventOrganization
+                {
+                    Name = orgName,
+                    NameAr = orgName,
+                    IsMain = false,
+                    IsActive = true,
+                    CreatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System",
+                    CreatedOn = DateTime.UtcNow
+                };
+
+                var orgEntity = await _unitOfWork.EventOrganizations.AddAsync(newOrg);
+                await _unitOfWork.CompleteAsync();
+                eventOrganizationId = ((EventOrganization)orgEntity).Id;
+            }
+            else
+            {
+                eventOrganizationId = existingOrg.Id;
+            }
+        }
+
+        var registration = new EventRegistration
+        {
+            Name = dto.Name,
+            NameAr = dto.NameAr,
+            Phone = dto.Phone ?? string.Empty, // Phone is optional for manual registration
+            Email = dto.Email ?? string.Empty, // Email is optional for manual registration
+            JobTitle = dto.JobTitle,
+            Barcode = barcode,
+            Status = dto.Status, // Use status from DTO (Draft if user selected, Approved if filled directly)
+            EventId = dto.EventId,
+            EventOrganizationId = eventOrganizationId,
+            IsManual = true, // Mark as manual registration
+            VipStatus = dto.VipStatus, // Set VIP status
+            CreatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System",
+            UpdatedBy = "System",
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var entity = await _unitOfWork.EventRegistrations.AddAsync(registration);
+        await _unitOfWork.CompleteAsync();
+
+        var registrationId = ((EventRegistration)entity).Id;
+
+        // Reload registration with related entities
+        var result = await _context.EventRegistrations
+            .Include(r => r.Event)
+            .Include(r => r.EventOrganization)
+            .FirstOrDefaultAsync(r => r.Id == registrationId);
+
+        // Note: We do NOT send email for manual registrations
+        // QR code is generated via the badge endpoint when needed
+
+        return CreatedAtAction(nameof(GetById), new { id = registrationId }, new BaseResponse<EventRegistrationDto>
+        {
+            StatusCode = 201,
+            Message = "Manual registration created successfully. QR code generated.",
+            Result = MapToDto(result ?? registration)
+        });
+    }
+
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
-        [FromQuery] int? eventId = null)
+        [FromQuery] int? eventId = null,
+        [FromQuery] EventRegistrationStatus? status = null)
     {
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 20;
@@ -233,7 +354,8 @@ public class EventRegistrationsController : ControllerBase
              x.Email.ToLower().Contains(searchLower) ||
              (x.Phone != null && x.Phone.Contains(searchLower)) ||
              (x.Barcode != null && x.Barcode.Contains(searchLower))) &&
-            (!eventId.HasValue || x.EventId == eventId.Value);
+            (!eventId.HasValue || x.EventId == eventId.Value) &&
+            (!status.HasValue || x.Status == status.Value);
 
         Expression<Func<EventRegistration, object>> orderBy = x => x.CreatedOn;
 
@@ -721,6 +843,87 @@ public class EventRegistrationsController : ControllerBase
         });
     }
 
+    [HttpPut("{id}")]
+    [Authorize]
+    public async Task<IActionResult> Update(int id, [FromBody] EventRegistrationDto dto)
+    {
+        var registration = await _unitOfWork.EventRegistrations.FindAsync(
+            x => x.Id == id && !x.IsDeleted
+        );
+
+        if (registration == null)
+        {
+            return NotFound(new BaseResponse<EventRegistrationDto>
+            {
+                StatusCode = 404,
+                Message = "Registration not found.",
+                Result = null
+            });
+        }
+
+        // Update allowed fields: Name, JobTitle, EventOrganizationId, VipStatus
+        // Only update properties that are provided in the DTO (not null/empty/default)
+        // This prevents overwriting existing values when only updating VipStatus
+        
+        // Check if Name is provided and not empty (since default is string.Empty, we check if it's not empty)
+        // Only update if the new value is not empty AND different from existing
+        if (!string.IsNullOrWhiteSpace(dto.Name) && dto.Name != registration.Name)
+        {
+            registration.Name = dto.Name;
+        }
+        
+        // JobTitle: Only update if provided (not null) and different from existing
+        // This prevents overwriting with null when not provided, but allows clearing by sending empty string
+        if (dto.JobTitle != null && dto.JobTitle != registration.JobTitle)
+        {
+            registration.JobTitle = dto.JobTitle;
+        }
+        
+        // VipStatus: Always update (enum value, frontend always sends current value)
+        registration.VipStatus = dto.VipStatus;
+        
+        // Update organization if provided (has a value) and different from existing
+        if (dto.EventOrganizationId.HasValue && dto.EventOrganizationId.Value != registration.EventOrganizationId)
+        {
+            // Verify the organization exists
+            var eventOrg = await _unitOfWork.EventOrganizations.FindAsync(
+                x => x.Id == dto.EventOrganizationId.Value && !x.IsDeleted
+            );
+            
+            if (eventOrg == null)
+            {
+                return BadRequest(new BaseResponse<EventRegistrationDto>
+                {
+                    StatusCode = 400,
+                    Message = "Event organization not found.",
+                    Result = null
+                });
+            }
+            
+            registration.EventOrganizationId = dto.EventOrganizationId.Value;
+        }
+        // Note: We don't clear EventOrganizationId if null is provided, to avoid accidental clearing
+
+        registration.UpdatedAt = DateTime.UtcNow;
+        registration.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+
+        await _unitOfWork.EventRegistrations.UpdateAsync(registration);
+        await _unitOfWork.CompleteAsync();
+
+        // Reload to get updated data with related entities
+        var updatedRegistration = await _unitOfWork.EventRegistrations.FindAsync(
+            x => x.Id == id && !x.IsDeleted,
+            new[] { "Event", "EventOrganization", "Attendees" }
+        );
+
+        return Ok(new BaseResponse<EventRegistrationDto>
+        {
+            StatusCode = 200,
+            Message = "Registration updated successfully.",
+            Result = MapToDto(updatedRegistration)
+        });
+    }
+
     [HttpPost("{id}/reject")]
     [Authorize]
     public async Task<IActionResult> Reject(int id)
@@ -815,6 +1018,8 @@ public class EventRegistrationsController : ControllerBase
             ConfirmationEmailSentAt = registration.ConfirmationEmailSentAt,
             FinalApprovalEmailSent = registration.FinalApprovalEmailSent,
             FinalApprovalEmailSentAt = registration.FinalApprovalEmailSentAt,
+            IsManual = registration.IsManual,
+            VipStatus = registration.VipStatus,
             EventId = registration.EventId,
             Event = registration.Event != null ? new EventDto
             {
@@ -896,7 +1101,11 @@ public class EventRegistrationsController : ControllerBase
     public async Task<IActionResult> ExportToExcel(
         [FromQuery] int? eventId = null,
         [FromQuery] string? search = null,
-        [FromQuery] EventRegistrationStatus? status = null)
+        [FromQuery] EventRegistrationStatus? status = null,
+        [FromQuery] VipStatus? vipStatus = null,
+        [FromQuery] bool? isManual = null,
+        [FromQuery] bool excludeMainOrganization = false,
+        [FromQuery] int? eventOrganizationId = null)
     {
         try
         {
@@ -934,6 +1143,30 @@ public class EventRegistrationsController : ControllerBase
                 registrations = registrations.Where(r => r.Status == status.Value).ToList();
             }
 
+            // Apply VIP status filter
+            if (vipStatus.HasValue)
+            {
+                registrations = registrations.Where(r => r.VipStatus == vipStatus.Value).ToList();
+            }
+
+            // Apply IsManual filter
+            if (isManual.HasValue)
+            {
+                registrations = registrations.Where(r => r.IsManual == isManual.Value).ToList();
+            }
+
+            // Apply eventOrganizationId filter
+            if (eventOrganizationId.HasValue)
+            {
+                registrations = registrations.Where(r => r.EventOrganizationId == eventOrganizationId.Value).ToList();
+            }
+
+            // Exclude main organization if requested
+            if (excludeMainOrganization)
+            {
+                registrations = registrations.Where(r => r.EventOrganization == null || !r.EventOrganization.IsMain).ToList();
+            }
+
             // Build CSV content
             var csvRows = new List<string>();
             
@@ -945,8 +1178,11 @@ public class EventRegistrationsController : ControllerBase
                 "Name (Arabic)",
                 "Phone",
                 "Email",
+                "Job Title",
                 "Barcode",
                 "Status",
+                "VIP Status",
+                "Is Manual",
                 "Email Sent",
                 "Email Sent At",
                 "Check-In Date",
@@ -977,8 +1213,17 @@ public class EventRegistrationsController : ControllerBase
                     registration.NameAr ?? "",
                     registration.Phone ?? "",
                     registration.Email ?? "",
+                    registration.JobTitle ?? "",
                     registration.Barcode ?? "",
                     statusText,
+                    registration.VipStatus switch
+                    {
+                        VipStatus.Attendee => "Attendee",
+                        VipStatus.Vip => "VIP",
+                        VipStatus.VVip => "V VIP",
+                        _ => "Attendee"
+                    },
+                    registration.IsManual ? "Yes" : "No",
                     registration.EmailSent ? "Yes" : "No",
                     registration.EmailSentAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "",
                     latestCheckIn?.CheckInDateTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "",
@@ -1006,11 +1251,9 @@ public class EventRegistrationsController : ControllerBase
 
             // Determine filename
             var eventName = registrations.FirstOrDefault()?.Event?.Name ?? "Event";
-            var statusSuffix = status.HasValue
-                ? (status.Value == EventRegistrationStatus.Approved ? "Approved" : "Rejected")
-                : "All";
+            var exportType = excludeMainOrganization ? "WithoutMainOrg" : "All";
             var dateStr = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            var filename = $"Event_Registrations_{statusSuffix}_{eventName.Replace(" ", "_")}_{dateStr}.csv";
+            var filename = $"Event_Registrations_{exportType}_{eventName.Replace(" ", "_")}_{dateStr}.csv";
 
             return File(result, "text/csv; charset=utf-8", filename);
         }

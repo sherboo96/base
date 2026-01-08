@@ -46,6 +46,25 @@
       </select>
     </div>
 
+    <!-- Attendance Type -->
+    <div class="space-y-2">
+      <label for="attendanceType" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.attendanceType' | translate }} <span class="text-red-500">*</span>
+      </label>
+      <select
+        id="attendanceType"
+        formControlName="attendanceType"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
+        [class.border-red-500]="form.get('attendanceType')?.invalid && form.get('attendanceType')?.touched"
+      >
+        <option [ngValue]="AttendanceType.Optional">{{ 'course.attendanceTypeOptional' | translate }}</option>
+        <option [ngValue]="AttendanceType.Mandatory">{{ 'course.attendanceTypeMandatory' | translate }}</option>
+      </select>
+      <p *ngIf="form.get('attendanceType')?.invalid && form.get('attendanceType')?.touched" class="text-xs text-red-600">
+        {{ 'course.attendanceTypeRequired' | translate }}
+      </p>
+    </div>
+
     <!-- Actions -->
     <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
       <button

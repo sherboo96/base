@@ -14,6 +14,10 @@ struct EventRegistrationsView: View {
     @State private var showQRScannerForSearch = false
     @State private var animateGradient = false
     @State private var statusFilter: EventRegistrationStatus? = nil
+    @State private var vipFilter: VipStatus? = nil // nil = all, .vip = VIP only, .vVip = VVIP only, .attendee = Attendee only
+    @State private var isStatusFilterExpanded = false
+    @State private var isVipFilterExpanded = false
+    @State private var isOrganizationFilterExpanded = false
     @State private var showSeatNumberDialog = false
     @State private var selectedRegistrationForSeat: EventRegistration? = nil
     @State private var seatNumberInput = ""
@@ -115,6 +119,7 @@ struct EventRegistrationsView: View {
                 registration.name.lowercased().contains(searchLower) ||
                 (registration.nameAr?.lowercased().contains(searchLower) ?? false) ||
                 registration.email.lowercased().contains(searchLower) ||
+                (registration.jobTitle?.lowercased().contains(searchLower) ?? false) ||
                 (registration.barcode?.lowercased().contains(searchLower) ?? false) ||
                 (registration.eventOrganization?.name.lowercased().contains(searchLower) ?? false) ||
                 (registration.eventOrganization?.nameAr?.lowercased().contains(searchLower) ?? false)
@@ -131,6 +136,13 @@ struct EventRegistrationsView: View {
             filtered = filtered.filter { $0.status == status }
         }
         // If no status filter is selected, show all registrations (including those with null status)
+        
+        // Apply VIP filter
+        if let vipStatus = vipFilter {
+            filtered = filtered.filter { 
+                ($0.vipStatus ?? .attendee) == vipStatus
+            }
+        }
         
         // Group by organization
         let grouped = Dictionary(grouping: filtered) { registration in
@@ -168,12 +180,12 @@ struct EventRegistrationsView: View {
                 gradient: Gradient(colors: [
                     Color.systemAccent.opacity(0.05),
                     Color.systemAccentLight.opacity(0.03),
-                    Color(.systemGroupedBackground)
+            Color(.systemGroupedBackground)
                 ]),
                 startPoint: animateGradient ? .topLeading : .bottomLeading,
                 endPoint: animateGradient ? .bottomTrailing : .topTrailing
             )
-            .ignoresSafeArea()
+                .ignoresSafeArea()
             .onAppear {
                 withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
                     animateGradient.toggle()
@@ -207,8 +219,8 @@ struct EventRegistrationsView: View {
                         .foregroundColor(.systemTextDark)
                 }
             } else {
-                VStack(spacing: 0) {
-                    // Search and Filter Section
+                    VStack(spacing: 0) {
+                        // Search and Filter Section
                     VStack(spacing: 16) {
                             // Search Bar with Scan QR Button
                             HStack(spacing: 10) {
@@ -218,12 +230,12 @@ struct EventRegistrationsView: View {
                                             .fill(Color.systemAccent.opacity(0.1))
                                             .frame(width: 30, height: 30)
                                         
-                                        Image(systemName: "magnifyingglass")
+                                    Image(systemName: "magnifyingglass")
                                             .foregroundColor(.systemAccent)
                                             .font(.system(size: 12, weight: .semibold))
                                     }
                                     
-                                    TextField("Search by name, email, or barcode...", text: $searchText)
+                                    TextField("Search by name, email, job title, or barcode...", text: $searchText)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.systemTextDark)
@@ -281,12 +293,27 @@ struct EventRegistrationsView: View {
                             
                             // Status Filter
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("Filter by Status")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.systemTextDark)
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        isStatusFilterExpanded.toggle()
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("Filter by Status")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.systemTextDark)
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: isStatusFilterExpanded ? "chevron.up" : "chevron.down")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.systemAccent)
+                                    }
                                     .padding(.horizontal, 16)
+                                }
                                 
-                                ScrollView(.horizontal, showsIndicators: false) {
+                                if isStatusFilterExpanded {
+                                    ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 10) {
                                         // "All" option
                                         Button(action: {
@@ -365,17 +392,144 @@ struct EventRegistrationsView: View {
                                         }
                                     }
                                     .padding(.horizontal, 16)
+                                    }
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
+                            }
+                            
+                            // VIP Filter
+                            VStack(alignment: .leading, spacing: 10) {
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        isVipFilterExpanded.toggle()
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("Filter by VIP Status")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.systemTextDark)
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: isVipFilterExpanded ? "chevron.up" : "chevron.down")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.systemAccent)
+                                    }
+                                    .padding(.horizontal, 16)
+                                }
+                                
+                                if isVipFilterExpanded {
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 10) {
+                                        // "All" option
+                                        Button(action: {
+                                            vipFilter = nil
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                if vipFilter == nil {
+                                                    Image(systemName: "checkmark")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                }
+                                                Text("All")
+                                                    .font(.system(size: 14, weight: .bold))
+                                            }
+                                            .foregroundColor(vipFilter == nil ? .white : .systemAccent)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(vipFilter == nil ? Color.systemAccent : Color.systemAccent.opacity(0.1))
+                                            .cornerRadius(10)
+                                        }
+                                        
+                                        // Attendee Only
+                                        Button(action: {
+                                            vipFilter = .attendee
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                if vipFilter == .attendee {
+                                                    Image(systemName: "checkmark")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                }
+                                                Text("Attendee")
+                                                    .font(.system(size: 14, weight: .bold))
+                                            }
+                                            .foregroundColor(vipFilter == .attendee ? .white : Color.gray)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(vipFilter == .attendee ? Color.gray : Color.gray.opacity(0.1))
+                                            .cornerRadius(10)
+                                        }
+                                        
+                                        // VIP Only
+                                        Button(action: {
+                                            vipFilter = .vip
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                if vipFilter == .vip {
+                                                    Image(systemName: "checkmark")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                }
+                                                Image(systemName: "star.fill")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                Text("VIP")
+                                                    .font(.system(size: 14, weight: .bold))
+                                            }
+                                            .foregroundColor(vipFilter == .vip ? .white : Color.purple)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(vipFilter == .vip ? Color.purple : Color.purple.opacity(0.1))
+                                            .cornerRadius(10)
+                                        }
+                                        
+                                        // V VIP Only
+                                        Button(action: {
+                                            vipFilter = .vVip
+                                        }) {
+                                            HStack(spacing: 6) {
+                                                if vipFilter == .vVip {
+                                                    Image(systemName: "checkmark")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                }
+                                                Image(systemName: "star.fill")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                Text("V VIP")
+                                                    .font(.system(size: 14, weight: .bold))
+                                            }
+                                            .foregroundColor(vipFilter == .vVip ? .white : Color.indigo)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(vipFilter == .vVip ? Color.indigo : Color.indigo.opacity(0.1))
+                                            .cornerRadius(10)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    }
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
                             }
                             
                             // Organization Filter
                             if !availableOrganizations.isEmpty {
                                 VStack(alignment: .leading, spacing: 10) {
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            isOrganizationFilterExpanded.toggle()
+                                        }
+                                    }) {
+                                        HStack {
                                     Text("Filter by Organization")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(.systemTextDark)
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.systemTextDark)
+                                            
+                                            Spacer()
+                                            
+                                            Image(systemName: isOrganizationFilterExpanded ? "chevron.up" : "chevron.down")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.systemAccent)
+                                        }
                                         .padding(.horizontal, 16)
+                                    }
                                     
+                                    if isOrganizationFilterExpanded {
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         HStack(spacing: 10) {
                                             // "All" option
@@ -445,6 +599,8 @@ struct EventRegistrationsView: View {
                                             }
                                         }
                                         .padding(.horizontal, 16)
+                                        }
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
                                     }
                                 }
                                 .padding(.bottom, 8)
@@ -452,8 +608,8 @@ struct EventRegistrationsView: View {
                         }
                         .background(Color(.systemGroupedBackground))
                         
-                    // Registrations List
-                    if viewModel.registrations.isEmpty {
+                        // Registrations List
+                        if viewModel.registrations.isEmpty {
                         VStack(spacing: 24) {
                             ZStack {
                                 Circle()
@@ -470,22 +626,22 @@ struct EventRegistrationsView: View {
                                     .font(.system(size: 50, weight: .light))
                                     .foregroundColor(.systemAccent)
                             }
-                            
+                                
                             VStack(spacing: 12) {
-                                Text("No Approved Registrations")
+                                Text("No Registrations")
                                     .font(.system(size: 22, weight: .bold))
                                     .foregroundColor(.systemTextDark)
                                 
-                                Text("There are no approved registrations for this event")
+                                Text("There are no registrations for this event")
                                     .font(.system(size: 15))
                                     .foregroundColor(.secondary)
                                     .multilineTextAlignment(.center)
                                     .lineSpacing(4)
                                     .padding(.horizontal, 40)
                             }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if groupedRegistrations.isEmpty {
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else if groupedRegistrations.isEmpty {
                         VStack(spacing: 24) {
                             ZStack {
                                 Circle()
@@ -502,7 +658,7 @@ struct EventRegistrationsView: View {
                                     .font(.system(size: 50, weight: .light))
                                     .foregroundColor(.systemAccent)
                             }
-                            
+                                
                             VStack(spacing: 12) {
                                 Text("No Results Found")
                                     .font(.system(size: 22, weight: .bold))
@@ -515,76 +671,77 @@ struct EventRegistrationsView: View {
                                     .lineSpacing(4)
                                     .padding(.horizontal, 40)
                             }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 16) {
-                                ForEach(Array(groupedRegistrations.enumerated()), id: \.offset) { index, group in
-                                    OrganizationGroupView(
-                                        group: group,
-                                        isExpanded: expandedOrganizations.contains(group.organizationId),
-                                        onToggle: {
-                                            withAnimation(.easeInOut(duration: 0.2)) {
-                                                if expandedOrganizations.contains(group.organizationId) {
-                                                    expandedOrganizations.remove(group.organizationId)
-                                                } else {
-                                                    expandedOrganizations.insert(group.organizationId)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            ScrollView {
+                                LazyVStack(spacing: 16) {
+                                    ForEach(Array(groupedRegistrations.enumerated()), id: \.offset) { index, group in
+                                        OrganizationGroupView(
+                                            group: group,
+                                            isExpanded: expandedOrganizations.contains(group.organizationId),
+                                            onToggle: {
+                                                withAnimation(.easeInOut(duration: 0.2)) {
+                                                    if expandedOrganizations.contains(group.organizationId) {
+                                                        expandedOrganizations.remove(group.organizationId)
+                                                    } else {
+                                                        expandedOrganizations.insert(group.organizationId)
+                                                    }
                                                 }
-                                            }
                                         },
+                                        viewModel: viewModel,
                                         selectedRegistrationForSeat: $selectedRegistrationForSeat,
                                         showSeatNumberDialog: $showSeatNumberDialog,
                                         selectedRegistrationForAction: $selectedRegistrationForAction,
                                         showApproveConfirmation: $showApproveConfirmation,
                                         showRejectConfirmation: $showRejectConfirmation,
                                         showFinalApprovalConfirmation: $showFinalApprovalConfirmation
-                                    )
+                                        )
+                                    }
                                 }
+                                .padding(.top, 8)
+                                .padding(.bottom, 100)
                             }
-                            .padding(.top, 8)
-                            .padding(.bottom, 100)
                         }
-                    }
                 }
                 .overlay(
-                    // Floating QR Scanner Button
-                    VStack {
-                        Spacer()
-                        HStack {
+                        // Floating QR Scanner Button
+                        VStack {
                             Spacer()
-                            Button(action: {
-                                if isScanningAllowed {
-                                    showScanOptions = true
-                                } else {
-                                    showTimeRestrictionAlert = true
-                                }
-                            }) {
-                                Image(systemName: isScanningAllowed ? "qrcode.viewfinder" : "clock.fill")
-                                    .font(.system(size: 24, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 64, height: 64)
-                                    .background(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: isScanningAllowed ?
-                                                [Color.systemAccent, Color.systemAccentDark] :
-                                                [Color.gray, Color.gray.opacity(0.8)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    if isScanningAllowed {
+                                        showScanOptions = true
+                                    } else {
+                                        showTimeRestrictionAlert = true
+                                    }
+                                }) {
+                                    Image(systemName: isScanningAllowed ? "qrcode.viewfinder" : "clock.fill")
+                                        .font(.system(size: 24, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 64, height: 64)
+                                        .background(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: isScanningAllowed ?
+                                                    [Color.systemAccent, Color.systemAccentDark] :
+                                                    [Color.gray, Color.gray.opacity(0.8)]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
                                         )
-                                    )
-                                    .clipShape(Circle())
-                                    .shadow(color: isScanningAllowed ? Color.systemAccent.opacity(0.4) : Color.gray.opacity(0.4), radius: 12, x: 0, y: 6)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white, lineWidth: 3)
-                                    )
-                                    .opacity(isScanningAllowed ? 1.0 : 0.6)
+                                        .clipShape(Circle())
+                                        .shadow(color: isScanningAllowed ? Color.systemAccent.opacity(0.4) : Color.gray.opacity(0.4), radius: 12, x: 0, y: 6)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.white, lineWidth: 3)
+                                        )
+                                        .opacity(isScanningAllowed ? 1.0 : 0.6)
+                                }
+                                .padding(.trailing, 20)
+                                .padding(.bottom, 20)
                             }
-                            .padding(.trailing, 20)
-                            .padding(.bottom, 20)
                         }
-                    }
                     , alignment: .bottomTrailing
                 )
             }
@@ -739,6 +896,7 @@ struct OrganizationGroupView: View {
     let group: (organization: EventOrganization?, organizationId: Int?, registrations: [EventRegistration])
     let isExpanded: Bool
     let onToggle: () -> Void
+    @ObservedObject var viewModel: EventRegistrationsViewModel
     @Binding var selectedRegistrationForSeat: EventRegistration?
     @Binding var showSeatNumberDialog: Bool
     @Binding var selectedRegistrationForAction: EventRegistration?
@@ -762,8 +920,8 @@ struct OrganizationGroupView: View {
                             )
                             .frame(width: 36, height: 36)
                         
-                        Image(systemName: "building.2.fill")
-                            .foregroundColor(.systemAccent)
+                    Image(systemName: "building.2.fill")
+                        .foregroundColor(.systemAccent)
                             .font(.system(size: 14, weight: .semibold))
                     }
                     
@@ -774,15 +932,15 @@ struct OrganizationGroupView: View {
                     Spacer()
                     
                     HStack(spacing: 6) {
-                        Text("\(group.registrations.count)")
+                    Text("\(group.registrations.count)")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.systemAccent)
-                            .padding(.horizontal, 10)
+                        .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(Color.systemAccent.opacity(0.1))
                             .cornerRadius(10)
-                        
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .foregroundColor(.systemAccent)
                             .font(.system(size: 12, weight: .bold))
                     }
@@ -815,6 +973,7 @@ struct OrganizationGroupView: View {
                     ForEach(group.registrations) { registration in
                         RegistrationRowView(
                             registration: registration,
+                            viewModel: viewModel,
                             selectedRegistrationForSeat: $selectedRegistrationForSeat,
                             showSeatNumberDialog: $showSeatNumberDialog,
                             selectedRegistrationForAction: $selectedRegistrationForAction,
@@ -836,6 +995,7 @@ struct OrganizationGroupView: View {
 // MARK: - Registration Row View
 struct RegistrationRowView: View {
     let registration: EventRegistration
+    @ObservedObject var viewModel: EventRegistrationsViewModel
     @Binding var selectedRegistrationForSeat: EventRegistration?
     @Binding var showSeatNumberDialog: Bool
     @Binding var selectedRegistrationForAction: EventRegistration?
@@ -846,12 +1006,37 @@ struct RegistrationRowView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // HEADER: Name + Status Badge + Menu
+            // HEADER: Name + Status Badge + VIP Badge + Menu
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
                     Text(registration.name)
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.systemTextDark)
+                            .foregroundColor(.systemTextDark)
+                        
+                        // VIP Status Badge
+                        if let vipStatus = registration.vipStatus, vipStatus != .attendee {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text(vipStatus == .vVip ? "V VIP" : "VIP")
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: vipStatus == .vVip 
+                                        ? [Color.indigo, Color.indigo.opacity(0.8)]
+                                        : [Color.purple, Color.purple.opacity(0.8)]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(8)
+                        }
+                    }
                     
                     if let nameAr = registration.nameAr, !nameAr.isEmpty {
                         Text(nameAr)
@@ -893,6 +1078,21 @@ struct RegistrationRowView: View {
                     Spacer()
                 }
                 
+                // Job Title
+                if let jobTitle = registration.jobTitle, !jobTitle.isEmpty {
+                    HStack(spacing: 12) {
+                        Image(systemName: "briefcase.fill")
+                            .foregroundColor(.indigo)
+                            .frame(width: 20)
+                        
+                        Text(jobTitle)
+                            .font(.system(size: 14))
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                    }
+                }
+                
                 // Barcode
                 if let barcode = registration.barcode {
                     HStack(spacing: 12) {
@@ -909,11 +1109,11 @@ struct RegistrationRowView: View {
                 }
                 
                 // Seat Number
-                HStack(spacing: 12) {
-                    Image(systemName: "chair.fill")
-                        .foregroundColor(.purple)
-                        .frame(width: 20)
-                    
+                    HStack(spacing: 12) {
+                        Image(systemName: "chair.fill")
+                            .foregroundColor(.purple)
+                            .frame(width: 20)
+                        
                     if let seatNumber = registration.seatNumber, !seatNumber.isEmpty {
                         Text("Seat: \(seatNumber)")
                             .font(.system(size: 14, weight: .medium))
@@ -923,8 +1123,8 @@ struct RegistrationRowView: View {
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
-                    
-                    Spacer()
+                        
+                        Spacer()
                 }
                 
                 // Organization
@@ -982,8 +1182,8 @@ struct RegistrationRowView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                    
+                                .foregroundColor(.secondary)
+                            
                     Text("Updated by \(updatedBy)")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
@@ -1005,6 +1205,26 @@ struct RegistrationRowView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(statusBorderColor, lineWidth: 2)
         )
+    }
+    
+    // VIP Status Label
+    private var vipStatusLabel: some View {
+        let currentVipStatus = registration.vipStatus ?? VipStatus.attendee
+        let labelText: String
+        let icon: String
+        
+        switch currentVipStatus {
+        case VipStatus.attendee:
+            labelText = "Set VIP Status"
+            icon = "person.fill"
+        case VipStatus.vip:
+            labelText = "VIP"
+            icon = "star.fill"
+        case VipStatus.vVip:
+            labelText = "V VIP"
+            icon = "star.fill"
+        }
+        return Label(labelText, systemImage: icon)
     }
     
     // 3-Dot Menu Content
@@ -1041,6 +1261,61 @@ struct RegistrationRowView: View {
                 }
             }
             
+            Divider()
+            
+            // VIP Status Menu
+            Menu {
+                Button(action: {
+                    if let id = registration.id {
+                        Task {
+                            await viewModel.updateVipStatus(id: id, newVipStatus: VipStatus.attendee)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Label("Attendee", systemImage: "person.fill")
+                        Spacer()
+                        if (registration.vipStatus ?? VipStatus.attendee) == VipStatus.attendee {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                
+                Button(action: {
+                    if let id = registration.id {
+                        Task {
+                            await viewModel.updateVipStatus(id: id, newVipStatus: VipStatus.vip)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Label("VIP", systemImage: "star.fill")
+                        Spacer()
+                        if registration.vipStatus == VipStatus.vip {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                
+                Button(action: {
+                    if let id = registration.id {
+                        Task {
+                            await viewModel.updateVipStatus(id: id, newVipStatus: VipStatus.vVip)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Label("V VIP", systemImage: "star.fill")
+                        Spacer()
+                        if registration.vipStatus == VipStatus.vVip {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            } label: {
+                vipStatusLabel
+            }
+            
             // Show Send Final Approval if seat is assigned and email not sent
             if let seatNumber = registration.seatNumber,
                !seatNumber.isEmpty,
@@ -1068,10 +1343,68 @@ struct RegistrationRowView: View {
             }
         }
         
+        // DRAFT STATUS - Also allow VIP status change
+        if registration.status == .draft || registration.status == nil {
+            Divider()
+            
+            // VIP Status Menu
+            Menu {
+                Button(action: {
+                    if let id = registration.id {
+                        Task {
+                            await viewModel.updateVipStatus(id: id, newVipStatus: VipStatus.attendee)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Label("Attendee", systemImage: "person.fill")
+                        Spacer()
+                        if (registration.vipStatus ?? VipStatus.attendee) == VipStatus.attendee {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                
+                Button(action: {
+                    if let id = registration.id {
+                        Task {
+                            await viewModel.updateVipStatus(id: id, newVipStatus: VipStatus.vip)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Label("VIP", systemImage: "star.fill")
+                        Spacer()
+                        if registration.vipStatus == VipStatus.vip {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                
+                Button(action: {
+                    if let id = registration.id {
+                        Task {
+                            await viewModel.updateVipStatus(id: id, newVipStatus: VipStatus.vVip)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Label("V VIP", systemImage: "star.fill")
+                        Spacer()
+                        if registration.vipStatus == VipStatus.vVip {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            } label: {
+                vipStatusLabel
+            }
+        }
+        
         // REJECTED STATUS - Show info only
         if registration.status == .rejected {
             Text("No actions available")
-                .foregroundColor(.secondary)
+                                .foregroundColor(.secondary)
         }
     }
     
@@ -1100,8 +1433,8 @@ struct RegistrationRowView: View {
             Text(title)
                 .font(.system(size: 13))
                 .foregroundColor(.primary)
-            
-            Spacer()
+                        
+                        Spacer()
             
             if sent, let sentAt = sentAt {
                 Text(formatDateTime(sentAt))
@@ -1179,7 +1512,7 @@ struct RegistrationRowView: View {
             for format in formats {
                 standardFormatter.dateFormat = format
                 if let parsedDate = standardFormatter.date(from: dateString) {
-                    date = parsedDate
+            date = parsedDate
                     break
                 }
             }
@@ -1416,16 +1749,23 @@ class EventRegistrationsViewModel: ObservableObject {
         currentEventId = eventId
         await MainActor.run {
             isLoading = true
+            errorMessage = nil
         }
         
         do {
+            print("🔵 Loading registrations for eventId: \(eventId)")
             let loadedRegistrations = try await APIService.shared.getEventRegistrations(eventId: eventId)
+            print("✅ Successfully loaded \(loadedRegistrations.count) registrations")
             await MainActor.run {
                 registrations = loadedRegistrations
                 isLoading = false
                 errorMessage = nil
             }
         } catch {
+            print("❌ Error loading registrations: \(error)")
+            if let apiError = error as? APIError {
+                print("❌ API Error: \(apiError.errorDescription ?? "Unknown")")
+            }
             await MainActor.run {
                 if let apiError = error as? APIError {
                     errorMessage = apiError.errorDescription
@@ -1433,6 +1773,10 @@ class EventRegistrationsViewModel: ObservableObject {
                     errorMessage = error.localizedDescription
                 }
                 isLoading = false
+                // Show alert for debugging
+                alertTitle = "Error Loading Registrations"
+                alertMessage = error.localizedDescription
+                showAlert = true
             }
         }
     }
@@ -1617,6 +1961,40 @@ class EventRegistrationsViewModel: ObservableObject {
                 alertTitle = "Email Error"
                 if let apiError = error as? APIError {
                     alertMessage = apiError.errorDescription ?? "Failed to send final approval email"
+                } else {
+                    alertMessage = error.localizedDescription
+                }
+                showAlert = true
+            }
+        }
+    }
+    
+    func updateVipStatus(id: Int, newVipStatus: VipStatus) async {
+        do {
+            let updatedRegistration = try await APIService.shared.updateRegistration(id: id, vipStatus: newVipStatus)
+            await MainActor.run {
+                // Update the registration in the list
+                if let index = registrations.firstIndex(where: { $0.id == id }) {
+                    registrations[index] = updatedRegistration
+                }
+                alertTitle = "Success"
+                let statusText: String
+                switch newVipStatus {
+                case .attendee:
+                    statusText = "Attendee"
+                case .vip:
+                    statusText = "VIP"
+                case .vVip:
+                    statusText = "V VIP"
+                }
+                alertMessage = "VIP status updated to \(statusText) successfully."
+                showAlert = true
+            }
+        } catch {
+            await MainActor.run {
+                alertTitle = "VIP Status Error"
+                if let apiError = error as? APIError {
+                    alertMessage = apiError.errorDescription ?? "Failed to update VIP status"
                 } else {
                     alertMessage = error.localizedDescription
                 }

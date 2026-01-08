@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Institution> Institutions { get; set; }
     public DbSet<Instructor> Instructors { get; set; }
     public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
+    public DbSet<Public> Publics { get; set; }
     public DbSet<Location> Locations { get; set; }
     public DbSet<Segment> Segments { get; set; }
     public DbSet<AdoptionUser> AdoptionUsers { get; set; }
@@ -33,6 +34,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
     public DbSet<CourseTabApproval> CourseTabApprovals { get; set; }
     public DbSet<CourseEnrollmentApproval> CourseEnrollmentApprovals { get; set; }
+    public DbSet<CourseQuestion> CourseQuestions { get; set; }
     public DbSet<Event> Events { get; set; }
     public DbSet<EventSpeaker> EventSpeakers { get; set; }
     public DbSet<EventOrganization> EventOrganizations { get; set; }
@@ -252,6 +254,14 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasOne(cc => cc.Course)
             .WithMany(c => c.CourseContacts)
             .HasForeignKey(cc => cc.CourseId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // CourseQuestion relationship
+        modelBuilder.Entity<CourseQuestion>()
+            .HasOne(cq => cq.Course)
+            .WithMany(c => c.CourseQuestions)
+            .HasForeignKey(cq => cq.CourseId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 

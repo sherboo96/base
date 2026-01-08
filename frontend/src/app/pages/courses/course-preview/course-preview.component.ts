@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CourseService, Course, CourseStatus, AdoptionType } from '../../../services/course.service';
+import { CourseQuestionService, CourseQuestion, QuestionType } from '../../../services/course-question.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingService } from '../../../services/loading.service';
@@ -10,6 +11,8 @@ import { TranslationService } from '../../../services/translation.service';
 import { EnrollmentService, CourseEnrollment, EnrollmentStatus } from '../../../services/enrollment.service';
 import { AttachmentService } from '../../../services/attachment.service';
 import { AdoptionUserService, AdoptionUser } from '../../../services/adoption-user.service';
+import { DialogService } from '@ngneat/dialog';
+import { EnrollmentQuestionsDialogComponent } from '../enrollment-questions-dialog/enrollment-questions-dialog.component';
 
 @Component({
   selector: 'app-course-preview',
@@ -34,19 +37,23 @@ export class CoursePreviewComponent implements OnInit {
   activeTab: 'overview' | 'instructor' | 'adoptionUsers' | 'courseContacts' = 'overview';
   currentLanguage: 'en' | 'ar' = 'en';
   approvedEnrollmentsCount = 0;
+  approvedOnlineEnrollmentsCount = 0;
   AdoptionType = AdoptionType;
   adoptionUsers: AdoptionUser[] = [];
+  isUploadingLocationDocument = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private courseService: CourseService,
+    private courseQuestionService: CourseQuestionService,
     private toastr: ToastrService,
     public loadingService: LoadingService,
     private translationService: TranslationService,
     private enrollmentService: EnrollmentService,
     private attachmentService: AttachmentService,
     private adoptionUserService: AdoptionUserService,
+    private dialogService: DialogService,
     private cdr: ChangeDetectorRef
   ) {
     // Get current language
@@ -76,8 +83,8 @@ export class CoursePreviewComponent implements OnInit {
         this.isLoading = false;
         this.loadingService.hide();
         
-        // Only check enrollment if course is published
-        if (this.course?.status === CourseStatus.Published) {
+        // Only check enrollment if course is published (normalized status)
+        if (this.isCoursePublished()) {
           this.checkEnrollmentStatus();
           this.loadApprovedEnrollmentsCount();
         }
@@ -98,6 +105,24 @@ export class CoursePreviewComponent implements OnInit {
     });
   }
 
+  /**
+   * Reload the full course + enrollment view from the backend.
+   * Ensures the "Enroll Now" card always reflects the latest server state.
+   */
+  private reloadView(): void {
+    if (!this.course?.id) {
+      return;
+    }
+    // Reload course and enrollment status
+    this.loadCourse(this.course.id);
+    // Also explicitly check enrollment status to ensure UI updates
+    setTimeout(() => {
+      this.checkEnrollmentStatus();
+      this.loadApprovedEnrollmentsCount();
+      this.cdr.detectChanges();
+    }, 500);
+  }
+
   checkEnrollmentStatus(): void {
     if (!this.course?.id) return;
     
@@ -107,12 +132,14 @@ export class CoursePreviewComponent implements OnInit {
         this.enrollment = response.result;
         this.isEnrolled = !!response.result;
         this.isCheckingEnrollment = false;
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         // If error, assume not enrolled
         this.isEnrolled = false;
         this.enrollment = null;
         this.isCheckingEnrollment = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -125,7 +152,8 @@ export class CoursePreviewComponent implements OnInit {
       next: (response: any) => {
         this.toastr.success(this.translationService.instant('course.excuseEnrollmentSuccess'));
         this.loadingService.hide();
-        this.checkEnrollmentStatus(); // Refresh enrollment status
+        // Reload full view so available seats and enrollment card are updated
+        this.reloadView();
       },
       error: (error: any) => {
         this.toastr.error(
@@ -161,7 +189,17 @@ export class CoursePreviewComponent implements OnInit {
         if (response && typeof response === 'object') {
           result = response.result || response.Result || [];
         }
-        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => e.status === EnrollmentStatus.Approve).length;
+        // Count approved onsite enrollments (enrollmentType === 1 or null)
+        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => 
+          e.status === EnrollmentStatus.Approve && 
+          (e.enrollmentType === 1 || e.enrollmentType === null)
+        ).length;
+        // Count approved online enrollments (enrollmentType === 2)
+        this.approvedOnlineEnrollmentsCount = result.filter((e: CourseEnrollment) => 
+          e.status === EnrollmentStatus.Approve && 
+          e.enrollmentType === 2
+        ).length;
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         // Silently fail for seats calculation
@@ -172,8 +210,24 @@ export class CoursePreviewComponent implements OnInit {
 
   getAvailableSeats(): number {
     if (!this.course) return 0;
+    // Use API values if available, otherwise fall back to calculation
+    if (this.course.onsiteEnrollmentsCount !== undefined) {
+      return Math.max(0, (this.course.availableSeats || 0) - (this.course.onsiteEnrollmentsCount || 0));
+    }
+    // Fallback to old calculation method
     const totalSeats = this.course.availableSeats || 0;
     return Math.max(0, totalSeats - this.approvedEnrollmentsCount);
+  }
+
+  getAvailableOnlineSeats(): number {
+    if (!this.course) return 0;
+    // Use API values if available, otherwise fall back to calculation
+    if (this.course.onlineEnrollmentsCount !== undefined) {
+      return Math.max(0, (this.course.availableOnlineSeats || 0) - (this.course.onlineEnrollmentsCount || 0));
+    }
+    // Fallback to old calculation method
+    const totalOnlineSeats = this.course.availableOnlineSeats || 0;
+    return Math.max(0, totalOnlineSeats - this.approvedOnlineEnrollmentsCount);
   }
 
   enrollInCourse(): void {
@@ -185,21 +239,76 @@ export class CoursePreviewComponent implements OnInit {
       this.toastr.error(this.translationService.instant('course.noSeatsAvailable'));
       return;
     }
+
+    // Step 1: Load enrollment questions for this course
+    this.loadingService.show();
+    this.courseQuestionService.getByCourseId(this.course.id).subscribe({
+      next: (response) => {
+        this.loadingService.hide();
+
+        let questions: CourseQuestion[] = [];
+        if (response.statusCode === 200 && response.result) {
+          questions = Array.isArray(response.result) ? response.result : [response.result];
+        }
+
+        // If there are questions, show the dialog for the user to answer them
+        if (questions.length > 0) {
+          const dialogRef = this.dialogService.open(EnrollmentQuestionsDialogComponent, {
+            data: { questions },
+            width: '700px',
+            maxHeight: '90vh',
+            enableClose: true,
+            closeButton: true,
+            resizable: false,
+            draggable: true,
+          });
+
+          dialogRef.afterClosed$.subscribe((answers: { [key: string]: string } | null) => {
+            if (answers) {
+              this.performEnrollment(answers);
+            }
+          });
+        } else {
+          // No questions – proceed with normal enrollment
+          this.performEnrollment();
+        }
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        console.error('Error loading enrollment questions:', error);
+        // If questions fail to load, still allow enrollment but notify user
+        this.toastr.warning(this.translationService.instant('course.loadQuestionsError'));
+        this.performEnrollment();
+      }
+    });
+  }
+
+  /**
+   * Perform the actual enrollment call, optionally including question answers.
+   */
+  private performEnrollment(questionAnswers?: { [key: string]: string }): void {
+    if (!this.course?.id) return;
     
     this.loadingService.show();
-    this.enrollmentService.enrollInCourse(this.course.id).subscribe({
+    this.enrollmentService.enrollInCourse(this.course.id, questionAnswers).subscribe({
       next: (response: any) => {
         this.toastr.success(this.translationService.instant('course.enrollSuccess'));
         this.loadingService.hide();
+        // Update enrollment status immediately
         this.isEnrolled = true;
-        this.checkEnrollmentStatus();
-        this.loadApprovedEnrollmentsCount(); // Refresh count after enrollment
+        if (response.result) {
+          this.enrollment = response.result;
+        }
+        // Always reload from backend so the Enroll Now view reflects latest state
+        this.reloadView();
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         this.toastr.error(
           error.error?.message || this.translationService.instant('course.enrollError')
         );
         this.loadingService.hide();
+        this.cdr.detectChanges();
       },
     });
   }
@@ -207,6 +316,86 @@ export class CoursePreviewComponent implements OnInit {
   getLocationLogoUrl(logoPath: string | undefined): string {
     if (!logoPath) return '';
     return this.attachmentService.getFileUrl(logoPath);
+  }
+
+  getLocationTemplateUrl(): string {
+    if (!this.course?.location?.template) return '';
+    return this.attachmentService.getFileUrl(this.course.location.template);
+  }
+
+  hasLocationDocumentation(): boolean {
+    return !!this.course?.location && (!!this.course.location.template || !!this.course.location.url);
+  }
+
+  onLocationDocumentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0 || !this.enrollment) {
+      return;
+    }
+
+    const file = input.files[0];
+    this.isUploadingLocationDocument = true;
+    this.loadingService.show();
+
+    this.attachmentService.uploadFile(file).subscribe({
+      next: (filePath: string) => {
+        // After uploading the file, associate it with the enrollment so it appears in enrollments view
+        this.enrollmentService.updateLocationDocument(this.enrollment!.id, filePath).subscribe({
+          next: () => {
+        this.isUploadingLocationDocument = false;
+        this.loadingService.hide();
+        this.toastr.success(this.translationService.instant('course.locationDocumentUploadSuccess'));
+            // Reload enrollment status so local state is in sync
+            this.checkEnrollmentStatus();
+            input.value = '';
+          },
+          error: () => {
+            this.isUploadingLocationDocument = false;
+            this.loadingService.hide();
+            this.toastr.error(this.translationService.instant('course.locationDocumentUploadError'));
+        input.value = '';
+          }
+        });
+      },
+      error: () => {
+        this.isUploadingLocationDocument = false;
+        this.loadingService.hide();
+        this.toastr.error(this.translationService.instant('course.locationDocumentUploadError'));
+        input.value = '';
+      }
+    });
+  }
+
+  /**
+   * Normalize course status from API (string or number) to CourseStatus enum.
+   */
+  private normalizeCourseStatus(value: any): CourseStatus | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return value as CourseStatus;
+    }
+
+    const str = String(value).trim();
+
+    // Try enum key name (e.g., "Published", "Active")
+    if (CourseStatus[str as keyof typeof CourseStatus] !== undefined) {
+      return CourseStatus[str as keyof typeof CourseStatus] as CourseStatus;
+    }
+
+    const num = Number(str);
+    return isNaN(num) ? null : (num as CourseStatus);
+  }
+
+  /**
+   * Helper to check if course is published (using normalized status).
+   */
+  isCoursePublished(): boolean {
+    if (!this.course) return false;
+    const status = this.normalizeCourseStatus((this.course as any).status);
+    return status === CourseStatus.Published;
   }
 
   formatDate(dateString: string | undefined): string {
@@ -229,7 +418,11 @@ export class CoursePreviewComponent implements OnInit {
     });
   }
 
-  getStatusClass(status: CourseStatus): string {
+  getStatusClass(status: CourseStatus | any): string {
+    const normalized = this.normalizeCourseStatus(status);
+    if (normalized === null) {
+      return 'bg-gray-100 text-gray-800';
+    }
     const statusClasses: { [key: number]: string } = {
       [CourseStatus.Draft]: 'bg-gray-100 text-gray-800',
       [CourseStatus.Published]: 'bg-green-100 text-green-800',
@@ -239,10 +432,14 @@ export class CoursePreviewComponent implements OnInit {
       [CourseStatus.Canceled]: 'bg-red-100 text-red-800',
       [CourseStatus.Archived]: 'bg-gray-100 text-gray-600',
     };
-    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    return statusClasses[normalized] || 'bg-gray-100 text-gray-800';
   }
 
-  getStatusText(status: CourseStatus): string {
+  getStatusText(status: CourseStatus | any): string {
+    const normalized = this.normalizeCourseStatus(status);
+    if (normalized === null) {
+      return this.translationService.instant('course.unknownStatus') || 'Unknown';
+    }
     const statusTexts: { [key: number]: string } = {
       [CourseStatus.Draft]: 'Draft',
       [CourseStatus.Published]: 'Published',
@@ -252,7 +449,7 @@ export class CoursePreviewComponent implements OnInit {
       [CourseStatus.Canceled]: 'Canceled',
       [CourseStatus.Archived]: 'Archived',
     };
-    return statusTexts[status] || 'Unknown';
+    return statusTexts[normalized] || this.translationService.instant('course.unknownStatus') || 'Unknown';
   }
 
   goBack(): void {

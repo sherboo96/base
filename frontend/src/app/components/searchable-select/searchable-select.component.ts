@@ -4,6 +4,9 @@ import {
   Output,
   EventEmitter,
   HostListener,
+  OnInit,
+  OnChanges,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -70,7 +73,7 @@ interface Option {
     </div>
   `,
 })
-export class SearchableSelectComponent {
+export class SearchableSelectComponent implements OnInit, OnChanges {
   @Input() options: Option[] = [];
   @Input() placeholder: string = 'Select an option';
   @Input() disabled: boolean = false;
@@ -82,7 +85,7 @@ export class SearchableSelectComponent {
   filteredOptions: Option[] = [];
 
   ngOnInit() {
-    this.filteredOptions = this.options;
+    this.updateFilteredOptions();
     if (this.value) {
       const selectedOption = this.options.find((opt) => opt.id === this.value);
       if (selectedOption) {
@@ -91,21 +94,58 @@ export class SearchableSelectComponent {
     }
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['options'] && !changes['options'].firstChange) {
+      this.updateFilteredOptions();
+      // Update search term if value exists
+      if (this.value) {
+        const selectedOption = this.options.find((opt) => opt.id === this.value);
+        if (selectedOption) {
+          this.searchTerm = selectedOption.name;
+        }
+      }
+    }
+    if (changes['value'] && this.value) {
+      const selectedOption = this.options.find((opt) => opt.id === this.value);
+      if (selectedOption) {
+        this.searchTerm = selectedOption.name;
+      }
+    }
+  }
+
+  updateFilteredOptions() {
+    if (!this.searchTerm) {
+      this.filteredOptions = this.options;
+    } else {
+      this.onSearch();
+    }
+  }
+
   onSearch() {
     if (!this.searchTerm) {
       this.filteredOptions = this.options;
     } else {
+      const searchLower = this.searchTerm.toLowerCase().trim();
       this.filteredOptions = this.options.filter(
-        (option) =>
-          option.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-          (option['email'] &&
-            option['email']
-              .toLowerCase()
-              .includes(this.searchTerm.toLowerCase())) ||
-          (option['system']?.['name'] &&
-            option['system']['name']
-              .toLowerCase()
-              .includes(this.searchTerm.toLowerCase()))
+        (option) => {
+          // Check main name
+          if (option.name.toLowerCase().includes(searchLower)) {
+            return true;
+          }
+          // Check searchText if available (for composite search)
+          if (option['searchText'] && option['searchText'].includes(searchLower)) {
+            return true;
+          }
+          // Check email if available
+          if (option['email'] && option['email'].toLowerCase().includes(searchLower)) {
+            return true;
+          }
+          // Check system name if available
+          if (option['system']?.['name'] && option['system']['name'].toLowerCase().includes(searchLower)) {
+            return true;
+          }
+          return false;
+        }
       );
     }
   }

@@ -24,6 +24,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { DialogService } from '@ngneat/dialog';
 import { CourseFormComponent } from './course-form/course-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
+import { MoveCourseTabDialogComponent } from './move-course-tab-dialog/move-course-tab-dialog.component';
 import { TranslationService } from '../../../services/translation.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { StorageService } from '../../../services/storage.service';
@@ -558,6 +559,28 @@ export class CourseComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed$.subscribe((result) => {
       if (result) {
+        this.fetchCourses();
+      }
+    });
+  }
+
+  moveCourseToTab(course: Course): void {
+    const dialogRef = this.dialogService.open(MoveCourseTabDialogComponent, {
+      data: {
+        course,
+        courseTabs: this.courseTabs
+      },
+      width: '600px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+      size: 'md',
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Refresh courses to show updated course tab
         this.fetchCourses();
       }
     });

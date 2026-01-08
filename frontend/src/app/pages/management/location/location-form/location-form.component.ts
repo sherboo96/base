@@ -114,12 +114,20 @@ export class LocationFormComponent implements OnInit {
     if (this.dialogRef.data?.location) {
       this.isEdit = true;
       const location = this.dialogRef.data.location;
+      // Ensure category is properly converted to enum value
+      let categoryValue: LocationCategory = LocationCategory.Onsite;
+      if (location.category !== undefined && location.category !== null) {
+        const catNum = typeof location.category === 'number' ? location.category : Number(location.category);
+        if (!isNaN(catNum) && catNum >= 1 && catNum <= 4) {
+          categoryValue = catNum as LocationCategory;
+        }
+      }
       this.form.patchValue({
         name: location.name,
         nameAr: location.nameAr,
         floor: location.floor || '',
         building: location.building || '',
-        category: typeof location.category === 'number' ? location.category : Number(location.category),
+        category: categoryValue,
         organizationId: location.organizationId,
         url: location.url || '',
       });
@@ -202,10 +210,18 @@ export class LocationFormComponent implements OnInit {
     const formData = { ...this.form.value };
     
     // Ensure category is sent as a number (enum value)
-    if (typeof formData.category === 'string') {
-      formData.category = parseInt(formData.category, 10);
-    } else if (formData.category != null) {
-      formData.category = Number(formData.category);
+    // With [ngValue], it should already be a number, but ensure it's valid
+    if (formData.category != null) {
+      const catNum = typeof formData.category === 'number' 
+        ? formData.category 
+        : parseInt(formData.category, 10);
+      if (!isNaN(catNum) && catNum >= 1 && catNum <= 4) {
+        formData.category = catNum;
+      } else {
+        formData.category = LocationCategory.Onsite; // Default fallback
+      }
+    } else {
+      formData.category = LocationCategory.Onsite; // Default fallback
     }
 
     if (this.isEdit) {

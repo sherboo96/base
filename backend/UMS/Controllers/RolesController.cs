@@ -95,6 +95,27 @@ public class RolesController : ControllerBase
             }
         }
 
+        // If setting as fallback, ensure no other fallback role exists for this organization
+        if (dto.IsFallback)
+        {
+            var existingFallbackRole = await _unitOfWork.Roles.FindAsync(
+                r => !r.IsDeleted && 
+                     r.IsFallback && 
+                     ((dto.OrganizationId.HasValue && r.OrganizationId == dto.OrganizationId) ||
+                      (!dto.OrganizationId.HasValue && r.ApplyToAllOrganizations && !r.OrganizationId.HasValue))
+            );
+
+            if (existingFallbackRole != null)
+            {
+                return BadRequest(new BaseResponse<Role>
+                {
+                    StatusCode = 400,
+                    Message = "A fallback role already exists for this organization. Please unset the existing fallback role first.",
+                    Result = null
+                });
+            }
+        }
+
         var entity = await _unitOfWork.Roles.AddAsync(dto);
         await _unitOfWork.CompleteAsync();
         return CreatedAtAction(nameof(GetById), new { id = ((Role)entity).Id }, new BaseResponse<Role> { StatusCode = 201, Message = "Role created successfully.", Result = (Role)entity });
@@ -128,7 +149,30 @@ public class RolesController : ControllerBase
             }
         }
 
+        // If setting as fallback, ensure no other fallback role exists for this organization
+        if (dto.IsFallback && !existing.IsFallback)
+        {
+            var existingFallbackRole = await _unitOfWork.Roles.FindAsync(
+                r => !r.IsDeleted && 
+                     r.Id != id &&
+                     r.IsFallback && 
+                     ((dto.OrganizationId.HasValue && r.OrganizationId == dto.OrganizationId) ||
+                      (!dto.OrganizationId.HasValue && r.ApplyToAllOrganizations && !r.OrganizationId.HasValue))
+            );
+
+            if (existingFallbackRole != null)
+            {
+                return BadRequest(new BaseResponse<Role>
+                {
+                    StatusCode = 400,
+                    Message = "A fallback role already exists for this organization. Please unset the existing fallback role first.",
+                    Result = null
+                });
+            }
+        }
+
         existing.Name = dto.Name;
+        existing.IsFallback = dto.IsFallback;
         existing.ApplyToAllOrganizations = dto.ApplyToAllOrganizations;
         existing.OrganizationId = dto.OrganizationId;
         existing.IsDefault = dto.IsDefault;

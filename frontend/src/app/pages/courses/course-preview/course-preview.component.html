@@ -13,7 +13,7 @@
   <div *ngIf="course && !isLoading">
     <!-- Top Navigation -->
     <div class="border-b border-gray-200 bg-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4">
         <button
           (click)="goBack()"
           class="inline-flex items-center text-gray-600 hover:text-accent transition-colors text-sm font-medium"
@@ -25,7 +25,7 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left Column - Main Content (2/3) -->
         <div class="lg:col-span-2 space-y-6">
@@ -63,41 +63,59 @@
             </p>
 
             <!-- Key Metrics Card -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
-                  <i class="fas fa-star text-yellow-600"></i>
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-star text-yellow-600 text-xs"></i>
                 </div>
-                <div>
-                  <p class="text-xs text-gray-500 font-medium">{{ 'course.kpiWeight' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ course.kpiWeight || 0 }}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <i class="fas fa-clock text-green-600"></i>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 font-medium">{{ 'course.duration' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ getCourseDuration() }}</p>
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 font-medium leading-tight">{{ 'course.kpiWeight' | translate }}</p>
+                  <p class="text-xs font-bold text-gray-900 leading-tight">{{ course.kpiWeight || 0 }}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                  <i class="fas fa-users text-indigo-600"></i>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-clock text-green-600 text-xs"></i>
                 </div>
-                <div>
-                  <p class="text-xs text-gray-500 font-medium">{{ 'course.seats' | translate }}</p>
-                  <p class="text-sm font-bold text-gray-900">{{ course.availableSeats || 0 }}</p>
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 font-medium leading-tight">{{ 'course.duration' | translate }}</p>
+                  <p class="text-xs font-bold text-gray-900 leading-tight">{{ getCourseDuration() }}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <i class="fas fa-user-check text-green-600"></i>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-users text-indigo-600 text-xs"></i>
                 </div>
-                <div>
-                  <p class="text-xs text-gray-500 font-medium">{{ 'course.availableSeats' | translate }}</p>
-                  <p class="text-sm font-bold text-accent">{{ getAvailableSeats() }}</p>
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 font-medium leading-tight">{{ 'course.seats' | translate }}</p>
+                  <p class="text-xs font-bold text-gray-900 leading-tight">{{ course.availableSeats || 0 }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-user-check text-green-600 text-xs"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 font-medium leading-tight">{{ 'course.availableSeats' | translate }}</p>
+                  <p class="text-xs font-bold text-accent leading-tight">{{ getAvailableSeats() }}</p>
+                </div>
+              </div>
+              <div *ngIf="course.availableOnlineSeats && course.availableOnlineSeats > 0" class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-laptop text-blue-600 text-xs"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 font-medium leading-tight">{{ 'course.onlineSeats' | translate }}</p>
+                  <p class="text-xs font-bold text-blue-600 leading-tight">{{ course.availableOnlineSeats || 0 }}</p>
+                </div>
+              </div>
+              <div *ngIf="course.availableOnlineSeats && course.availableOnlineSeats > 0" class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-laptop text-cyan-600 text-xs"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs text-gray-500 font-medium leading-tight">{{ 'course.availableOnlineSeats' | translate }}</p>
+                  <p class="text-xs font-bold text-cyan-600 leading-tight">{{ getAvailableOnlineSeats() }}</p>
                 </div>
               </div>
             </div>
@@ -209,6 +227,7 @@
                     </div>
                   </div>
                 </div>
+
               </div>
 
               <!-- Instructor Tab -->
@@ -325,15 +344,14 @@
 
         <!-- Right Column - Sidebar (1/3) -->
         <div class="lg:col-span-1 space-y-6">
-          
-
-          <!-- Course Details Card -->
+          <!-- Course Details Card (mirrors management course details) -->
           <div class="bg-white rounded-lg border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <i class="fas fa-folder text-accent"></i>
               {{ 'course.courseDetails' | translate }}
             </h3>
             <div class="space-y-3">
+              <!-- Start Date -->
               <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <i class="fas fa-calendar text-gray-500"></i>
                 <div>
@@ -341,6 +359,8 @@
                   <p class="text-sm font-semibold text-gray-900">{{ formatDate(course.startDateTime) }}</p>
                 </div>
               </div>
+
+              <!-- End Date -->
               <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <i class="fas fa-calendar text-gray-500"></i>
                 <div>
@@ -348,11 +368,59 @@
                   <p class="text-sm font-semibold text-gray-900">{{ formatDate(course.endDateTime) }}</p>
                 </div>
               </div>
+
+              <!-- Time -->
               <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <i class="fas fa-clock text-gray-500"></i>
                 <div>
                   <p class="text-xs text-gray-500 font-medium">{{ 'course.time' | translate }}</p>
                   <p class="text-sm font-semibold text-gray-900">{{ getCourseTime() }}</p>
+                </div>
+              </div>
+
+              <!-- Location + Documentation -->
+              <div *ngIf="course.location" class="space-y-3">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <i class="fas fa-map-marker-alt text-gray-500"></i>
+                  <div class="flex-1">
+                    <p class="text-xs text-gray-500 font-medium">{{ 'course.location' | translate }}</p>
+                    <p class="text-sm font-semibold text-gray-900">
+                      {{ course.location.name }}
+                      <span *ngIf="course.location.nameAr && currentLanguage === 'ar'">
+                        – {{ course.location.nameAr }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Location Documentation -->
+                <div *ngIf="course.location.url || course.location.template" class="space-y-2 pl-3 border-l-2 border-gray-200">
+                  <p class="text-xs text-gray-500 font-medium mb-1">{{ 'course.locationDocumentation' | translate }}</p>
+
+                  <!-- Location URL -->
+                  <div *ngIf="course.location.url" class="flex items-center gap-2 text-xs">
+                    <i class="fas fa-link text-accent"></i>
+                    <a
+                      [href]="course.location.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-accent hover:text-accentDark font-medium underline"
+                    >
+                      {{ 'course.openLocationUrl' | translate }}
+                    </a>
+                  </div>
+
+                  <!-- Location Template -->
+                  <div *ngIf="course.location.template" class="flex items-center gap-2 text-xs">
+                    <i class="fas fa-file-download text-accent"></i>
+                    <a
+                      [href]="getLocationTemplateUrl()"
+                      target="_blank"
+                      class="text-accent hover:text-accentDark font-medium underline"
+                    >
+                      {{ 'course.downloadLocationTemplate' | translate }}
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -378,10 +446,9 @@
 
             <!-- Enroll Button -->
             <button
-              *ngIf="!isEnrolled && course.status === CourseStatus.Published && getAvailableSeats() > 0"
+              *ngIf="!isEnrolled && isCoursePublished() && getAvailableSeats() > 0"
               (click)="enrollInCourse()"
-              [disabled]="isCheckingEnrollment"
-              class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4"
+              class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 mb-4"
             >
               <i class="fas fa-user-plus"></i>
               <span>{{ 'course.enroll' | translate }}</span>
@@ -389,7 +456,7 @@
 
             <!-- No Seats Available -->
             <div
-              *ngIf="!isEnrolled && course.status === CourseStatus.Published && getAvailableSeats() < 1"
+              *ngIf="!isEnrolled && isCoursePublished() && getAvailableSeats() < 1"
               class="w-full px-6 py-3 bg-red-500 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 mb-4"
             >
               <i class="fas fa-exclamation-circle"></i>
@@ -408,6 +475,29 @@
                   {{ getEnrollmentStatusText(enrollment.status) }}
                 </span>
               </div>
+
+              <!-- Upload Signed Location Document -->
+              <div *ngIf="hasLocationDocumentation()" class="space-y-2">
+                <p class="text-xs font-medium text-gray-700">
+                  {{ 'course.uploadSignedLocationDocument' | translate }}
+                </p>
+                <label
+                  class="w-full flex items-center justify-center px-4 py-2 border border-dashed border-accent text-accent rounded-lg cursor-pointer hover:bg-accent/5 text-xs font-medium gap-2"
+                >
+                  <i class="fas fa-file-upload"></i>
+                  <span>{{ 'course.chooseFile' | translate }}</span>
+                  <input
+                    type="file"
+                    class="hidden"
+                    (change)="onLocationDocumentSelected($event)"
+                    [disabled]="isUploadingLocationDocument"
+                  />
+                </label>
+                <p *ngIf="isUploadingLocationDocument" class="text-xs text-gray-500 flex items-center gap-1">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>{{ 'course.uploading' | translate }}</span>
+                </p>
+              </div>
               <!-- Excuse Button -->
               <button
                 *ngIf="canExcuse()"
@@ -420,7 +510,7 @@
             </div>
 
             <!-- Course Not Available -->
-            <div *ngIf="course.status !== CourseStatus.Published" class="w-full px-6 py-3 bg-gray-400 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 mb-4">
+            <div *ngIf="!isCoursePublished()" class="w-full px-6 py-3 bg-gray-400 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 mb-4">
               <i class="fas fa-lock"></i>
               <span>{{ 'course.notAvailable' | translate }}</span>
             </div>

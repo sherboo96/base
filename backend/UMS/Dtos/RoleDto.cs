@@ -7,4 +7,5 @@ public class RoleDto
     public bool ApplyToAllOrganizations { get; set; } = false;
     public int? OrganizationId { get; set; }
     public bool IsDefault { get; set; } = false;
+    public bool IsFallback { get; set; } = false;
 }

@@ -163,9 +163,6 @@ namespace UMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Attendance")
-                        .HasColumnType("int");
-
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(max)");
 
@@ -216,6 +213,9 @@ namespace UMS.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableOnlineSeats")
+                        .HasColumnType("int");
 
                     b.Property<int>("AvailableSeats")
                         .HasColumnType("int");
@@ -288,6 +288,9 @@ namespace UMS.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("Questions")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("StartDateTime")
                         .HasColumnType("datetime2");
 
@@ -338,6 +341,9 @@ namespace UMS.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("AdoptionType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AttendanceType")
                         .HasColumnType("int");
 
                     b.Property<string>("CreatedBy")
@@ -521,6 +527,9 @@ namespace UMS.Migrations
                     b.Property<DateTime>("EnrollmentAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("EnrollmentType")
+                        .HasColumnType("int");
+
                     b.Property<bool>("FinalApproval")
                         .HasColumnType("bit");
 
@@ -532,6 +541,12 @@ namespace UMS.Migrations
 
                     b.Property<bool>("IsManualEnrollment")
                         .HasColumnType("bit");
+
+                    b.Property<string>("LocationDocumentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("QuestionAnswers")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -686,6 +701,64 @@ namespace UMS.Migrations
                     b.HasIndex("CourseId");
 
                     b.ToTable("CourseLearningOutcomes");
+                });
+
+            modelBuilder.Entity("UMS.Models.CourseQuestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DescriptionAr")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("QuestionAr")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("CourseQuestions");
                 });
 
             modelBuilder.Entity("UMS.Models.CourseTab", b =>
@@ -1188,6 +1261,9 @@ namespace UMS.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsManual")
+                        .HasColumnType("bit");
+
                     b.Property<string>("JobTitle")
                         .HasColumnType("nvarchar(max)");
 
@@ -1219,6 +1295,9 @@ namespace UMS.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("VipStatus")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1723,6 +1802,48 @@ namespace UMS.Migrations
                     b.ToTable("Positions");
                 });
 
+            modelBuilder.Entity("UMS.Models.Public", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Publics");
+                });
+
             modelBuilder.Entity("UMS.Models.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -1747,6 +1868,9 @@ namespace UMS.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFallback")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -2311,6 +2435,17 @@ namespace UMS.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("UMS.Models.CourseQuestion", b =>
+                {
+                    b.HasOne("UMS.Models.Course", "Course")
+                        .WithMany("CourseQuestions")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("UMS.Models.CourseTab", b =>
                 {
                     b.HasOne("UMS.Models.Organization", "Organization")
@@ -2601,6 +2736,8 @@ namespace UMS.Migrations
                     b.Navigation("CourseContents");
 
                     b.Navigation("CourseInstructors");
+
+                    b.Navigation("CourseQuestions");
 
                     b.Navigation("LearningOutcomes");
                 });

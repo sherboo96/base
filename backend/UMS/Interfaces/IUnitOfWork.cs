@@ -15,6 +15,7 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<Institution, InstitutionDto> Institutions { get; }
     IBaseRepository<Instructor, InstructorDto> Instructors { get; }
     IBaseRepository<SystemConfiguration, SystemConfigurationDto> SystemConfigurations { get; }
+    IBaseRepository<Public, PublicDto> Publics { get; }
     IBaseRepository<Location, LocationDto> Locations { get; }
     ISegmentRepository Segments { get; }
     IBaseRepository<AdoptionUser, AdoptionUserDto> AdoptionUsers { get; }
@@ -22,6 +23,7 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<Course, CourseDto> Courses { get; }
     IBaseRepository<CourseTabApproval, CourseTabApprovalDto> CourseTabApprovals { get; }
     IBaseRepository<CourseEnrollmentApproval, CourseEnrollmentApprovalDto> CourseEnrollmentApprovals { get; }
+    IBaseRepository<CourseQuestion, CourseQuestionDto> CourseQuestions { get; }
     IBaseRepository<Event, EventDto> Events { get; }
     IBaseRepository<EventSpeaker, EventSpeakerDto> EventSpeakers { get; }
     IBaseRepository<EventOrganization, EventOrganizationDto> EventOrganizations { get; }

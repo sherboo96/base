@@ -34,7 +34,7 @@
           {{ 'course.basicInformation' | translate }}
         </h3>
 
-        <!-- Code -->
+        <!-- Code (read-only, auto-generated) -->
         <div class="space-y-2">
           <label for="code" class="block text-sm font-medium text-textDark font-poppins">
             {{ 'course.code' | translate }}
@@ -44,68 +44,75 @@
             type="text"
             id="code"
             formControlName="code"
-            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm bg-gray-100 text-gray-600 cursor-not-allowed font-poppins"
+            readonly
             [placeholder]="'course.codePlaceholder' | translate"
           />
         </div>
 
-        <!-- Course Title -->
-        <div class="space-y-2">
-          <label for="courseTitle" class="block text-sm font-medium text-textDark font-poppins">
-            {{ 'course.courseTitle' | translate }}
-            <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="courseTitle"
-            formControlName="courseTitle"
-            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
-            [placeholder]="'course.courseTitlePlaceholder' | translate"
-          />
+        <!-- Course Title and Course Title Ar in 2 columns -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Course Title -->
+          <div class="space-y-2">
+            <label for="courseTitle" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.courseTitle' | translate }}
+              <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="courseTitle"
+              formControlName="courseTitle"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+              [placeholder]="'course.courseTitlePlaceholder' | translate"
+            />
+          </div>
+
+          <!-- Course Title Ar -->
+          <div class="space-y-2">
+            <label for="courseTitleAr" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.courseTitleAr' | translate }}
+            </label>
+            <input
+              type="text"
+              id="courseTitleAr"
+              formControlName="courseTitleAr"
+              dir="rtl"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+              [placeholder]="'course.courseTitleArPlaceholder' | translate"
+            />
+          </div>
         </div>
 
-        <!-- Course Title Ar -->
-        <div class="space-y-2">
-          <label for="courseTitleAr" class="block text-sm font-medium text-textDark font-poppins">
-            {{ 'course.courseTitleAr' | translate }}
-          </label>
-          <input
-            type="text"
-            id="courseTitleAr"
-            formControlName="courseTitleAr"
-            dir="rtl"
-            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
-            [placeholder]="'course.courseTitleArPlaceholder' | translate"
-          />
-        </div>
+        <!-- Description and Description Ar in 2 columns -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Description -->
+          <div class="space-y-2">
+            <label for="description" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.description' | translate }}
+            </label>
+            <textarea
+              id="description"
+              formControlName="description"
+              rows="3"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+              [placeholder]="'course.descriptionPlaceholder' | translate"
+            ></textarea>
+          </div>
 
-        <!-- Description -->
-        <div class="space-y-2">
-          <label for="description" class="block text-sm font-medium text-textDark font-poppins">
-            {{ 'course.description' | translate }}
-          </label>
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="3"
-            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
-            [placeholder]="'course.descriptionPlaceholder' | translate"
-          ></textarea>
-        </div>
-
-        <!-- Description Ar -->
-        <div class="space-y-2">
-          <label for="descriptionAr" class="block text-sm font-medium text-textDark font-poppins">
-            {{ 'course.descriptionAr' | translate }}
-          </label>
-          <textarea
-            id="descriptionAr"
-            formControlName="descriptionAr"
-            dir="rtl"
-            rows="3"
-            class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
-            [placeholder]="'course.descriptionArPlaceholder' | translate"
-          ></textarea>
+          <!-- Description Ar -->
+          <div class="space-y-2">
+            <label for="descriptionAr" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.descriptionAr' | translate }}
+            </label>
+            <textarea
+              id="descriptionAr"
+              formControlName="descriptionAr"
+              dir="rtl"
+              rows="3"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+              [placeholder]="'course.descriptionArPlaceholder' | translate"
+            ></textarea>
+          </div>
         </div>
       </div>
 
@@ -181,7 +188,6 @@
             <select
               id="organizationId"
               formControlName="organizationId"
-              [disabled]="organizationDisabled"
               class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option [value]="null">{{ 'course.selectOrganization' | translate }}</option>
@@ -228,7 +234,6 @@
               id="locationId"
               formControlName="locationId"
               class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 appearance-none bg-white"
-              [disabled]="!form.get('organizationId')?.value"
             >
               <option [value]="null">{{ 'course.selectLocation' | translate }}</option>
               <option *ngFor="let location of filteredLocations" [value]="location.id">
@@ -282,7 +287,7 @@
           {{ 'course.capacityPricing' | translate }}
         </h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <!-- Available Seats -->
           <div class="space-y-2">
             <label for="availableSeats" class="block text-sm font-medium text-textDark font-poppins">
@@ -293,6 +298,20 @@
               type="number"
               id="availableSeats"
               formControlName="availableSeats"
+              min="0"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
+            />
+          </div>
+
+          <!-- Available Online Seats -->
+          <div class="space-y-2">
+            <label for="availableOnlineSeats" class="block text-sm font-medium text-textDark font-poppins">
+              {{ 'course.availableOnlineSeats' | translate }}
+            </label>
+            <input
+              type="number"
+              id="availableOnlineSeats"
+              formControlName="availableOnlineSeats"
               min="0"
               class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
             />
@@ -490,7 +509,7 @@
           >
             <option [value]="null">{{ 'course.selectTargetUserType' | translate }}</option>
             <!-- Options for Main Organization -->
-            <ng-container *ngIf="isMainOrg">
+            <ng-container *ngIf="isMainOrganization">
               <option [value]="TargetUserType.ForOurOrganization">{{ 'course.targetUserTypeForOurOrganization' | translate }}</option>
               <option [value]="TargetUserType.All">{{ 'course.targetUserTypeAll' | translate }}</option>
               <option [value]="TargetUserType.SpecificDepartments">{{ 'course.targetUserTypeSpecificDepartments' | translate }}</option>
@@ -498,7 +517,7 @@
               <option [value]="TargetUserType.SpecificSegments">{{ 'course.targetUserTypeSpecificSegments' | translate }}</option>
             </ng-container>
             <!-- Options for Non-Main Organization -->
-            <ng-container *ngIf="!isMainOrg">
+            <ng-container *ngIf="!isMainOrganization">
               <option [value]="TargetUserType.AllUsersOfOrganization">{{ 'course.targetUserTypeAllUsersOfOrganization' | translate }}</option>
               <option [value]="TargetUserType.SpecificOrganizationSegment">{{ 'course.targetUserTypeSpecificOrganizationSegment' | translate }}</option>
             </ng-container>

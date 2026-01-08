@@ -107,13 +107,10 @@ export class LocationComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           // Normalize category values to ensure they're numbers
+          // API returns enum as string (e.g., "Online", "Onsite") due to JsonStringEnumConverter
           this.locations = response.result.map(location => ({
             ...location,
-            category: typeof location.category === 'number' 
-              ? location.category 
-              : (typeof location.category === 'object' 
-                  ? (location.category as any).value || (location.category as any).id || Number(location.category) || 1
-                  : Number(location.category) || 1)
+            category: this.normalizeCategory(location.category)
           }));
           this.totalItems = response.pagination.total;
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
@@ -195,28 +192,59 @@ export class LocationComponent implements OnInit, OnDestroy {
     });
   }
 
-  getCategoryText(category: LocationCategory | number | any): string {
-    try {
+  normalizeCategory(category: LocationCategory | number | string | any): number {
       // Handle null/undefined
       if (category == null || category === undefined) {
-        return '';
+      return LocationCategory.Onsite; // Default
       }
       
       // If it's already a number, use it directly
-      let categoryValue: number;
       if (typeof category === 'number') {
-        categoryValue = category;
-      } else if (typeof category === 'string') {
-        categoryValue = parseInt(category, 10);
-      } else if (typeof category === 'object') {
-        // If it's an object, try to extract the value
-        categoryValue = Number(category) || (category as any).value || (category as any).id || (category as any).category || 0;
-      } else {
-        categoryValue = Number(category) || 0;
+      return category;
+    }
+    
+    // If it's a string, check if it's an enum name or numeric string
+    if (typeof category === 'string') {
+      // Check if it's a numeric string
+      const numValue = parseInt(category, 10);
+      if (!isNaN(numValue) && numValue >= 1 && numValue <= 4) {
+        return numValue;
       }
       
-      // Handle NaN
-      if (isNaN(categoryValue) || categoryValue === 0) {
+      // Map enum string names to numbers
+      const categoryLower = category.toLowerCase();
+      switch (categoryLower) {
+        case 'onsite':
+          return LocationCategory.Onsite; // 1
+        case 'online':
+          return LocationCategory.Online; // 2
+        case 'outsite':
+          return LocationCategory.OutSite; // 3
+        case 'abroad':
+          return LocationCategory.Abroad; // 4
+        default:
+          return LocationCategory.Onsite; // Default
+      }
+    }
+    
+        // If it's an object, try to extract the value
+    if (typeof category === 'object') {
+      const objValue = (category as any).value || (category as any).id || (category as any).category;
+      return this.normalizeCategory(objValue);
+    }
+    
+    // Try to convert to number
+    const numValue = Number(category);
+    return !isNaN(numValue) && numValue >= 1 && numValue <= 4 ? numValue : LocationCategory.Onsite;
+  }
+
+  getCategoryText(category: LocationCategory | number | string | any): string {
+    try {
+      // Normalize the category to a number first
+      const categoryValue = this.normalizeCategory(category);
+      
+      // Handle invalid values
+      if (categoryValue < 1 || categoryValue > 4) {
         return '';
       }
       
@@ -250,27 +278,12 @@ export class LocationComponent implements OnInit, OnDestroy {
     }
   }
 
-  getCategoryClass(category: LocationCategory | number | any): string {
-    // Handle null/undefined
-    if (category == null) {
-      return 'bg-gray-100 text-gray-800';
-    }
+  getCategoryClass(category: LocationCategory | number | string | any): string {
+    // Normalize the category to a number first
+    const categoryValue = this.normalizeCategory(category);
     
-    // If it's already a number, use it directly
-    let categoryValue: number;
-    if (typeof category === 'number') {
-      categoryValue = category;
-    } else if (typeof category === 'string') {
-      categoryValue = parseInt(category, 10);
-    } else if (typeof category === 'object') {
-      // If it's an object, try to extract the value
-      categoryValue = Number(category) || (category as any).value || (category as any).id || 0;
-    } else {
-      categoryValue = Number(category) || 0;
-    }
-    
-    // Handle NaN
-    if (isNaN(categoryValue)) {
+    // Handle invalid values
+    if (categoryValue < 1 || categoryValue > 4) {
       return 'bg-gray-100 text-gray-800';
     }
     

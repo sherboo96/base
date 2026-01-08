@@ -16,7 +16,7 @@ export interface Location {
   nameAr: string;
   floor?: string;
   building?: string;
-  category: LocationCategory;
+  category: LocationCategory | string | number; // API returns string enum, but we normalize to number
   organizationId: number;
   organization: {
     id: number;

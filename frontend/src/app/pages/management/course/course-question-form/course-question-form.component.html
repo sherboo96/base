@@ -1,0 +1,90 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+    <i class="fas fa-question-circle text-accent"></i>
+    <span *ngIf="!isEdit">{{ 'course.addQuestion' | translate }}</span>
+    <span *ngIf="isEdit">{{ 'course.editQuestion' | translate }}</span>
+  </h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+    <!-- Question (English) -->
+    <div class="space-y-2">
+      <label for="question" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.question' | translate }} <span class="text-red-500">*</span>
+      </label>
+      <textarea
+        id="question"
+        formControlName="question"
+        rows="3"
+        [placeholder]="'course.questionPlaceholder' | translate"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 resize-none"
+        [class.border-red-500]="form.get('question')?.invalid && form.get('question')?.touched"
+      ></textarea>
+      <p *ngIf="form.get('question')?.invalid && form.get('question')?.touched" class="text-xs text-red-600">
+        {{ 'course.questionRequired' | translate }}
+      </p>
+    </div>
+
+    <!-- Question (Arabic) -->
+    <div class="space-y-2">
+      <label for="questionAr" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.questionAr' | translate }}
+      </label>
+      <textarea
+        id="questionAr"
+        formControlName="questionAr"
+        rows="3"
+        [placeholder]="'course.questionArPlaceholder' | translate"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 resize-none"
+        dir="rtl"
+      ></textarea>
+    </div>
+
+    <!-- Question Type -->
+    <div class="space-y-2">
+      <label for="type" class="block text-sm font-medium text-gray-700 font-poppins">
+        {{ 'course.questionType' | translate }} <span class="text-red-500">*</span>
+      </label>
+      <select
+        id="type"
+        formControlName="type"
+        class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+      >
+        <option *ngFor="let type of questionTypes" [value]="type.value">
+          {{ type.label | translate }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Required -->
+    <div class="flex items-center space-x-3">
+      <input
+        type="checkbox"
+        id="required"
+        formControlName="required"
+        class="w-4 h-4 text-accent border-gray-300 rounded focus:ring-accent"
+      />
+      <label for="required" class="text-sm font-medium text-gray-700 font-poppins cursor-pointer">
+        {{ 'course.required' | translate }}
+      </label>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors font-poppins"
+      >
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        class="px-4 py-2 border-2 border-transparent rounded-lg text-sm font-medium text-white bg-accent hover:bg-accentDark disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-poppins"
+      >
+        {{ 'common.save' | translate }}
+      </button>
+    </div>
+  </form>
+</div>
+

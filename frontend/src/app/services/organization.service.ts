@@ -110,4 +110,24 @@ export class OrganizationService {
   exportOrganization(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/export`, { responseType: 'blob' });
   }
+
+  // Bulk upload organizations from JSON
+  bulkUploadOrganizations(organizations: BulkOrganizationUpload[]): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/bulk-upload`, organizations);
+  }
+}
+
+export interface BulkOrganizationUpload {
+  nameEn: string;  // camelCase to match backend DTO (NameEn)
+  nameAr?: string; // camelCase to match backend DTO (NameAr)
+  code: string;
+  domain: string;
+}
+
+export interface BulkOrganizationUploadResponse {
+  totalProcessed: number;
+  successfullyAdded: number;
+  skipped: number;
+  skippedDomains: string[];
+  errors: string[];
 }

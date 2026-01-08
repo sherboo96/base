@@ -192,6 +192,10 @@
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">
                             <div class="flex items-center justify-end gap-1.5">
+                                <button (click)="openSeatingChart(event)" class="inline-flex items-center px-2 py-1 border-2 border-teal-500 rounded-lg text-teal-600 bg-white hover:bg-teal-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'eventRegistration.seatingChart'|translate">
+                                    <i class="fas fa-chair mr-1 text-xs"></i>
+                                    <span>{{'eventRegistration.seatingChart'|translate}}</span>
+                                </button>
                                 <button (click)="viewRegistrations(event)" class="inline-flex items-center px-2 py-1 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'event.viewRegistrations'|translate">
                                     <i class="fas fa-users mr-1 text-xs"></i>
                                     <span>{{'event.registered'|translate}}</span>

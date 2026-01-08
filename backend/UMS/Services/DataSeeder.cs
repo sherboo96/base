@@ -257,6 +257,12 @@ public class DataSeeder
             new Permission { Name = "Create System Configuration", Code = "SYSTEM_CONFIG_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Update System Configuration", Code = "SYSTEM_CONFIG_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
 
+            // Public Configuration Permissions
+            new Permission { Name = "View Public Configuration", Code = "PUBLIC_CONFIG_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Create Public Configuration", Code = "PUBLIC_CONFIG_CREATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Update Public Configuration", Code = "PUBLIC_CONFIG_UPDATE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+            new Permission { Name = "Delete Public Configuration", Code = "PUBLIC_CONFIG_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
+
             // Logs Management Permissions
             new Permission { Name = "View Logs", Code = "LOGS_VIEW", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },
             new Permission { Name = "Delete Logs", Code = "LOGS_DELETE", IsActive = true, CreatedBy = "System", CreatedOn = DateTime.UtcNow },

@@ -38,6 +38,7 @@ public class Course : BaseModel
     public DateTime? StartDateTime { get; set; }
     public DateTime? EndDateTime { get; set; }
     public int AvailableSeats { get; set; }
+    public int AvailableOnlineSeats { get; set; } = 0;
     public decimal Price { get; set; } = 0;
     public decimal KpiWeight { get; set; } = 0;
     public bool DigitLibraryAvailability { get; set; } = false;
@@ -54,6 +55,7 @@ public class Course : BaseModel
     public string? TargetDepartmentRoles { get; set; } // JSON object mapping department IDs to roles, e.g., "{\"1\":\"Head\",\"2\":\"Member\",\"3\":\"Both\"}"
     public string? TargetOrganizationIds { get; set; } // JSON array of organization IDs, e.g., "[1,2,3]"
     public string? TargetSegmentIds { get; set; } // JSON array of segment IDs, e.g., "[1,2,3]"
+    public string? Questions { get; set; } // JSON array of course enrollment questions
 
     [JsonIgnore]
     public ICollection<CourseLearningOutcome> LearningOutcomes { get; set; } = new List<CourseLearningOutcome>();
@@ -69,4 +71,7 @@ public class Course : BaseModel
 
     [JsonIgnore]
     public ICollection<CourseContact> CourseContacts { get; set; } = new List<CourseContact>();
+
+    [JsonIgnore]
+    public ICollection<CourseQuestion> CourseQuestions { get; set; } = new List<CourseQuestion>();
 }

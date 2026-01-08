@@ -1,4 +1,4 @@
-<div class="flex items-center justify-center min-h-screen py-8">
+<div class="flex flex-col items-center justify-center min-h-screen py-8">
     <!-- Loading Component -->
     <app-loading></app-loading>
 
@@ -160,11 +160,13 @@
                     <span>{{ 'login.signIn' | translate }}</span>
                 </button>
 
-                <div class="text-xs text-gray-500 mt-2">
-                    <p class="text-center">
-                        <i class="fas fa-shield-alt mr-1 rtl:mr-0 rtl:ml-1 text-accent"></i>
-                        {{ 'login.securityMessage' | translate }}
-                    </p>
+                <!-- Support Button -->
+                <div class="flex items-center justify-center mt-3">
+                    <button type="button" (click)="openSupportDialog()" 
+                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-accent transition-colors duration-200 font-poppins">
+                        <i class="fas fa-headset"></i>
+                        <span>{{ 'support.contactSupport' | translate }}</span>
+                    </button>
                 </div>
             </form>
 
@@ -425,5 +427,12 @@
         <div class="hidden md:block md:w-1/2" *ngIf="!isRegistrationMode">
             <img src="assets/images/moo.png" alt="Ministry of Oil" class="h-full w-full object-cover" />
         </div>
+    </div>
+    
+    <!-- Copyright Footer -->
+    <div class="mt-6 text-center w-full max-w-5xl">
+        <p class="text-xs text-gray-500 font-poppins" [attr.dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
+            © {{ currentYear }} Information Systems Center - Ministry of Oil
+        </p>
     </div>
 </div>

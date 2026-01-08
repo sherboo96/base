@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using UMS.Models;
 
 namespace UMS.Dtos;
@@ -14,6 +15,9 @@ public class CourseEnrollmentDto
     public bool FinalApproval { get; set; } = false;
     public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Pending;
     public bool IsManualEnrollment { get; set; } = false;
+    public string? QuestionAnswers { get; set; } // JSON object storing answers to course enrollment questions
+    public string? LocationDocumentPath { get; set; } // Path to uploaded signed location document
+    public EnrollmentType? EnrollmentType { get; set; } // Onsite or Online enrollment type
     public List<CourseEnrollmentApprovalDto>? ApprovalSteps { get; set; }
     public object? _Debug { get; set; } // Diagnostic info for troubleshooting approval steps
 }
@@ -35,11 +39,18 @@ public class UserEnrollmentDto
 public class CreateEnrollmentDto
 {
     public int CourseId { get; set; }
+    public Dictionary<string, string>? QuestionAnswers { get; set; } // Answers to course enrollment questions
 }
 
 public class CreateManualEnrollmentDto
 {
     public int CourseId { get; set; }
     public string UserId { get; set; }
+    public Dictionary<string, string>? QuestionAnswers { get; set; } // Answers to course enrollment questions
+}
+
+public class UpdateLocationDocumentDto
+{
+    public string FilePath { get; set; } = string.Empty;
 }
 

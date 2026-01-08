@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { DialogRef } from '@ngneat/dialog';
-import { CourseService, AdoptionType } from '../../../../services/course.service';
+import { CourseService, AdoptionType, AttendanceType } from '../../../../services/course.service';
 import { AdoptionUserService, AdoptionUser } from '../../../../services/adoption-user.service';
 import { ToastrService } from 'ngx-toastr';
 import { TranslationService } from '../../../../services/translation.service';
@@ -18,6 +18,7 @@ export class CourseAdoptionUserFormComponent implements OnInit {
   form: FormGroup;
   adoptionUsers: AdoptionUser[] = [];
   AdoptionType = AdoptionType;
+  AttendanceType = AttendanceType;
   isEdit = false;
 
   constructor(
@@ -32,6 +33,7 @@ export class CourseAdoptionUserFormComponent implements OnInit {
     this.form = this.fb.group({
       adoptionUserId: [null, Validators.required],
       adoptionType: [AdoptionType.Other, Validators.required],
+      attendanceType: [AttendanceType.Optional, Validators.required],
     });
     this.isEdit = this.dialogRef.data?.isEdit || false;
   }
@@ -42,6 +44,7 @@ export class CourseAdoptionUserFormComponent implements OnInit {
       this.form.patchValue({
         adoptionUserId: this.dialogRef.data.adoptionUser.adoptionUserId,
         adoptionType: this.dialogRef.data.adoptionUser.adoptionType,
+        attendanceType: this.dialogRef.data.adoptionUser.attendanceType || AttendanceType.Optional,
       });
     }
   }
@@ -108,10 +111,13 @@ export class CourseAdoptionUserFormComponent implements OnInit {
 
     if (!course || !courseId) return;
 
-    // Ensure adoptionType is a number (enum value)
+    // Ensure adoptionType and attendanceType are numbers (enum values)
     const adoptionType = typeof formValue.adoptionType === 'string' 
       ? parseInt(formValue.adoptionType, 10) 
       : Number(formValue.adoptionType);
+    const attendanceType = typeof formValue.attendanceType === 'string' 
+      ? parseInt(formValue.attendanceType, 10) 
+      : Number(formValue.attendanceType);
 
     if (this.isEdit) {
       // Update existing adoption user
@@ -121,6 +127,7 @@ export class CourseAdoptionUserFormComponent implements OnInit {
             ...au,
             adoptionUserId: formValue.adoptionUserId,
             adoptionType: adoptionType,
+            attendanceType: attendanceType,
           };
         }
         return au;
@@ -147,6 +154,7 @@ export class CourseAdoptionUserFormComponent implements OnInit {
       const newAdoptionUser = {
         adoptionUserId: formValue.adoptionUserId,
         adoptionType: adoptionType,
+        attendanceType: attendanceType,
       };
 
       // Check if already exists

@@ -545,6 +545,11 @@ export class SideMenuComponent implements OnInit, OnDestroy {
     this.router.navigate(['/management/system-configuration']);
   }
 
+  navigateToPublic() {
+    this.activeRoute = '/management/public';
+    this.router.navigate(['/management/public']);
+  }
+
   navigateToLogs() {
     this.activeRoute = '/management/logs';
     this.router.navigate(['/management/logs']);
@@ -716,7 +721,7 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   }
 
   hasSystemAdministrationItems(): boolean {
-    return this.hasPermission('SYSTEM_CONFIG_VIEW') || this.hasPermission('LOGS_VIEW');
+    return this.hasPermission('SYSTEM_CONFIG_VIEW') || this.hasPermission('LOGS_VIEW') || this.hasPermission('PUBLIC_CONFIG_VIEW');
   }
 
   isDepartmentHead(): boolean {

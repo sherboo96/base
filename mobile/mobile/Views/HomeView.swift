@@ -391,6 +391,39 @@ struct EventCardView: View {
                                 Spacer()
                             }
                         }
+                        
+                        // Registration Count (without main organization)
+                        if let registrationCount = event.registrationCount {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color.blue.opacity(0.15), Color.blue.opacity(0.05)]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .frame(width: 40, height: 40)
+                                    
+                                    Image(systemName: "person.3.fill")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.blue)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Registrations")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                    
+                                    Text("\(registrationCount) registered")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                }
+                                
+                                Spacer()
+                            }
+                        }
                     }
                     
                     // Action Footer

@@ -93,13 +93,41 @@ import { DialogRef } from '@ngneat/dialog';
             <label class="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
+                formControlName="isActive"
+                class="text-[#c9ae81] focus:ring-[#c9ae81] rounded"
+              />
+              <span class="text-sm text-gray-700 font-medium">Status (Active)</span>
+            </label>
+            <p class="text-xs text-gray-500 mt-1">
+              If checked, this role will be active and available for assignment. Uncheck to deactivate the role.
+            </p>
+          </div>
+
+          <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
                 formControlName="isDefault"
                 class="text-[#c9ae81] focus:ring-[#c9ae81] rounded"
               />
-              <span class="text-sm text-gray-700">Set as Default Role for Organization</span>
+              <span class="text-sm text-gray-700 font-medium">Set as Default Role for Organization</span>
             </label>
             <p class="text-xs text-gray-500 mt-1">
               If checked, this role will be automatically assigned to new users registering with this organization's email domain.
+            </p>
+          </div>
+
+          <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                formControlName="isFallback"
+                class="text-[#c9ae81] focus:ring-[#c9ae81] rounded"
+              />
+              <span class="text-sm text-gray-700 font-medium">Set as Fallback Role</span>
+            </label>
+            <p class="text-xs text-gray-500 mt-1">
+              If checked, this role will be used as fallback when a user registers and their organization doesn't have a default role.
             </p>
           </div>
 
@@ -142,7 +170,9 @@ export class RoleFormComponent implements OnInit {
       name: ['', Validators.required],
       applyToAllOrganizations: ['false'],
       organizationId: [null],
+      isActive: [true],
       isDefault: [false],
+      isFallback: [false],
     });
 
     // Check if editing - will populate after organizations are loaded
@@ -182,7 +212,9 @@ export class RoleFormComponent implements OnInit {
               const formValues: any = {
                 name: role.name || '',
                 applyToAllOrganizations: applyToAll ? 'true' : 'false',
+                isActive: role.isActive ?? true,
                 isDefault: role.isDefault ?? false,
+                isFallback: role.isFallback ?? false,
               };
               
               // Set organizationId (null if not set)
@@ -211,7 +243,9 @@ export class RoleFormComponent implements OnInit {
         ...this.roleForm.value,
         applyToAllOrganizations: this.roleForm.value.applyToAllOrganizations === 'true' || this.roleForm.value.applyToAllOrganizations === true,
         organizationId: this.roleForm.value.organizationId || null,
-        isDefault: this.roleForm.value.isDefault === true || this.roleForm.value.isDefault === 'true'
+        isActive: this.roleForm.value.isActive === true || this.roleForm.value.isActive === 'true',
+        isDefault: this.roleForm.value.isDefault === true || this.roleForm.value.isDefault === 'true',
+        isFallback: this.roleForm.value.isFallback === true || this.roleForm.value.isFallback === 'true'
       };
       
       if (this.isEdit && this.roleId) {
@@ -227,7 +261,7 @@ export class RoleFormComponent implements OnInit {
         });
       } else {
         // Create new role
-        this.userService.createRole({ ...formValue, isActive: true }).subscribe({
+        this.userService.createRole(formValue).subscribe({
           next: (response) => {
             this.toastr.success('Role created successfully');
             this.dialogRef.close(true);

@@ -1,0 +1,82 @@
+<div class="p-4 mx-auto max-w-full">
+    <app-loading></app-loading>
+    <div class="mb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-textDark mb-0.5 flex items-center gap-2">
+                <i class="fas fa-globe text-accent text-lg"></i>
+                <span>{{'public.title'|translate}}</span>
+            </h1>
+            <p class="text-xs text-gray-600">
+                {{'public.subtitle'|translate}}
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <button (click)="editSupportInfo()" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md">
+                <i class="fas fa-headset mr-1.5"></i>
+                <span>{{'public.editSupportInfo'|translate}}</span>
+            </button>
+            <button (click)="addPublic()" class="inline-flex items-center px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-medium hover:bg-accentDark transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md">
+                <i class="fas fa-plus mr-1.5"></i>
+                <span>{{'public.addPublic'|translate}}</span>
+            </button>
+        </div>
+    </div>
+    <div class="mb-3 bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        <div class="bg-accentDark px-3 py-1.5">
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-search text-white text-xs"></i>
+                <h2 class="text-xs font-semibold text-white">{{'public.search'|translate}}</h2>
+            </div>
+        </div>
+        <div class="p-3 bg-gray-50">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                    <i class="fas fa-search text-gray-400 text-xs"></i>
+                </div>
+                <input type="text" [(ngModel)]="searchTerm" (keyup)="onSearch()" [placeholder]="'public.searchPlaceholder'|translate" class="w-full border-2 border-gray-300 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white shadow-sm" />
+            </div>
+        </div>
+    </div>
+    <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{{'public.key'|translate}}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{{'public.value'|translate}}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{{'public.description'|translate}}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">{{'common.actions'|translate}}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr *ngFor="let publicData of filteredPublics" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">{{publicData.key}}</td>
+                        <td class="px-4 py-3 text-xs text-gray-700 break-all max-w-xs">{{publicData.value.length > 100 ? (publicData.value.substring(0, 100) + '...') : publicData.value}}</td>
+                        <td class="px-4 py-3 text-xs text-gray-600">{{publicData.description || '-'}}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end gap-2">
+                                <button (click)="editPublic(publicData)" class="inline-flex items-center px-3 py-1.5 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'common.edit' | translate">
+                                    <i class="fas fa-edit mr-1.5"></i>
+                                    <span>{{ 'common.edit' | translate }}</span>
+                                </button>
+                                <button (click)="deletePublic(publicData)" class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs" [title]="'common.delete' | translate">
+                                    <i class="fas fa-trash mr-1.5"></i>
+                                    <span>{{ 'common.delete' | translate }}</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="filteredPublics.length === 0">
+                        <td colspan="4" class="px-4 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-inbox text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-xl text-gray-500 font-medium">{{'public.noPublics'|translate}}</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

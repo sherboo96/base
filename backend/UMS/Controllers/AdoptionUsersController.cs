@@ -108,7 +108,6 @@ public class AdoptionUsersController : ControllerBase
 
         existing.Name = dto.Name;
         existing.NameAr = dto.NameAr;
-        existing.Attendance = dto.Attendance;
         existing.Email = dto.Email;
         existing.Bio = dto.Bio;
         existing.OrganizationId = dto.OrganizationId;

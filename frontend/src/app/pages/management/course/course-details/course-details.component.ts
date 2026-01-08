@@ -1,7 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CourseService, Course, CourseStatus, AdoptionType } from '../../../../services/course.service';
+import { CourseService, Course, CourseStatus, AdoptionType, AttendanceType, TargetUserType } from '../../../../services/course.service';
+import { CourseQuestionService, CourseQuestion, QuestionType } from '../../../../services/course-question.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { LoadingService } from '../../../../services/loading.service';
@@ -11,13 +12,18 @@ import { DeleteConfirmationDialogComponent } from '../../../../components/delete
 import { TranslationService } from '../../../../services/translation.service';
 import { CourseAdoptionUserFormComponent } from '../course-adoption-user-form/course-adoption-user-form.component';
 import { CourseContactFormComponent } from '../course-contact-form/course-contact-form.component';
-import { EnrollmentService, CourseEnrollment, EnrollmentStatus } from '../../../../services/enrollment.service';
+import { EnrollmentService, CourseEnrollment, EnrollmentStatus, EnrollmentType } from '../../../../services/enrollment.service';
 import { AttendanceService } from '../../../../services/attendance.service';
 import { AttachmentService } from '../../../../services/attachment.service';
 import { AdoptionUserService, AdoptionUser } from '../../../../services/adoption-user.service';
+import { DepartmentService, Department } from '../../../../services/department.service';
+import { SegmentService, Segment } from '../../../../services/segment.service';
+import { OrganizationService, Organization } from '../../../../services/organization.service';
 import { ApprovalStepsDialogComponent } from '../../../../components/approval-steps-dialog/approval-steps-dialog.component';
 import { CourseAttendanceComponent } from '../course-attendance/course-attendance.component';
 import { CourseManualEnrollmentComponent } from '../course-manual-enrollment/course-manual-enrollment.component';
+import { CourseQuestionFormComponent } from '../course-question-form/course-question-form.component';
+import { EnrollmentAnswersDialogComponent } from './enrollment-answers-dialog/enrollment-answers-dialog.component';
 
 @Component({
   selector: 'app-course-details',
@@ -35,7 +41,7 @@ export class CourseDetailsComponent implements OnInit {
   course: Course | null = null;
   isLoading = false;
   CourseStatus = CourseStatus;
-  activeTab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' = 'overview';
+  activeTab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' | 'questions' | 'targetUsers' = 'overview';
   enrollments: CourseEnrollment[] = [];
   groupedEnrollments: { [key: string]: CourseEnrollment[] } = {};
   enrollmentOrganizations: string[] = [];
@@ -44,6 +50,7 @@ export class CourseDetailsComponent implements OnInit {
   enrollmentPageSize = 20;
   totalEnrollments = 0;
   approvedEnrollmentsCount = 0;
+  approvedOnlineEnrollmentsCount = 0;
   Math = Math;
   currentLanguage: 'en' | 'ar' = 'en';
   AdoptionType = AdoptionType;
@@ -52,6 +59,13 @@ export class CourseDetailsComponent implements OnInit {
   adoptionUserOrganizations: string[] = [];
   showStatusDropdown = false;
   attendanceRecords: { [enrollmentId: number]: { hasCheckIn: boolean; hasCheckOut: boolean } } = {};
+  courseQuestions: CourseQuestion[] = []; // Using new CourseQuestion model from course-question.service
+  TargetUserType = TargetUserType;
+  QuestionType = QuestionType; // Expose QuestionType enum to template
+  targetDepartments: Department[] = [];
+  targetOrganizations: Organization[] = [];
+  targetSegments: Segment[] = [];
+  isLoadingTargetUsers = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -65,6 +79,10 @@ export class CourseDetailsComponent implements OnInit {
     private attachmentService: AttachmentService,
     private adoptionUserService: AdoptionUserService,
     private attendanceService: AttendanceService,
+    private departmentService: DepartmentService,
+    private segmentService: SegmentService,
+    private organizationService: OrganizationService,
+    private courseQuestionService: CourseQuestionService,
     private cdr: ChangeDetectorRef
   ) {
     // Get current language
@@ -93,6 +111,8 @@ export class CourseDetailsComponent implements OnInit {
         this.course = response.result;
         this.isLoading = false;
         this.loadingService.hide();
+        // Load questions
+        this.loadQuestions();
         // Always load enrollments to calculate available seats
         this.loadEnrollmentsForSeats();
         // Load full enrollments if on enrollments tab
@@ -105,6 +125,11 @@ export class CourseDetailsComponent implements OnInit {
         } else if (this.course?.adoptionUsers && this.course.adoptionUsers.length > 0) {
           // Pre-load adoption users data for grouping even if not on the tab
           this.loadAdoptionUsers();
+        }
+
+        // Pre-load target user details if needed
+        if (this.activeTab === 'targetUsers') {
+          this.loadTargetUsersDetails();
         }
       },
       error: (error) => {
@@ -149,8 +174,16 @@ export class CourseDetailsComponent implements OnInit {
         // Ensure result is an array
         this.enrollments = Array.isArray(result) ? result : [];
         this.totalEnrollments = typeof total === 'number' ? total : 0;
-        // Count approved enrollments
-        this.approvedEnrollmentsCount = this.enrollments.filter(e => this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve).length;
+        // Count approved onsite enrollments (exclude online enrollments)
+        this.approvedEnrollmentsCount = this.enrollments.filter(e => 
+          this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve && 
+          (e.enrollmentType === null || e.enrollmentType === 1 || e.enrollmentType === undefined) // Onsite or null/undefined (defaults to onsite)
+        ).length;
+        // Count approved online enrollments
+        this.approvedOnlineEnrollmentsCount = this.enrollments.filter(e => 
+          this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve && 
+          e.enrollmentType === 2 // Online enrollment type
+        ).length;
         
         // Load attendance records to check check-in status
         this.loadAttendanceForEnrollments();
@@ -245,12 +278,14 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance'): void {
+  switchTab(tab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' | 'questions' | 'targetUsers'): void {
     this.activeTab = tab;
     if (tab === 'enrollments' && this.enrollments.length === 0) {
       this.loadEnrollments();
     } else if (tab === 'adoptionUsers') {
       this.loadAdoptionUsers();
+    } else if (tab === 'targetUsers') {
+      this.loadTargetUsersDetails();
     }
   }
 
@@ -263,7 +298,16 @@ export class CourseDetailsComponent implements OnInit {
         if (response && typeof response === 'object') {
           result = response.result || response.Result || [];
         }
-        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve).length;
+        // Count approved onsite enrollments (exclude online enrollments)
+        this.approvedEnrollmentsCount = result.filter((e: CourseEnrollment) => 
+          this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve && 
+          (e.enrollmentType === null || e.enrollmentType === 1 || e.enrollmentType === undefined) // Onsite or null/undefined (defaults to onsite)
+        ).length;
+        // Count approved online enrollments
+        this.approvedOnlineEnrollmentsCount = result.filter((e: CourseEnrollment) => 
+          this.normalizeEnrollmentStatus(e.status) === EnrollmentStatus.Approve && 
+          e.enrollmentType === 2 // Online enrollment type
+        ).length;
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -275,8 +319,68 @@ export class CourseDetailsComponent implements OnInit {
 
   getAvailableSeats(): number {
     if (!this.course) return 0;
+    // Use API values if available, otherwise fall back to calculation
+    if (this.course.onsiteEnrollmentsCount !== undefined) {
+      return Math.max(0, (this.course.availableSeats || 0) - (this.course.onsiteEnrollmentsCount || 0));
+    }
+    // Fallback to old calculation method
     const totalSeats = this.course.availableSeats || 0;
     return Math.max(0, totalSeats - this.approvedEnrollmentsCount);
+  }
+
+  getAvailableOnlineSeats(): number {
+    if (!this.course) return 0;
+    // Use API values if available, otherwise fall back to calculation
+    if (this.course.onlineEnrollmentsCount !== undefined) {
+      return Math.max(0, (this.course.availableOnlineSeats || 0) - (this.course.onlineEnrollmentsCount || 0));
+    }
+    // Fallback to old calculation method
+    const totalOnlineSeats = this.course.availableOnlineSeats || 0;
+    return Math.max(0, totalOnlineSeats - this.approvedOnlineEnrollmentsCount);
+  }
+
+  /**
+   * Normalize enrollment type to handle both string and numeric values from API
+   */
+  normalizeEnrollmentType(enrollmentType?: number | string | null): number | null {
+    if (enrollmentType === null || enrollmentType === undefined) {
+      return null;
+    }
+    
+    // Handle string enum values from API (e.g., "Online", "Onsite")
+    if (typeof enrollmentType === 'string') {
+      if (enrollmentType === 'Online' || enrollmentType.toLowerCase() === 'online') {
+        return EnrollmentType.Online;
+      }
+      if (enrollmentType === 'Onsite' || enrollmentType.toLowerCase() === 'onsite') {
+        return EnrollmentType.Onsite;
+      }
+      // Try to parse as number
+      const parsed = parseInt(enrollmentType, 10);
+      if (!isNaN(parsed)) {
+        return parsed;
+      }
+      return null;
+    }
+    
+    // Handle numeric enum values
+    return Number(enrollmentType);
+  }
+
+  /**
+   * Check if enrollment type is Online
+   */
+  isOnlineEnrollment(enrollment: CourseEnrollment): boolean {
+    const normalizedType = this.normalizeEnrollmentType(enrollment.enrollmentType);
+    return normalizedType === EnrollmentType.Online;
+  }
+
+  /**
+   * Check if enrollment type is Onsite
+   */
+  isOnsiteEnrollment(enrollment: CourseEnrollment): boolean {
+    const normalizedType = this.normalizeEnrollmentType(enrollment.enrollmentType);
+    return normalizedType === EnrollmentType.Onsite || (normalizedType === null && this.isApprovedEnrollment(enrollment));
   }
 
   loadAdoptionUsers(): void {
@@ -343,6 +447,67 @@ export class CourseDetailsComponent implements OnInit {
         return this.translationService.instant('course.adoptionTypeOther');
       default:
         return '';
+    }
+  }
+
+  getAttendanceTypeLabel(type: AttendanceType | number | any): string {
+    try {
+      if (type == null || type === undefined) {
+        return '';
+      }
+      
+      let attendanceValue: number;
+      if (typeof type === 'number') {
+        attendanceValue = type;
+      } else if (typeof type === 'string') {
+        attendanceValue = parseInt(type, 10);
+      } else {
+        attendanceValue = Number(type) || 0;
+      }
+      
+      switch (attendanceValue) {
+        case AttendanceType.Optional:
+        case 1:
+          return this.translationService.instant('course.attendanceTypeOptional');
+        case AttendanceType.Mandatory:
+        case 2:
+          return this.translationService.instant('course.attendanceTypeMandatory');
+        default:
+          return '';
+      }
+    } catch (error) {
+      console.error('Error getting attendance type label:', error);
+      return '';
+    }
+  }
+
+  getAttendanceTypeClass(type: AttendanceType | number | any): string {
+    try {
+      if (type == null || type === undefined) {
+        return 'bg-gray-100 text-gray-800';
+      }
+      
+      let attendanceValue: number;
+      if (typeof type === 'number') {
+        attendanceValue = type;
+      } else if (typeof type === 'string') {
+        attendanceValue = parseInt(type, 10);
+      } else {
+        attendanceValue = Number(type) || 0;
+      }
+      
+      switch (attendanceValue) {
+        case AttendanceType.Optional:
+        case 1:
+          return 'bg-blue-100 text-blue-800 border-blue-200';
+        case AttendanceType.Mandatory:
+        case 2:
+          return 'bg-red-100 text-red-800 border-red-200';
+        default:
+          return 'bg-gray-100 text-gray-800 border-gray-200';
+      }
+    } catch (error) {
+      return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   }
 
@@ -624,15 +789,23 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
-  approveEnrollment(enrollment: CourseEnrollment): void {
+  approveEnrollment(enrollment: CourseEnrollment, enrollmentType?: 'onsite' | 'online'): void {
+    const enrollmentTypeText = enrollmentType === 'online' 
+      ? this.translationService.instant('course.approveOnline')
+      : this.translationService.instant('course.approveOnsite');
+    
     const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
       data: {
         type: 'success',
-        title: this.translationService.instant('course.approveEnrollment'),
+        title: enrollmentType 
+          ? `${this.translationService.instant('course.approveEnrollment')} (${enrollmentTypeText})`
+          : this.translationService.instant('course.approveEnrollment'),
         message: this.translationService.instant('course.approveEnrollmentConfirmation', {
           name: enrollment.user?.fullName || 'User',
         }),
-        confirmText: this.translationService.instant('course.approve'),
+        confirmText: enrollmentType 
+          ? `${this.translationService.instant('course.approve')} (${enrollmentTypeText})`
+          : this.translationService.instant('course.approve'),
         cancelText: this.translationService.instant('common.cancel'),
       },
     });
@@ -640,11 +813,16 @@ export class CourseDetailsComponent implements OnInit {
     dialogRef.afterClosed$.subscribe((confirmed) => {
       if (confirmed) {
         this.loadingService.show();
-        this.enrollmentService.approveEnrollment(enrollment.id).subscribe({
+        this.enrollmentService.approveEnrollment(enrollment.id, enrollmentType).subscribe({
           next: () => {
             this.toastr.success(this.translationService.instant('course.approveEnrollmentSuccess'));
             this.loadingService.hide();
+            // Reload both enrollments and course to update seat counts and enrollment type
             this.loadEnrollments();
+            if (this.course?.id) {
+              this.loadCourse(this.course.id);
+            }
+            this.loadEnrollmentsForSeats(); // Update seat counts
           },
           error: (error) => {
             this.toastr.error(
@@ -709,16 +887,26 @@ export class CourseDetailsComponent implements OnInit {
     return !hasPendingPreviousSteps;
   }
 
-  approveEnrollmentStep(enrollment: CourseEnrollment, step: any): void {
+  approveEnrollmentStep(enrollment: CourseEnrollment, step: any, enrollmentType?: 'onsite' | 'online'): void {
+    const enrollmentTypeText = enrollmentType === 'online' 
+      ? this.translationService.instant('course.approveOnline')
+      : enrollmentType === 'onsite'
+      ? this.translationService.instant('course.approveOnsite')
+      : this.translationService.instant('course.approve');
+    
     const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
       data: {
         type: 'success',
-        title: this.translationService.instant('course.approveStep'),
+        title: enrollmentType 
+          ? `${this.translationService.instant('course.approveStep')} (${enrollmentTypeText})`
+          : this.translationService.instant('course.approveStep'),
         message: this.translationService.instant('course.approveStepConfirmation', {
           step: step.courseTabApproval?.approvalOrder || 1,
           name: enrollment.user?.fullName || 'User',
         }),
-        confirmText: this.translationService.instant('course.approve'),
+        confirmText: enrollmentType 
+          ? `${this.translationService.instant('course.approve')} (${enrollmentTypeText})`
+          : this.translationService.instant('course.approve'),
         cancelText: this.translationService.instant('common.cancel'),
       },
     });
@@ -726,7 +914,7 @@ export class CourseDetailsComponent implements OnInit {
     dialogRef.afterClosed$.subscribe((confirmed) => {
       if (confirmed) {
         this.loadingService.show();
-        this.enrollmentService.approveEnrollmentStep(enrollment.id, step.courseTabApprovalId).subscribe({
+        this.enrollmentService.approveEnrollmentStep(enrollment.id, step.courseTabApprovalId, undefined, enrollmentType).subscribe({
           next: () => {
             this.toastr.success(this.translationService.instant('course.approveStepSuccess'));
             this.loadingService.hide();
@@ -777,10 +965,34 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
+  viewEnrollmentAnswers(enrollment: CourseEnrollment): void {
+    if (!enrollment || !this.hasQuestionAnswers(enrollment)) {
+      return;
+    }
+
+    const dialogRef = this.dialogService.open(EnrollmentAnswersDialogComponent, {
+      data: {
+        enrollment,
+        courseQuestions: this.courseQuestions
+      },
+      width: '700px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+    });
+
+    dialogRef.afterClosed$.subscribe(() => {
+      // Dialog closed, no action needed
+    });
+  }
+
   viewApprovalSteps(enrollment: CourseEnrollment): void {
     const dialogRef = this.dialogService.open(ApprovalStepsDialogComponent, {
       data: {
         enrollment: enrollment,
+        course: this.course,
         approvalSteps: enrollment.approvalSteps || [],
         canApproveStep: (step: any) => this.canApproveStep(enrollment, step)
       },
@@ -793,7 +1005,7 @@ export class CourseDetailsComponent implements OnInit {
 
     dialogRef.afterClosed$.subscribe((result: any) => {
       if (result?.action === 'approve') {
-        this.approveEnrollmentStep(enrollment, result.step);
+        this.approveEnrollmentStep(enrollment, result.step, result.enrollmentType);
       } else if (result?.action === 'reject') {
         this.rejectEnrollmentStep(enrollment, result.step);
       }
@@ -1309,6 +1521,282 @@ export class CourseDetailsComponent implements OnInit {
     return this.attachmentService.getFileUrl(imagePath);
   }
 
+  getLocationTemplateUrl(): string {
+    if (!this.course?.location?.template) return '';
+    return this.attachmentService.getFileUrl(this.course.location.template);
+  }
+
+  getEnrollmentLocationDocumentUrl(enrollment: CourseEnrollment): string {
+    if (!enrollment || !enrollment.locationDocumentPath) {
+      return '';
+    }
+    return this.attachmentService.getFileUrl(enrollment.locationDocumentPath);
+  }
+
+  /**
+   * Parse question answers from JSON string
+   */
+  getEnrollmentQuestionAnswers(enrollment: CourseEnrollment): { [questionId: string]: string } | null {
+    if (!enrollment || !enrollment.questionAnswers) {
+      return null;
+    }
+    try {
+      return JSON.parse(enrollment.questionAnswers);
+    } catch (error) {
+      console.error('Error parsing question answers:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get question text by ID
+   */
+  getQuestionText(questionId: string): string {
+    const question = this.courseQuestions.find(q => q.id?.toString() === questionId);
+    if (!question) return questionId;
+    return this.currentLanguage === 'ar' && question.questionAr ? question.questionAr : question.question;
+  }
+
+  /**
+   * Get question type by ID
+   */
+  getQuestionType(questionId: string): QuestionType | string | number | null {
+    const question = this.courseQuestions.find(q => q.id?.toString() === questionId);
+    if (!question) return null;
+    
+    // If type is already a string from API, return it as-is
+    if (typeof question.type === 'string') {
+      return question.type;
+    }
+    
+    // Otherwise return the numeric enum value
+    return question.type;
+  }
+
+  /**
+   * Format answer for display based on question type
+   */
+  formatAnswer(answer: string, questionId: string): string {
+    const questionType = this.getQuestionType(questionId);
+    if (!questionType) return answer;
+    
+    // Handle string enum values from API
+    if (typeof questionType === 'string') {
+      if (questionType === 'YesNo' || questionType.toLowerCase() === 'yesno') {
+        return answer.charAt(0).toUpperCase() + answer.slice(1).toLowerCase();
+      }
+      return answer;
+    }
+    
+    // Handle numeric enum values
+    const typeValue = Number(questionType);
+    if (typeValue === Number(QuestionType.YesNo)) {
+      // Capitalize first letter
+      return answer.charAt(0).toUpperCase() + answer.slice(1).toLowerCase();
+    }
+    return answer;
+  }
+
+  /**
+   * Check if enrollment has question answers
+   */
+  hasQuestionAnswers(enrollment: CourseEnrollment): boolean {
+    const answers = this.getEnrollmentQuestionAnswers(enrollment);
+    return answers !== null && Object.keys(answers).length > 0;
+  }
+
+  /**
+   * Get answer entries as array for template iteration
+   */
+  getAnswerEntries(enrollment: CourseEnrollment): Array<{ key: string; value: string }> {
+    const answers = this.getEnrollmentQuestionAnswers(enrollment);
+    if (!answers) return [];
+    return Object.keys(answers).map(key => ({ key, value: answers[key] }));
+  }
+
+  /**
+   * Check if question is Yes/No type (helper for template)
+   * Handles both string enum values from API ("YesNo") and numeric enum values
+   */
+  /**
+   * Check if question is Yes/No type (helper for template)
+   * Handles both string enum values from API ("YesNo") and numeric enum values
+   */
+  isYesNoQuestionType(question: CourseQuestion): boolean {
+    if (!question || question.type === undefined || question.type === null) {
+      return false;
+    }
+    
+    // Handle string enum values from API (e.g., "YesNo", "ShortAnswer")
+    if (typeof question.type === 'string') {
+      return question.type === 'YesNo' || question.type.toLowerCase() === 'yesno';
+    }
+    
+    // Handle numeric enum values
+    const typeValue = Number(question.type);
+    return typeValue === Number(QuestionType.YesNo);
+  }
+
+  /**
+   * Check if answer type is Yes/No (for displaying answers)
+   */
+  isYesNoAnswerType(questionId: string): boolean {
+    const questionType = this.getQuestionType(questionId);
+    if (!questionType) return false;
+    
+    // Handle string enum values from API
+    if (typeof questionType === 'string') {
+      return questionType === 'YesNo' || questionType.toLowerCase() === 'yesno';
+    }
+    
+    // Handle numeric enum values
+    const typeValue = Number(questionType);
+    return typeValue === Number(QuestionType.YesNo);
+  }
+
+  /**
+   * Normalize targetUserType from API (string or number) to TargetUserType enum.
+   */
+  private normalizeTargetUserType(value: any): TargetUserType | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return value as TargetUserType;
+    }
+
+    const str = String(value).trim();
+
+    // Match by enum key name, e.g. "SpecificOrganizations"
+    if (TargetUserType[str as keyof typeof TargetUserType] !== undefined) {
+      return TargetUserType[str as keyof typeof TargetUserType] as TargetUserType;
+    }
+
+    const num = Number(str);
+    return isNaN(num) ? null : (num as TargetUserType);
+  }
+
+  /**
+   * Helper for template to get normalized target user type.
+   */
+  getTargetUserType(): TargetUserType | null {
+    if (!this.course) {
+      return null;
+    }
+    return this.normalizeTargetUserType((this.course as any).targetUserType);
+  }
+
+  /**
+   * Load human-readable details for the course target users configuration.
+   */
+  private loadTargetUsersDetails(): void {
+    const normalizedType = this.getTargetUserType();
+
+    if (!this.course || normalizedType === null) {
+      this.targetDepartments = [];
+      this.targetOrganizations = [];
+      this.targetSegments = [];
+      return;
+    }
+
+    this.isLoadingTargetUsers = true;
+
+    const targetType = normalizedType;
+    const orgId = this.course.organizationId;
+
+    // Load departments when needed
+    if (targetType === TargetUserType.SpecificDepartments && this.course.targetDepartmentIds?.length) {
+      this.departmentService.getAllDepartments(orgId).subscribe({
+        next: (response: any) => {
+          const allDepts: Department[] = response?.result || response?.Result || response || [];
+          this.targetDepartments = allDepts.filter(d => this.course!.targetDepartmentIds!.includes(d.id));
+        },
+        error: () => {
+          this.targetDepartments = [];
+        },
+        complete: () => {
+          this.isLoadingTargetUsers = false;
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    } else {
+      this.targetDepartments = [];
+    }
+
+    // Load organizations when needed
+    if (targetType === TargetUserType.SpecificOrganizations && this.course.targetOrganizationIds?.length) {
+      this.organizationService.getOrganizations(1, 1000).subscribe({
+        next: (response: any) => {
+          const allOrgs: Organization[] = response?.result || response?.Result || response || [];
+          this.targetOrganizations = allOrgs.filter(o => this.course!.targetOrganizationIds!.includes(o.id));
+        },
+        error: () => {
+          this.targetOrganizations = [];
+        },
+        complete: () => {
+          this.isLoadingTargetUsers = false;
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    } else {
+      this.targetOrganizations = [];
+    }
+
+    // Load segments when needed
+    if ((targetType === TargetUserType.SpecificSegments || targetType === TargetUserType.SpecificOrganizationSegment)
+      && this.course.targetSegmentIds?.length) {
+      this.segmentService.getSegments(1, 1000, orgId).subscribe({
+        next: (response: any) => {
+          const allSegments: Segment[] = response?.result || response?.Result || response || [];
+          this.targetSegments = allSegments.filter(s => this.course!.targetSegmentIds!.includes(s.id));
+        },
+        error: () => {
+          this.targetSegments = [];
+        },
+        complete: () => {
+          this.isLoadingTargetUsers = false;
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    } else {
+      this.targetSegments = [];
+    }
+
+    this.isLoadingTargetUsers = false;
+    this.cdr.detectChanges();
+  }
+
+  getTargetUserTypeLabel(type: TargetUserType | number | any): string {
+    if (type === null || type === undefined) {
+      return this.translationService.instant('course.notAvailable');
+    }
+
+    const value = this.normalizeTargetUserType(type);
+
+    switch (value as TargetUserType | null) {
+      case TargetUserType.ForOurOrganization:
+        return this.translationService.instant('course.targetUserTypeForOurOrganization');
+      case TargetUserType.All:
+        return this.translationService.instant('course.targetUserTypeAll');
+      case TargetUserType.SpecificDepartments:
+        return this.translationService.instant('course.targetUserTypeSpecificDepartments');
+      case TargetUserType.SpecificOrganizations:
+        return this.translationService.instant('course.targetUserTypeSpecificOrganizations');
+      case TargetUserType.SpecificSegments:
+        return this.translationService.instant('course.targetUserTypeSpecificSegments');
+      case TargetUserType.AllUsersOfOrganization:
+        return this.translationService.instant('course.targetUserTypeAllUsersOfOrganization');
+      case TargetUserType.SpecificOrganizationSegment:
+        return this.translationService.instant('course.targetUserTypeSpecificOrganizationSegment');
+      default:
+        return this.translationService.instant('course.notAvailable');
+    }
+  }
+
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     if (img) {
@@ -1424,6 +1912,168 @@ export class CourseDetailsComponent implements OnInit {
         this.loadEnrollments();
       }
     });
+  }
+
+  loadQuestions(): void {
+    if (!this.course?.id) {
+      this.courseQuestions = [];
+      return;
+    }
+    
+    this.courseQuestionService.getByCourseId(this.course.id).subscribe({
+      next: (response) => {
+        if (response.statusCode === 200 && response.result) {
+          this.courseQuestions = Array.isArray(response.result) ? response.result : [response.result];
+          // Sort by order
+          this.courseQuestions.sort((a, b) => (a.order || 0) - (b.order || 0));
+        } else {
+          this.courseQuestions = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading questions:', error);
+        this.courseQuestions = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  addQuestion(): void {
+    const dialogRef = this.dialogService.open(CourseQuestionFormComponent, {
+      data: { isEdit: false },
+      width: '600px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result && this.course?.id) {
+        const newQuestion: Partial<CourseQuestion> = {
+          courseId: this.course.id,
+          question: result.question,
+          questionAr: result.questionAr || '',
+          type: result.type === 'yesno' ? QuestionType.YesNo : QuestionType.ShortAnswer,
+          isRequired: result.required !== undefined ? result.required : true,
+          order: 0 // Will be set by backend if 0
+        };
+        
+        this.loadingService.show();
+        this.courseQuestionService.create(newQuestion).subscribe({
+          next: (response) => {
+            if (response.statusCode === 200 && response.result) {
+              this.toastr.success(this.translationService.instant('course.questionCreated'));
+              this.loadQuestions(); // Reload questions
+              this.cdr.detectChanges();
+            }
+            this.loadingService.hide();
+          },
+          error: (error) => {
+            this.toastr.error(error.error?.message || this.translationService.instant('course.questionCreateError'));
+            this.loadingService.hide();
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
+  }
+
+  editQuestion(question: CourseQuestion, index: number): void {
+    // Convert backend question to form format
+    const formQuestion = {
+      question: question.question,
+      questionAr: question.questionAr || '',
+      type: question.type === QuestionType.YesNo ? 'yesno' : 'shortanswer',
+      required: question.isRequired
+    };
+    
+    const dialogRef = this.dialogService.open(CourseQuestionFormComponent, {
+      data: { question: formQuestion, isEdit: true },
+      width: '600px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result && question.id) {
+        const updateData: Partial<CourseQuestion> = {
+          courseId: question.courseId,
+          question: result.question,
+          questionAr: result.questionAr || '',
+          type: result.type === 'yesno' ? QuestionType.YesNo : QuestionType.ShortAnswer,
+          isRequired: result.required !== undefined ? result.required : true,
+          order: question.order || 0
+        };
+        
+        this.loadingService.show();
+        this.courseQuestionService.update(question.id, updateData).subscribe({
+          next: (response) => {
+            if (response.statusCode === 200) {
+              this.toastr.success(this.translationService.instant('course.questionUpdated'));
+              this.loadQuestions(); // Reload questions
+              this.cdr.detectChanges();
+            }
+            this.loadingService.hide();
+          },
+          error: (error) => {
+            this.toastr.error(error.error?.message || this.translationService.instant('course.questionUpdateError'));
+            this.loadingService.hide();
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
+  }
+
+  deleteQuestion(index: number): void {
+    const question = this.courseQuestions[index];
+    if (!question || !question.id) return;
+    
+    const dialogRef = this.dialogService.open(DeleteConfirmationDialogComponent, {
+      data: {
+        title: this.translationService.instant('course.deleteQuestionTitle'),
+        message: this.translationService.instant('course.deleteQuestionConfirmation'),
+        confirmText: this.translationService.instant('common.delete'),
+        cancelText: this.translationService.instant('common.cancel'),
+        type: 'danger'
+      },
+      width: '500px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result && question.id) {
+        this.loadingService.show();
+        this.courseQuestionService.delete(question.id).subscribe({
+          next: (response) => {
+            if (response.statusCode === 200) {
+              this.toastr.success(this.translationService.instant('course.questionDeleted'));
+              this.loadQuestions(); // Reload questions
+              this.cdr.detectChanges();
+            }
+            this.loadingService.hide();
+          },
+          error: (error) => {
+            this.toastr.error(error.error?.message || this.translationService.instant('course.questionDeleteError'));
+            this.loadingService.hide();
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
+  }
+
+  saveQuestions(): void {
+    // This method is no longer needed as questions are saved individually via the API
+    // Keeping it for backward compatibility but it does nothing
+    // Questions are now managed through addQuestion, editQuestion, and deleteQuestion methods
   }
 }
 

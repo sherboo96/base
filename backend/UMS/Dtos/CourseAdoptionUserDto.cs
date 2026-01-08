@@ -1,3 +1,4 @@
+using UMS.Models;
 using UMS.Models.Shared;
 
 namespace UMS.Dtos;
@@ -9,5 +10,6 @@ public class CourseAdoptionUserDto
     public int AdoptionUserId { get; set; }
     public AdoptionUserDto? AdoptionUser { get; set; }
     public AdoptionType AdoptionType { get; set; } = AdoptionType.Other;
+    public AttendanceType AttendanceType { get; set; } = AttendanceType.Optional;
 }
 

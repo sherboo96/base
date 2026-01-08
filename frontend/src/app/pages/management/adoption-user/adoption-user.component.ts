@@ -10,7 +10,6 @@ import {
   AdoptionUser,
   AdoptionUserService,
   AdoptionUserResponse,
-  AttendanceType,
 } from '../../../services/adoption-user.service';
 import { OrganizationService } from '../../../services/organization.service';
 import { ToastrService } from 'ngx-toastr';
@@ -47,7 +46,6 @@ export class AdoptionUserComponent implements OnInit, OnDestroy {
   searchTerm = '';
   filterOrganizationId: number | null = null;
   Math = Math;
-  AttendanceType = AttendanceType;
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -102,12 +100,7 @@ export class AdoptionUserComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.adoptionUsers = response.result.map(au => ({
-            ...au,
-            attendance: typeof au.attendance === 'number' 
-              ? au.attendance 
-              : Number(au.attendance) || AttendanceType.Optional
-          }));
+          this.adoptionUsers = response.result;
           this.totalItems = response.pagination.total;
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
         },
@@ -186,76 +179,6 @@ export class AdoptionUserComponent implements OnInit, OnDestroy {
     });
   }
 
-  getAttendanceText(attendance: AttendanceType | number | any): string {
-    try {
-      if (attendance == null || attendance === undefined) {
-        return '';
-      }
-      
-      let attendanceValue: number;
-      if (typeof attendance === 'number') {
-        attendanceValue = attendance;
-      } else if (typeof attendance === 'string') {
-        attendanceValue = parseInt(attendance, 10);
-      } else {
-        attendanceValue = Number(attendance) || 0;
-      }
-      
-      if (isNaN(attendanceValue) || attendanceValue === 0) {
-        return '';
-      }
-      
-      let translationKey = '';
-      switch (attendanceValue) {
-        case AttendanceType.Optional:
-        case 1:
-          translationKey = 'adoptionUser.attendance.optional';
-          break;
-        case AttendanceType.Mandatory:
-        case 2:
-          translationKey = 'adoptionUser.attendance.mandatory';
-          break;
-        default:
-          return '';
-      }
-      
-      const translated = this.translationService.instant(translationKey);
-      return typeof translated === 'string' ? translated : translationKey;
-    } catch (error) {
-      console.error('Error getting attendance text:', error, attendance);
-      return '';
-    }
-  }
-
-  getAttendanceClass(attendance: AttendanceType | number | any): string {
-    if (attendance == null) {
-      return 'bg-gray-100 text-gray-800';
-    }
-    
-    let attendanceValue: number;
-    if (typeof attendance === 'number') {
-      attendanceValue = attendance;
-    } else if (typeof attendance === 'string') {
-      attendanceValue = parseInt(attendance, 10);
-    } else {
-      attendanceValue = Number(attendance) || 0;
-    }
-    
-    if (isNaN(attendanceValue)) {
-      return 'bg-gray-100 text-gray-800';
-    }
-    
-    switch (attendanceValue) {
-      case AttendanceType.Optional:
-      case 1:
-        return 'bg-blue-100 text-blue-800';
-      case AttendanceType.Mandatory:
-      case 2:
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  }
 
   getStatusClass(isActive: boolean): string {
     return isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';

@@ -20,6 +20,7 @@ public class CourseDto
     public DateTime? StartDateTime { get; set; }
     public DateTime? EndDateTime { get; set; }
     public int AvailableSeats { get; set; }
+    public int AvailableOnlineSeats { get; set; } = 0;
     public decimal Price { get; set; } = 0;
     public decimal KpiWeight { get; set; } = 0;
     public bool DigitLibraryAvailability { get; set; } = false;
@@ -35,6 +36,7 @@ public class CourseDto
     public List<CourseAdoptionUserDto> AdoptionUsers { get; set; } = new();
     public List<CourseContactDto> CourseContacts { get; set; } = new();
     public bool IsActive { get; set; } = true;
+    public string? Questions { get; set; } // JSON array of course enrollment questions
     
     // Target User Configuration
     public TargetUserType? TargetUserType { get; set; }
@@ -53,6 +55,10 @@ public class CourseDto
     public bool IsEnrolled { get; set; } = false;
     public string? EnrollmentStatus { get; set; } // "Pending", "Approved", "Rejected", etc.
     public int? EnrollmentId { get; set; }
+    
+    // Enrollment counts
+    public int OnlineEnrollmentsCount { get; set; } = 0; // Number of approved online enrollments
+    public int OnsiteEnrollmentsCount { get; set; } = 0; // Number of approved onsite enrollments
 }
 
 public class CourseLearningOutcomeDto

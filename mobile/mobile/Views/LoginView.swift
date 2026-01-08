@@ -336,7 +336,7 @@ class LoginViewModel: ObservableObject {
         }
         
         do {
-            let loginResponse = try await APIService.shared.login(username: username, password: password)
+            _ = try await APIService.shared.login(username: username, password: password)
             await MainActor.run {
                 // Login successful - token is already stored in APIService
                 isAuthenticated = true

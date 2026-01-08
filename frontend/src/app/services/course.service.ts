@@ -43,6 +43,11 @@ export enum AdoptionType {
   Other = 3
 }
 
+export enum AttendanceType {
+  Optional = 1,
+  Mandatory = 2
+}
+
 export interface CourseLearningOutcome {
   id?: number;
   name: string;
@@ -63,6 +68,7 @@ export interface CourseAdoptionUser {
   adoptionUserId: number;
   adoptionUser?: any;
   adoptionType: AdoptionType;
+  attendanceType?: AttendanceType;
 }
 
 export interface CourseContact {
@@ -90,6 +96,9 @@ export interface Course {
   startDateTime?: string;
   endDateTime?: string;
   availableSeats: number;
+  availableOnlineSeats: number;
+  onlineEnrollmentsCount?: number; // Number of approved online enrollments
+  onsiteEnrollmentsCount?: number; // Number of approved onsite enrollments
   price: number;
   kpiWeight: number;
   digitLibraryAvailability: boolean;
@@ -112,6 +121,7 @@ export interface Course {
   targetDepartmentRoles?: { [key: number]: string }; // Dictionary mapping department IDs to roles, e.g., {1: "Head", 2: "Member", 3: "Both"}
   targetOrganizationIds?: number[];
   targetSegmentIds?: number[];
+  questions?: CourseQuestion[]; // JSON array of course enrollment questions
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
@@ -119,6 +129,14 @@ export interface Course {
   isEnrolled?: boolean;
   enrollmentStatus?: string; // "Pending", "Approved", "Rejected", etc.
   enrollmentId?: number;
+}
+
+export interface CourseQuestion {
+  id: string; // Unique identifier for the question
+  question: string; // Question text
+  questionAr?: string; // Question text in Arabic
+  type: 'yesno' | 'shortanswer'; // Question type
+  required: boolean; // Whether the question is required
 }
 
 export interface CourseResponse {

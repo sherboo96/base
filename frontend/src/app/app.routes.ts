@@ -21,6 +21,7 @@ import { InstructorComponent } from './pages/management/instructor/instructor.co
 import { InstitutionComponent } from './pages/management/institution/institution.component';
 import { SegmentComponent } from './pages/management/segment/segment.component';
 import { SystemConfigurationComponent } from './pages/management/system-configuration/system-configuration.component';
+import { PublicComponent } from './pages/management/public/public.component';
 import { AdoptionUserComponent } from './pages/management/adoption-user/adoption-user.component';
 import { CourseTabComponent } from './pages/management/course-tab/course-tab.component';
 import { LogsComponent } from './pages/management/logs/logs.component';
@@ -207,6 +208,15 @@ export const routes: Routes = [
     data: {
       redirectIfLoggedIn: false,
       permission: 'SYSTEM_CONFIG_VIEW',
+    },
+  },
+  {
+    path: 'management/public',
+    component: PublicComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'PUBLIC_CONFIG_VIEW',
     },
   },
   {

@@ -9,6 +9,12 @@ export enum EventRegistrationStatus {
   Rejected = 2
 }
 
+export enum VipStatus {
+  Attendee = 0,
+  Vip = 1,
+  VVip = 2
+}
+
 export interface EventRegistration {
   id?: number;
   name: string;
@@ -32,6 +38,8 @@ export interface EventRegistration {
   eventOrganizationId?: number;
   eventOrganization?: any;
   otherOrganization?: string;
+  isManual?: boolean; // Flag to indicate manual registration
+  vipStatus?: VipStatus | number | string; // VIP status: Attendee, VIP, or VVIP
   attendees?: EventAttendee[];
   isActive?: boolean;
   createdAt?: string;
@@ -82,11 +90,17 @@ export class EventRegistrationService {
     return this.http.post<EventRegistrationResponse>(`${this.baseUrl}/public`, registration);
   }
 
+  // Manual registration endpoint - requires authentication, does not send email, generates QR
+  createManual(registration: EventRegistration): Observable<EventRegistrationResponse> {
+    return this.http.post<EventRegistrationResponse>(`${this.baseUrl}/manual`, registration);
+  }
+
   getAll(
     page: number = 1,
     pageSize: number = 20,
     search?: string,
-    eventId?: number
+    eventId?: number,
+    status?: EventRegistrationStatus
   ): Observable<EventRegistrationListResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -97,6 +111,9 @@ export class EventRegistrationService {
     }
     if (eventId) {
       params = params.set('eventId', eventId.toString());
+    }
+    if (status !== undefined) {
+      params = params.set('status', status.toString());
     }
 
     return this.http.get<EventRegistrationListResponse>(this.baseUrl, { params });
@@ -162,11 +179,23 @@ export class EventRegistrationService {
     );
   }
 
+  // Update registration (name, jobTitle, eventOrganizationId)
+  update(id: number, registration: Partial<EventRegistration>): Observable<EventRegistrationResponse> {
+    return this.http.put<EventRegistrationResponse>(
+      `${this.baseUrl}/${id}`,
+      registration
+    );
+  }
+
   // Export registrations to Excel (CSV)
   exportToExcel(
     eventId?: number,
     search?: string,
-    status?: EventRegistrationStatus
+    status?: EventRegistrationStatus,
+    vipStatus?: VipStatus,
+    isManual?: boolean,
+    excludeMainOrganization?: boolean,
+    eventOrganizationId?: number
   ): Observable<Blob> {
     let params = new HttpParams();
     
@@ -178,6 +207,18 @@ export class EventRegistrationService {
     }
     if (status !== undefined) {
       params = params.set('status', status.toString());
+    }
+    if (vipStatus !== undefined) {
+      params = params.set('vipStatus', vipStatus.toString());
+    }
+    if (isManual !== undefined) {
+      params = params.set('isManual', isManual.toString());
+    }
+    if (excludeMainOrganization) {
+      params = params.set('excludeMainOrganization', 'true');
+    }
+    if (eventOrganizationId) {
+      params = params.set('eventOrganizationId', eventOrganizationId.toString());
     }
 
     return this.http.get(`${this.baseUrl}/export`, {

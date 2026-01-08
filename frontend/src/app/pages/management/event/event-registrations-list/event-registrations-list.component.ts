@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { DialogRef, DialogService } from '@ngneat/dialog';
-import { EventRegistrationService, EventRegistration, EventRegistrationListResponse, EventRegistrationStatus, EventAttendee } from '../../../../services/event-registration.service';
+import { EventRegistrationService, EventRegistration, EventRegistrationListResponse, EventRegistrationStatus, VipStatus, EventAttendee } from '../../../../services/event-registration.service';
 import { LoadingService } from '../../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
 import { TranslationService } from '../../../../services/translation.service';
 import { finalize } from 'rxjs/operators';
 import { EventBadgeComponent } from '../../../../components/event-badge/event-badge.component';
 import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dialog.component';
+import { EventRegistrationEditFormComponent } from './event-registration-edit-form/event-registration-edit-form.component';
+import { EventRegistrationManualFormComponent } from './event-registration-manual-form/event-registration-manual-form.component';
 
 @Component({
   selector: 'app-event-registrations-list',
@@ -73,17 +75,25 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
               </p>
             </div>
           </div>
-          <!-- Status Counts -->
+          <!-- Status Counts and Add Manual Button -->
           <div class="flex items-center gap-3">
+            <button
+              (click)="addManualRegistration()"
+              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-accent rounded-lg text-accent bg-white hover:bg-accent/10 hover:border-accentDark transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
+              [title]="'eventRegistration.addManualRegistration' | translate"
+            >
+              <i class="fas fa-user-plus text-accent"></i>
+              <span>{{ 'eventRegistration.addManual' | translate }}</span>
+            </button>
             <div class="flex items-center gap-2 px-3 py-2 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
               <i class="fas fa-file-alt text-yellow-600 text-sm"></i>
               <span class="text-xs font-semibold text-yellow-800 font-poppins">{{ 'eventRegistration.statusDraft' | translate }}:</span>
-              <span class="text-sm font-bold text-yellow-900 font-poppins">{{ getDraftCount() }}</span>
+              <span class="text-sm font-bold text-yellow-900 font-poppins">{{ draftCount }}</span>
             </div>
             <div class="flex items-center gap-2 px-3 py-2 bg-green-50 border-2 border-green-200 rounded-lg">
               <i class="fas fa-check-circle text-green-600 text-sm"></i>
               <span class="text-xs font-semibold text-green-800 font-poppins">{{ 'eventRegistration.statusApproved' | translate }}:</span>
-              <span class="text-sm font-bold text-green-900 font-poppins">{{ getApprovedCount() }}</span>
+              <span class="text-sm font-bold text-green-900 font-poppins">{{ approvedCount }}</span>
             </div>
           </div>
         </div>
@@ -104,30 +114,101 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
               class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
             />
           </div>
+          <div class="relative min-w-[180px]">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-filter text-gray-400"></i>
+            </div>
+            <select
+              [(ngModel)]="statusFilter"
+              (change)="onStatusFilterChange()"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-8 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins bg-white appearance-none cursor-pointer"
+            >
+              <option [ngValue]="null">{{ 'eventRegistration.allStatuses' | translate }}</option>
+              <option [ngValue]="EventRegistrationStatus.Draft">{{ 'eventRegistration.statusDraft' | translate }}</option>
+              <option [ngValue]="EventRegistrationStatus.Approved">{{ 'eventRegistration.statusApproved' | translate }}</option>
+              <option [ngValue]="EventRegistrationStatus.Rejected">{{ 'eventRegistration.statusRejected' | translate }}</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+            </div>
+          </div>
+          <div class="relative min-w-[200px]">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-building text-gray-400"></i>
+            </div>
+            <select
+              [(ngModel)]="organizationFilter"
+              (change)="onOrganizationFilterChange()"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-8 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins bg-white appearance-none cursor-pointer"
+            >
+              <option [ngValue]="null">{{ 'eventRegistration.allOrganizations' | translate }}</option>
+              <option *ngFor="let org of availableOrganizations" [ngValue]="org">
+                {{ org }}
+              </option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+            </div>
+          </div>
+          <div class="relative min-w-[150px]">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-star text-gray-400"></i>
+            </div>
+            <select
+              [(ngModel)]="vipStatusFilter"
+              (change)="onFilterChange()"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-8 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins bg-white appearance-none cursor-pointer"
+            >
+              <option [ngValue]="null">{{ 'eventRegistration.allVip' | translate }}</option>
+              <option [ngValue]="VipStatus.Attendee">{{ 'eventRegistration.attendee' | translate }}</option>
+              <option [ngValue]="VipStatus.Vip">{{ 'eventRegistration.vip' | translate }}</option>
+              <option [ngValue]="VipStatus.VVip">{{ 'eventRegistration.vVip' | translate }}</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+            </div>
+          </div>
+          <div class="relative min-w-[150px]">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-user-plus text-gray-400"></i>
+            </div>
+            <select
+              [(ngModel)]="isManualFilter"
+              (change)="onFilterChange()"
+              class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-8 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins bg-white appearance-none cursor-pointer"
+            >
+              <option [ngValue]="null">{{ 'eventRegistration.allManual' | translate }}</option>
+              <option [ngValue]="true">{{ 'eventRegistration.isManual' | translate }}</option>
+              <option [ngValue]="false">{{ 'eventRegistration.notManual' | translate }}</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+            </div>
+          </div>
           <div class="flex items-center gap-2">
             <button
               (click)="exportToExcel()"
-              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-accent bg-accent text-white rounded-lg hover:bg-accentDark hover:border-accentDark transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
+              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-50 hover:border-blue-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
               [title]="'eventRegistration.exportAll' | translate"
             >
-              <i class="fas fa-file-excel text-base"></i>
+              <i class="fas fa-file-excel text-blue-500"></i>
               <span>{{ 'eventRegistration.exportAll' | translate }}</span>
             </button>
             <button
-              (click)="exportToExcel(EventRegistrationStatus.Approved)"
-              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-green-500 bg-green-500 text-white rounded-lg hover:bg-green-600 hover:border-green-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
-              [title]="'eventRegistration.exportApproved' | translate"
+              (click)="exportToExcelWithoutMainOrg()"
+              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-50 hover:border-blue-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
+              [title]="'eventRegistration.exportWithoutMainOrg' | translate"
             >
-              <i class="fas fa-check-circle text-base"></i>
-              <span>{{ 'eventRegistration.exportApproved' | translate }}</span>
+              <i class="fas fa-file-excel text-blue-500"></i>
+              <span>{{ 'eventRegistration.exportWithoutMainOrg' | translate }}</span>
             </button>
             <button
-              (click)="exportToExcel(EventRegistrationStatus.Rejected)"
-              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-red-500 bg-red-500 text-white rounded-lg hover:bg-red-600 hover:border-red-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
-              [title]="'eventRegistration.exportRejected' | translate"
+              (click)="printAllBadges()"
+              class="inline-flex items-center gap-2 px-4 py-2 border-2 border-purple-500 rounded-lg text-purple-600 bg-white hover:bg-purple-50 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-sm whitespace-nowrap"
+              [title]="'eventRegistration.printAllBadges' | translate"
             >
-              <i class="fas fa-times-circle text-base"></i>
-              <span>{{ 'eventRegistration.exportRejected' | translate }}</span>
+              <i class="fas fa-print text-purple-500"></i>
+              <span>{{ 'eventRegistration.printAllBadges' | translate }}</span>
             </button>
           </div>
         </div>
@@ -148,10 +229,10 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
               </div>
               <button
                 (click)="exportOrganizationToExcel(orgName)"
-                class="inline-flex items-center gap-2 px-3 py-1.5 border-2 border-accent bg-accent text-white rounded-lg hover:bg-accentDark hover:border-accentDark transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-xs whitespace-nowrap"
+                class="inline-flex items-center gap-2 px-4 py-2 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-50 hover:border-blue-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium font-poppins text-xs whitespace-nowrap"
                 [title]="'eventRegistration.exportOrganization' | translate"
               >
-                <i class="fas fa-file-excel text-sm"></i>
+                <i class="fas fa-file-excel text-sm text-blue-500"></i>
                 <span>{{ 'eventRegistration.exportOrganization' | translate }}</span>
               </button>
             </div>
@@ -183,6 +264,9 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                   <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                     <i class="fas fa-info-circle mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.status' | translate }}
                   </th>
+                  <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-darkGray uppercase tracking-wider">
+                    <i class="fas fa-star mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.isVip' | translate }}
+                  </th>
                   <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-darkGray uppercase tracking-wider">
                     <i class="fas fa-envelope mr-1.5 text-accent text-xs"></i>{{ 'eventRegistration.emailStatus' | translate }}
                   </th>
@@ -198,7 +282,9 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr *ngFor="let registration of getRegistrationsForOrganization(orgName)" class="hover:bg-gray-50 transition-all duration-150">
+                <tr *ngFor="let registration of getRegistrationsForOrganization(orgName)" 
+                    class="hover:bg-gray-50 transition-all duration-150"
+                    (click)="onTableRowClick($event)">
                 <td class="px-4 py-3 whitespace-nowrap">
                   <div class="text-xs text-gray-900 font-medium">{{ registration.name }}</div>
                   <div *ngIf="registration.nameAr" class="text-xs text-gray-500" dir="rtl">{{ registration.nameAr }}</div>
@@ -239,6 +325,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                   </div>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-xs">
+                  <div class="flex items-center gap-2 flex-wrap">
                   <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                     [ngClass]="{
@@ -251,11 +338,41 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                     <span *ngIf="normalizeStatus(registration.status) === 1">{{ 'eventRegistration.statusApproved' | translate }}</span>
                     <span *ngIf="normalizeStatus(registration.status) === 2">{{ 'eventRegistration.statusRejected' | translate }}</span>
                   </span>
+                  <span
+                    *ngIf="normalizeVipStatus(registration.vipStatus) !== VipStatus.Attendee"
+                    [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getVipStatusClass(registration.vipStatus)"
+                  >
+                    <i class="fas fa-star mr-1 text-xs"></i>
+                    {{ getVipStatusLabel(registration.vipStatus) }}
+                  </span>
+                  <span
+                    *ngIf="registration.isManual"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    <i class="fas fa-user-plus mr-1 text-xs"></i>
+                    {{ 'eventRegistration.isManual' | translate }}
+                  </span>
+                  
+                  </div>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-xs" style="position: relative;">
+                <td class="px-4 py-3 whitespace-nowrap text-center" style="position: relative;">
+                  <div class="relative inline-block">
+                    <button
+                      type="button"
+                      (click)="toggleVipStatusMenu(registration.id!, $event)"
+                      [class]="'vip-status-button inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 shadow-sm hover:shadow-md ' + getVipStatusButtonClass(registration.vipStatus)"
+                      [title]="'eventRegistration.vipStatus' | translate"
+                    >
+                      <i class="fas fa-star text-xs"></i>
+                      <span>{{ getVipStatusLabel(registration.vipStatus) }}</span>
+                      <i class="fas fa-chevron-down text-xs ml-1"></i>
+                    </button>
+                  </div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs" style="position: relative; z-index: 1;">
                   <button
                     (click)="toggleEmailStatus(registration.id!, $event)"
-                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200"
+                    class="email-status-button inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200"
                     [ngClass]="{
                       'bg-green-100 text-green-800 hover:bg-green-200': getTotalEmailsSent(registration) > 0,
                       'bg-gray-100 text-gray-600 hover:bg-gray-200': getTotalEmailsSent(registration) === 0
@@ -291,41 +408,41 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right text-xs font-medium" style="position: relative; overflow: visible;">
                   <div class="flex items-center justify-end gap-2">
+                    <!-- Print Badge Button -->
+                    <button
+                      *ngIf="registration.barcode"
+                      (click)="printBadge(registration); $event.stopPropagation()"
+                      class="inline-flex items-center px-3 py-2 border-2 border-purple-500 rounded-lg text-purple-600 bg-white hover:bg-purple-50 hover:border-purple-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                      [title]="'eventRegistration.printBadge' | translate"
+                    >
+                      <i class="fas fa-print mr-1.5 text-xs text-purple-500"></i>
+                      <span>{{ 'eventRegistration.printBadge' | translate }}</span>
+                    </button>
                     <!-- Approve Button -->
                     <button
                       *ngIf="normalizeStatus(registration.status) === 0"
-                      (click)="approveRegistration(registration)"
-                      class="inline-flex items-center px-3 py-1.5 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
+                      (click)="approveRegistration(registration); $event.stopPropagation()"
+                      class="inline-flex items-center px-3 py-2 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-50 hover:border-green-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
                       [title]="'eventRegistration.approve' | translate"
                     >
-                      <i class="fas fa-check mr-1 text-xs"></i>
+                      <i class="fas fa-check mr-1.5 text-xs text-green-500"></i>
                       <span>{{ 'eventRegistration.approve' | translate }}</span>
                     </button>
                     <!-- Reject Button -->
                     <button
                       *ngIf="normalizeStatus(registration.status) === 0"
-                      (click)="rejectRegistration(registration)"
-                      class="inline-flex items-center px-3 py-1.5 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
+                      (click)="rejectRegistration(registration); $event.stopPropagation()"
+                      class="inline-flex items-center px-3 py-2 border-2 border-red-500 rounded-lg text-red-600 bg-white hover:bg-red-50 hover:border-red-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
                       [title]="'eventRegistration.reject' | translate"
                     >
-                      <i class="fas fa-times mr-1 text-xs"></i>
+                      <i class="fas fa-times mr-1.5 text-xs text-red-500"></i>
                       <span>{{ 'eventRegistration.reject' | translate }}</span>
                     </button>
-                    <!-- Send Final Approval Button -->
-                    <button
-                      *ngIf="normalizeStatus(registration.status) === 1"
-                      (click)="sendFinalApproval(registration)"
-                      class="inline-flex items-center px-3 py-1.5 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
-                      [title]="'eventRegistration.sendFinalApproval' | translate"
-                    >
-                      <i class="fas fa-paper-plane mr-1 text-xs"></i>
-                      <span>{{ 'eventRegistration.sendFinalApproval' | translate }}</span>
-                    </button>
                     <!-- 3 Dots Menu -->
-                    <div class="relative">
+                    <div class="relative" style="z-index: 1;">
                       <button
                         (click)="toggleMenu(registration.id!, $event)"
-                        class="inline-flex items-center justify-center px-2 py-1.5 border-2 border-gray-300 rounded-lg text-gray-600 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium"
+                        class="actions-menu-button inline-flex items-center justify-center px-2.5 py-2 border-2 border-gray-300 rounded-lg text-gray-600 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
                         [title]="'common.moreActions' | translate"
                       >
                         <i class="fas fa-ellipsis-v text-xs"></i>
@@ -354,7 +471,7 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loadingService.isLoading$ | async" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 flex flex-col items-center">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mb-4"></div>
           <p class="text-gray-700 font-poppins">{{ 'common.loading' | translate }}</p>
@@ -369,9 +486,9 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
         </div>
         <div class="flex items-center space-x-2">
           <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="text-xs border-2 border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm font-medium">
-            <option [value]="10">10 {{ 'common.perPage' | translate }}</option>
-            <option [value]="20">20 {{ 'common.perPage' | translate }}</option>
             <option [value]="50">50 {{ 'common.perPage' | translate }}</option>
+            <option [value]="100">100 {{ 'common.perPage' | translate }}</option>
+            <option [value]="200">200 {{ 'common.perPage' | translate }}</option>
           </select>
           <div class="flex space-x-1">
             <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage === 1" (click)="goToPage(1)" [title]="'common.firstPage' | translate">
@@ -407,13 +524,57 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
       </div>
     </div>
     
+    <!-- VIP Status Dropdown Menu (rendered outside table) -->
+    <div
+      *ngIf="openVipMenuId && getCurrentVipRegistration()"
+      class="fixed bg-white rounded-lg shadow-xl border-2 border-gray-200 py-1 min-w-[140px] vip-status-dropdown"
+      [style.top.px]="vipMenuPosition.top"
+      [style.right.px]="vipMenuPosition.right"
+      style="z-index: 10000; margin-top: 0;"
+      (click)="$event.stopPropagation()"
+    >
+      <ng-container *ngIf="getCurrentVipRegistration() as registration">
+        <button
+          type="button"
+          (click)="updateVipStatusTo(registration, VipStatus.Attendee); $event.stopPropagation()"
+          class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+          [class.bg-gray-100]="normalizeVipStatus(registration.vipStatus) === VipStatus.Attendee"
+        >
+          <i class="fas fa-user text-gray-400 text-xs"></i>
+          <span>{{ 'eventRegistration.attendee' | translate }}</span>
+          <i *ngIf="normalizeVipStatus(registration.vipStatus) === VipStatus.Attendee" class="fas fa-check text-accent ml-auto"></i>
+        </button>
+        <button
+          type="button"
+          (click)="updateVipStatusTo(registration, VipStatus.Vip); $event.stopPropagation()"
+          class="w-full text-left px-4 py-2 text-xs text-purple-700 hover:bg-purple-50 transition-colors flex items-center gap-2"
+          [class.bg-purple-50]="normalizeVipStatus(registration.vipStatus) === VipStatus.Vip"
+        >
+          <i class="fas fa-star text-purple-500 text-xs"></i>
+          <span>{{ 'eventRegistration.vip' | translate }}</span>
+          <i *ngIf="normalizeVipStatus(registration.vipStatus) === VipStatus.Vip" class="fas fa-check text-purple-600 ml-auto"></i>
+        </button>
+        <button
+          type="button"
+          (click)="updateVipStatusTo(registration, VipStatus.VVip); $event.stopPropagation()"
+          class="w-full text-left px-4 py-2 text-xs text-indigo-700 hover:bg-indigo-50 transition-colors flex items-center gap-2"
+          [class.bg-indigo-50]="normalizeVipStatus(registration.vipStatus) === VipStatus.VVip"
+        >
+          <i class="fas fa-star text-indigo-500 text-xs"></i>
+          <span>{{ 'eventRegistration.vVip' | translate }}</span>
+          <i *ngIf="normalizeVipStatus(registration.vipStatus) === VipStatus.VVip" class="fas fa-check text-indigo-600 ml-auto"></i>
+        </button>
+      </ng-container>
+    </div>
+    
     <!-- Dropdown Menu (rendered outside table) -->
     <div
       *ngIf="openMenuId && getCurrentRegistration()"
       class="fixed w-48 bg-white rounded-lg shadow-xl border-2 border-gray-200 py-1"
       [style.top.px]="menuPosition.top"
       [style.right.px]="menuPosition.right"
-      style="z-index: 99999;"
+      style="z-index: 10000;"
+      (click)="$event.stopPropagation()"
     >
       <ng-container *ngIf="getCurrentRegistration() as registration">
         <button
@@ -425,30 +586,21 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
           <span>{{ 'eventRegistration.showBadge' | translate }}</span>
         </button>
         <button
-          *ngIf="registration.barcode"
-          (click)="printBadge(registration); closeMenu()"
-          class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-        >
-          <i class="fas fa-print text-purple-500"></i>
-          <span>{{ 'eventRegistration.printBadge' | translate }}</span>
-        </button>
-        <button
-          *ngIf="normalizeStatus(registration.status) === 1"
+          *ngIf="normalizeStatus(registration.status) === 1 && !registration.isManual"
           (click)="resendEmail(registration); closeMenu()"
           class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
         >
           <i class="fas fa-paper-plane text-purple-500"></i>
           <span>{{ 'eventRegistration.resendEmail' | translate }}</span>
         </button>
+        <hr class="my-1 border-gray-200">
         <button
-          *ngIf="normalizeStatus(registration.status) === 1"
-          (click)="sendFinalApproval(registration); closeMenu()"
+          (click)="editRegistration(registration); closeMenu()"
           class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
         >
-          <i class="fas fa-check-circle text-green-500"></i>
-          <span>{{ 'eventRegistration.sendFinalApproval' | translate }}</span>
+          <i class="fas fa-edit text-blue-500"></i>
+          <span>{{ 'eventRegistration.edit' | translate }}</span>
         </button>
-        <hr class="my-1 border-gray-200">
         <button
           (click)="deleteRegistration(registration); closeMenu()"
           class="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
@@ -465,7 +617,8 @@ import { SeatNumberDialogComponent } from './seat-number-dialog/seat-number-dial
       class="fixed bg-white rounded-lg shadow-xl border-2 border-gray-200 py-3 px-4 email-status-tooltip"
       [style.top.px]="emailStatusPosition.top"
       [style.right.px]="emailStatusPosition.right"
-      style="z-index: 99999; min-width: 280px;"
+      style="z-index: 10000; min-width: 280px;"
+      (click)="$event.stopPropagation()"
     >
       <ng-container *ngIf="getCurrentRegistrationForEmailStatus() as registration">
         <div class="mb-2 pb-2 border-b border-gray-200">
@@ -538,17 +691,31 @@ export class EventRegistrationsListComponent implements OnInit {
   groupedRegistrations: { [key: string]: EventRegistration[] } = {};
   organizationNames: string[] = [];
   isLoading = false;
-  pageSize = 20;
+  pageSize = 200;
   currentPage = 1;
   totalPages = 1;
   totalItems = 0;
   searchTerm = '';
+  statusFilter: EventRegistrationStatus | null = null;
+  organizationFilter: string | null = null;
+  vipStatusFilter: VipStatus | null = null;
+  isManualFilter: boolean | null = null;
+  availableOrganizations: string[] = [];
   eventId: number;
   eventName: string;
+  
+  // Expose VipStatus enum to template
+  VipStatus = VipStatus;
   openMenuId: number | null = null;
   menuPosition: { top: number; right: number } = { top: 0, right: 0 };
   openEmailStatusId: number | null = null;
   emailStatusPosition: { top: number; right: number } = { top: 0, right: 0 };
+  openVipMenuId: number | null = null;
+  vipMenuPosition: { top: number; right: number } = { top: 0, right: 0 };
+  
+  // Cached counts to avoid ExpressionChangedAfterItHasBeenCheckedError
+  draftCount = 0;
+  approvedCount = 0;
   
   // Expose EventRegistrationStatus to template
   EventRegistrationStatus = EventRegistrationStatus;
@@ -567,19 +734,27 @@ export class EventRegistrationsListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.fetchAllOrganizations();
     this.fetchRegistrations();
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    // Close menu if clicking outside the button or dropdown menu
-    if (!target.closest('button[title*="More"]') && !target.closest('.fixed.w-48')) {
+    
+    // Close actions menu if clicking outside
+    if (!target.closest('.actions-menu-button') && !target.closest('.fixed.w-48')) {
       this.closeMenu();
     }
+    
     // Close email status tooltip if clicking outside
-    if (!target.closest('button[title*="Email Status"]') && !target.closest('.email-status-tooltip')) {
+    if (!target.closest('.email-status-button') && !target.closest('.email-status-tooltip')) {
       this.closeEmailStatus();
+    }
+    
+    // Close VIP menu if clicking outside
+    if (!target.closest('.vip-status-button') && !target.closest('.vip-status-dropdown')) {
+      this.closeVipMenu();
     }
   }
 
@@ -592,7 +767,8 @@ export class EventRegistrationsListComponent implements OnInit {
         this.currentPage,
         this.pageSize,
         this.searchTerm || undefined,
-        this.eventId
+        this.eventId,
+        this.statusFilter !== null ? this.statusFilter : undefined
       )
       .pipe(
         finalize(() => {
@@ -602,9 +778,26 @@ export class EventRegistrationsListComponent implements OnInit {
       )
       .subscribe({
         next: (response: EventRegistrationListResponse) => {
-          this.registrations = response.result;
-          this.totalItems = response.pagination?.total || 0;
+          let filteredRegistrations = response.result;
+          
+          // Apply VIP status filter
+          if (this.vipStatusFilter !== null) {
+            filteredRegistrations = filteredRegistrations.filter(r => {
+              const regVipStatus = this.normalizeVipStatus(r.vipStatus);
+              return regVipStatus === this.vipStatusFilter;
+            });
+          }
+          
+          // Apply IsManual filter
+          if (this.isManualFilter !== null) {
+            filteredRegistrations = filteredRegistrations.filter(r => r.isManual === this.isManualFilter);
+          }
+          
+          this.registrations = filteredRegistrations;
+          this.totalItems = filteredRegistrations.length;
           this.totalPages = Math.ceil(this.totalItems / this.pageSize);
+          this.updateAvailableOrganizations();
+          this.updateCounts();
           this.groupRegistrationsByOrganization();
         },
         error: (error) => {
@@ -647,6 +840,59 @@ export class EventRegistrationsListComponent implements OnInit {
   onSearch(): void {
     this.currentPage = 1;
     this.fetchRegistrations();
+  }
+
+  onStatusFilterChange(): void {
+    this.currentPage = 1;
+    this.fetchRegistrations();
+  }
+
+  onOrganizationFilterChange(): void {
+    this.currentPage = 1;
+    this.fetchRegistrations();
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.fetchRegistrations();
+  }
+
+  fetchAllOrganizations(): void {
+    // Fetch all registrations (with a very large pageSize) just to get all unique organizations
+    this.eventRegistrationService
+      .getAll(
+        1,
+        10000, // Very large page size to get all registrations
+        undefined, // search
+        this.eventId,
+        undefined // status
+      )
+      .subscribe({
+        next: (response: EventRegistrationListResponse) => {
+          const orgSet = new Set<string>();
+          response.result.forEach(reg => {
+            const orgName = reg.eventOrganization?.name || 'No Organization';
+            orgSet.add(orgName);
+          });
+          this.availableOrganizations = Array.from(orgSet).sort();
+        },
+        error: (error) => {
+          console.error('Error fetching all organizations:', error);
+          // Fallback to current registrations if the large fetch fails
+          this.updateAvailableOrganizations();
+        }
+      });
+  }
+
+  updateAvailableOrganizations(): void {
+    const orgSet = new Set<string>();
+    this.registrations.forEach(reg => {
+      const orgName = reg.eventOrganization?.name || 'No Organization';
+      orgSet.add(orgName);
+    });
+    // Merge with existing availableOrganizations to ensure we don't lose any
+    this.availableOrganizations.forEach(org => orgSet.add(org));
+    this.availableOrganizations = Array.from(orgSet).sort();
   }
 
   get paginationParams() {
@@ -839,6 +1085,168 @@ export class EventRegistrationsListComponent implements OnInit {
     printWindow.document.close();
   }
 
+  printAllBadges(): void {
+    // Get all filtered registrations that have barcodes
+    const registrationsWithBarcodes = this.registrations.filter(r => r.barcode);
+    
+    if (registrationsWithBarcodes.length === 0) {
+      this.toastr.warning(this.translationService.instant('eventRegistration.noBadgesToPrint'));
+      return;
+    }
+
+    // Show info message
+    this.toastr.info(
+      this.translationService.instant('eventRegistration.printingBadges', { count: registrationsWithBarcodes.length }),
+      '',
+      { timeOut: 3000 }
+    );
+
+    // Print badges one by one with a delay between each
+    let currentIndex = 0;
+    const printDelay = 2000; // 2 seconds delay between each print
+
+    const printNextBadge = () => {
+      if (currentIndex >= registrationsWithBarcodes.length) {
+        // All badges printed
+        this.toastr.success(
+          this.translationService.instant('eventRegistration.allBadgesPrinted', { count: registrationsWithBarcodes.length })
+        );
+        return;
+      }
+
+      const registration = registrationsWithBarcodes[currentIndex];
+      const barcode = registration.barcode || '';
+      const name = registration.name || '';
+
+      // Create a print-optimized window for this badge
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      if (!printWindow) {
+        this.toastr.error('Please allow popups to print badges');
+        return;
+      }
+
+      // Create print-optimized HTML for single badge
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Badge - ${name}</title>
+            <style>
+              @page {
+                size: 3.375in 2.125in;
+                margin: 0;
+              }
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              body {
+                font-family: 'Poppins', Arial, sans-serif;
+                width: 3.375in;
+                height: 2.125in;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                padding: 0.2in 0.2in 0.1in 0.2in;
+                padding-top: 0.4in;
+                background: white;
+              }
+              .badge-container {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 8px;
+                margin-top: 0.2in;
+              }
+              .qr-code {
+                width: 120px;
+                height: 120px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .qr-code img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
+              .barcode-text {
+                font-size: 14px;
+                font-weight: bold;
+                color: #333;
+                text-align: center;
+                font-family: 'Courier New', monospace;
+                letter-spacing: 1px;
+              }
+              .name {
+                font-size: 18px;
+                font-weight: bold;
+                color: #000;
+                text-align: center;
+                margin-top: 4px;
+              }
+              @media print {
+                body {
+                  width: 3.375in;
+                  height: 2.125in;
+                }
+                .badge-container {
+                  page-break-inside: avoid;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="badge-container">
+              <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(barcode)}" alt="QR Code" />
+              </div>
+              <div class="barcode-text">${barcode}</div>
+              <div class="name">${name}</div>
+            </div>
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  // Close window after print dialog is handled
+                  setTimeout(function() {
+                    window.close();
+                  }, 1000);
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      
+      // Move to next badge after delay
+      currentIndex++;
+      
+      // Schedule next badge print
+      if (currentIndex < registrationsWithBarcodes.length) {
+        setTimeout(() => {
+          printNextBadge();
+        }, printDelay);
+      } else {
+        // All badges queued for printing
+        setTimeout(() => {
+          this.toastr.success(
+            this.translationService.instant('eventRegistration.allBadgesPrinted', { count: registrationsWithBarcodes.length })
+          );
+        }, printDelay);
+      }
+    };
+
+    // Start printing the first badge
+    printNextBadge();
+  }
+
   approveRegistration(registration: EventRegistration): void {
     if (!registration.id) {
       return;
@@ -924,6 +1332,7 @@ export class EventRegistrationsListComponent implements OnInit {
         );
         // Remove from local array
         this.registrations = this.registrations.filter(r => r.id !== registration.id);
+        this.updateCounts();
         this.totalItems--;
         this.totalPages = Math.ceil(this.totalItems / this.pageSize);
         // Re-group registrations
@@ -941,6 +1350,12 @@ export class EventRegistrationsListComponent implements OnInit {
 
   resendEmail(registration: EventRegistration): void {
     if (!registration.id) {
+      return;
+    }
+
+    // Manual registrations cannot send emails
+    if (registration.isManual) {
+      this.toastr.warning(this.translationService.instant('eventRegistration.manualRegistrationNoEmail'));
       return;
     }
 
@@ -994,6 +1409,12 @@ export class EventRegistrationsListComponent implements OnInit {
       return;
     }
 
+    // Manual registrations cannot send emails
+    if (registration.isManual) {
+      this.toastr.warning(this.translationService.instant('eventRegistration.manualRegistrationNoEmail'));
+      return;
+    }
+
     // Show info toastr that email is being sent
     const infoToast = this.toastr.info(
       this.translationService.instant('eventRegistration.sendingFinalApproval'),
@@ -1040,6 +1461,218 @@ export class EventRegistrationsListComponent implements OnInit {
         );
       },
     });
+  }
+
+  editRegistration(registration: EventRegistration): void {
+    if (!registration.id) {
+      return;
+    }
+
+    // Fetch fresh registration data from API to ensure we have the latest data
+    this.eventRegistrationService.getById(registration.id).subscribe({
+      next: (response) => {
+        if (response.result) {
+          const freshRegistration = response.result;
+          
+          const dialogRef = this.dialogService.open(EventRegistrationEditFormComponent, {
+            data: { registration: freshRegistration },
+            width: '600px',
+            enableClose: true,
+            closeButton: true,
+            resizable: false,
+            draggable: true,
+            size: 'md',
+          });
+
+          dialogRef.afterClosed$.subscribe((result) => {
+            if (result && typeof result === 'object') {
+              // API returned updated registration - update the local registration object directly
+              const updatedRegistration = result as EventRegistration;
+              const updateIndex = this.registrations.findIndex(r => r.id === updatedRegistration.id);
+              if (updateIndex !== -1) {
+                // Update the registration object with the API response
+                this.registrations[updateIndex] = { ...this.registrations[updateIndex], ...updatedRegistration };
+                // Re-group registrations to reflect changes
+                this.groupRegistrationsByOrganization();
+                this.cdr.detectChanges();
+              }
+            } else if (result === true) {
+              // Fallback - refresh all registrations if no data returned
+              this.fetchRegistrations();
+            }
+          });
+        }
+      },
+      error: () => {
+        // If API call fails, use the local registration data
+        const dialogRef = this.dialogService.open(EventRegistrationEditFormComponent, {
+          data: { registration },
+          width: '600px',
+          enableClose: true,
+          closeButton: true,
+          resizable: false,
+          draggable: true,
+          size: 'md',
+        });
+
+        dialogRef.afterClosed$.subscribe((result) => {
+          if (result && typeof result === 'object') {
+            const updatedRegistration = result as EventRegistration;
+            const updateIndex = this.registrations.findIndex(r => r.id === updatedRegistration.id);
+            if (updateIndex !== -1) {
+              this.registrations[updateIndex] = { ...this.registrations[updateIndex], ...updatedRegistration };
+              this.groupRegistrationsByOrganization();
+              this.cdr.detectChanges();
+            }
+          } else if (result === true) {
+            this.fetchRegistrations();
+          }
+        });
+      }
+    });
+  }
+
+  addManualRegistration(): void {
+    const dialogRef = this.dialogService.open(EventRegistrationManualFormComponent, {
+      data: { eventId: this.eventId },
+      width: '600px',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Reload registrations after successful manual registration
+        this.fetchRegistrations();
+      }
+    });
+  }
+
+  updateVipStatus(registration: EventRegistration, event: Event): void {
+    if (!registration.id) {
+      return;
+    }
+
+    const target = event.target as HTMLSelectElement;
+    const newVipStatus = Number(target.value) as VipStatus;
+    
+    this.loadingService.show();
+    
+    this.eventRegistrationService.update(registration.id, { vipStatus: newVipStatus }).subscribe({
+      next: (response) => {
+        this.loadingService.hide();
+        if (response.result) {
+          // Update the local registration object
+          const updateIndex = this.registrations.findIndex(r => r.id === registration.id);
+          if (updateIndex !== -1) {
+            this.registrations[updateIndex] = { ...this.registrations[updateIndex], vipStatus: newVipStatus };
+            this.groupRegistrationsByOrganization();
+            this.cdr.detectChanges();
+          }
+          
+          this.toastr.success(
+            this.translationService.instant('eventRegistration.vipStatusUpdated')
+          );
+        }
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('eventRegistration.vipToggleError')
+        );
+        // Revert dropdown state on error
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleVipStatusMenu(registrationId: number, event?: MouseEvent): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Close other dropdowns when opening VIP menu
+    if (this.openVipMenuId !== registrationId) {
+      this.closeMenu();
+      this.closeEmailStatus();
+    }
+    
+    if (this.openVipMenuId === registrationId) {
+      this.closeVipMenu();
+    } else {
+      this.openVipMenuId = registrationId;
+      // Calculate position for fixed dropdown
+      if (event) {
+        const button = event.currentTarget as HTMLElement;
+        const rect = button.getBoundingClientRect();
+        this.vipMenuPosition = {
+          top: rect.bottom - 40,
+          right: window.innerWidth - rect.right
+        };
+      }
+    }
+  }
+
+  closeVipMenu(): void {
+    this.openVipMenuId = null;
+  }
+
+  updateVipStatusTo(registration: EventRegistration, newVipStatus: VipStatus): void {
+    if (!registration.id) {
+      return;
+    }
+
+    // Close menu first
+    this.closeVipMenu();
+
+    // If status is already the same, don't update
+    if (this.normalizeVipStatus(registration.vipStatus) === newVipStatus) {
+      return;
+    }
+    
+    this.loadingService.show();
+    
+    this.eventRegistrationService.update(registration.id, { vipStatus: newVipStatus }).subscribe({
+      next: (response) => {
+        this.loadingService.hide();
+        if (response.result) {
+          // Update the local registration object
+          const updateIndex = this.registrations.findIndex(r => r.id === registration.id);
+          if (updateIndex !== -1) {
+            this.registrations[updateIndex] = { ...this.registrations[updateIndex], vipStatus: newVipStatus };
+            this.groupRegistrationsByOrganization();
+            this.cdr.detectChanges();
+          }
+          
+          this.toastr.success(
+            this.translationService.instant('eventRegistration.vipStatusUpdated')
+          );
+        }
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('eventRegistration.vipToggleError')
+        );
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getVipStatusButtonClass(vipStatus?: VipStatus | string | number): string {
+    const normalized = this.normalizeVipStatus(vipStatus);
+    switch (normalized) {
+      case VipStatus.Attendee:
+        return 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 focus:ring-gray-500';
+      case VipStatus.Vip:
+        return 'bg-purple-100 text-purple-700 border border-purple-300 hover:bg-purple-200 focus:ring-purple-500';
+      case VipStatus.VVip:
+        return 'bg-indigo-100 text-indigo-700 border border-indigo-300 hover:bg-indigo-200 focus:ring-indigo-500';
+      default:
+        return 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 focus:ring-gray-500';
+    }
   }
 
   editSeatNumber(registration: EventRegistration): void {
@@ -1137,8 +1770,17 @@ export class EventRegistrationsListComponent implements OnInit {
     this.groupedRegistrations = {};
     this.organizationNames = [];
 
+    // Filter registrations by organization if filter is set
+    let filteredRegistrations = this.registrations;
+    if (this.organizationFilter) {
+      filteredRegistrations = this.registrations.filter(reg => {
+        const orgName = reg.eventOrganization?.name || 'No Organization';
+        return orgName === this.organizationFilter;
+      });
+    }
+
     // Group registrations by organization
-    this.registrations.forEach(registration => {
+    filteredRegistrations.forEach(registration => {
       const orgName = registration.eventOrganization?.name || 'No Organization';
       if (!this.groupedRegistrations[orgName]) {
         this.groupedRegistrations[orgName] = [];
@@ -1159,28 +1801,55 @@ export class EventRegistrationsListComponent implements OnInit {
     return this.groupedRegistrations[orgName]?.length || 0;
   }
 
+  updateCounts(): void {
+    // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.draftCount = this.registrations.filter(r => 
+        this.normalizeStatus(r.status) === EventRegistrationStatus.Draft &&
+        (!r.eventOrganization || !r.eventOrganization.isMain)
+      ).length;
+      
+      this.approvedCount = this.registrations.filter(r => 
+        this.normalizeStatus(r.status) === EventRegistrationStatus.Approved &&
+        (!r.eventOrganization || !r.eventOrganization.isMain)
+      ).length;
+      
+      this.cdr.markForCheck();
+    }, 0);
+  }
+
   getDraftCount(): number {
-    return this.registrations.filter(r => 
-      this.normalizeStatus(r.status) === EventRegistrationStatus.Draft &&
-      (!r.eventOrganization || !r.eventOrganization.isMain)
-    ).length;
+    return this.draftCount;
   }
 
   getApprovedCount(): number {
-    return this.registrations.filter(r => 
-      this.normalizeStatus(r.status) === EventRegistrationStatus.Approved &&
-      (!r.eventOrganization || !r.eventOrganization.isMain)
-    ).length;
+    return this.approvedCount;
   }
 
-  exportToExcel(statusFilter?: EventRegistrationStatus): void {
+  exportToExcel(excludeMainOrganization: boolean = false): void {
     this.loadingService.show();
+    
+    // Find eventOrganizationId from organizationFilter (organization name)
+    let eventOrganizationId: number | undefined = undefined;
+    if (this.organizationFilter) {
+      const org = this.registrations.find(r => {
+        const orgName = r.eventOrganization?.name || 'No Organization';
+        return orgName === this.organizationFilter;
+      });
+      if (org?.eventOrganizationId) {
+        eventOrganizationId = org.eventOrganizationId;
+      }
+    }
     
     // Call backend export endpoint
     this.eventRegistrationService.exportToExcel(
       this.eventId,
       this.searchTerm || undefined,
-      statusFilter
+      this.statusFilter !== null ? this.statusFilter : undefined,
+      this.vipStatusFilter !== null ? this.vipStatusFilter : undefined,
+      this.isManualFilter !== null ? this.isManualFilter : undefined,
+      excludeMainOrganization,
+      eventOrganizationId
     )
       .pipe(
         finalize(() => this.loadingService.hide())
@@ -1194,11 +1863,7 @@ export class EventRegistrationsListComponent implements OnInit {
           // Get filename from Content-Disposition header if available, otherwise generate one
           const eventName = this.dialogRef.data?.eventName || 'Event';
           const dateStr = new Date().toISOString().split('T')[0];
-          const exportType = statusFilter === undefined 
-            ? 'All' 
-            : statusFilter === EventRegistrationStatus.Approved 
-              ? 'Approved' 
-              : 'Rejected';
+          const exportType = excludeMainOrganization ? 'WithoutMainOrg' : 'All';
           const filename = `Event_Registrations_${exportType}_${eventName.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.csv`;
           
           link.setAttribute('href', url);
@@ -1215,6 +1880,10 @@ export class EventRegistrationsListComponent implements OnInit {
           this.toastr.error(error.error?.message || this.translationService.instant('common.error'));
         }
       });
+  }
+
+  exportToExcelWithoutMainOrg(): void {
+    this.exportToExcel(true);
   }
 
   exportOrganizationToExcel(orgName: string): void {
@@ -1238,6 +1907,8 @@ export class EventRegistrationsListComponent implements OnInit {
       this.translationService.instant('eventRegistration.email'),
       this.translationService.instant('eventRegistration.barcode'),
       this.translationService.instant('eventRegistration.status'),
+      this.translationService.instant('eventRegistration.vipStatus'),
+      this.translationService.instant('eventRegistration.isManual'),
       this.translationService.instant('eventRegistration.emailSent'),
       this.translationService.instant('eventRegistration.emailSentAt'),
       this.translationService.instant('eventRegistration.checkIn'),
@@ -1256,6 +1927,8 @@ export class EventRegistrationsListComponent implements OnInit {
         registration.email || '',
         registration.barcode || '',
         this.getStatusText(registration.status ?? EventRegistrationStatus.Draft),
+        this.getVipStatusLabel(registration.vipStatus),
+        registration.isManual ? this.translationService.instant('common.yes') : this.translationService.instant('common.no'),
         registration.emailSent 
           ? this.translationService.instant('eventRegistration.emailSent') 
           : this.translationService.instant('eventRegistration.emailNotSent'),
@@ -1314,6 +1987,13 @@ export class EventRegistrationsListComponent implements OnInit {
         right: window.innerWidth - rect.right
       };
     }
+    
+    // Close other dropdowns when opening actions menu
+    if (this.openMenuId !== registrationId) {
+      this.closeVipMenu();
+      this.closeEmailStatus();
+    }
+    
     this.openMenuId = this.openMenuId === registrationId ? null : registrationId;
   }
 
@@ -1323,6 +2003,13 @@ export class EventRegistrationsListComponent implements OnInit {
 
   toggleEmailStatus(registrationId: number, event: MouseEvent): void {
     event.stopPropagation();
+    
+    // Close other dropdowns when opening email status
+    if (this.openEmailStatusId !== registrationId) {
+      this.closeVipMenu();
+      this.closeMenu();
+    }
+    
     if (this.openEmailStatusId === registrationId) {
       this.closeEmailStatus();
     } else {
@@ -1341,6 +2028,23 @@ export class EventRegistrationsListComponent implements OnInit {
     this.openEmailStatusId = null;
   }
 
+  onTableRowClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    // Don't close dropdowns if clicking on buttons, inputs, or dropdowns themselves
+    if (target.closest('button') || 
+        target.closest('input') || 
+        target.closest('select') || 
+        target.closest('.vip-status-dropdown') || 
+        target.closest('.email-status-tooltip') || 
+        target.closest('.fixed.w-48')) {
+      return;
+    }
+    // Close all dropdowns when clicking on table row
+    this.closeVipMenu();
+    this.closeMenu();
+    this.closeEmailStatus();
+  }
+
   getTotalEmailsSent(registration: EventRegistration): number {
     let count = 0;
     if (registration.registrationSuccessfulEmailSent) count++;
@@ -1357,6 +2061,11 @@ export class EventRegistrationsListComponent implements OnInit {
   getCurrentRegistration(): EventRegistration | null {
     if (!this.openMenuId) return null;
     return this.registrations.find(r => r.id === this.openMenuId) || null;
+  }
+
+  getCurrentVipRegistration(): EventRegistration | null {
+    if (!this.openVipMenuId) return null;
+    return this.registrations.find(r => r.id === this.openVipMenuId) || null;
   }
 
   getStatusText(status: EventRegistrationStatus): string {
@@ -1387,6 +2096,52 @@ export class EventRegistrationsListComponent implements OnInit {
       return statusMap[status] ?? Number(status) ?? EventRegistrationStatus.Draft;
     }
     return Number(status) ?? EventRegistrationStatus.Draft;
+  }
+
+  normalizeVipStatus(vipStatus?: VipStatus | string | number): VipStatus {
+    if (vipStatus === null || vipStatus === undefined) return VipStatus.Attendee;
+    if (typeof vipStatus === 'string') {
+      const statusMap: { [key: string]: VipStatus } = {
+        'Attendee': VipStatus.Attendee,
+        'VIP': VipStatus.Vip,
+        'Vip': VipStatus.Vip,
+        'VVIP': VipStatus.VVip,
+        'VVip': VipStatus.VVip,
+        '0': VipStatus.Attendee,
+        '1': VipStatus.Vip,
+        '2': VipStatus.VVip
+      };
+      return statusMap[vipStatus] ?? Number(vipStatus) ?? VipStatus.Attendee;
+    }
+    return Number(vipStatus) ?? VipStatus.Attendee;
+  }
+
+  getVipStatusLabel(vipStatus?: VipStatus | string | number): string {
+    const normalized = this.normalizeVipStatus(vipStatus);
+    switch (normalized) {
+      case VipStatus.Attendee:
+        return this.translationService.instant('eventRegistration.attendee');
+      case VipStatus.Vip:
+        return this.translationService.instant('eventRegistration.vip');
+      case VipStatus.VVip:
+        return this.translationService.instant('eventRegistration.vVip');
+      default:
+        return this.translationService.instant('eventRegistration.attendee');
+    }
+  }
+
+  getVipStatusClass(vipStatus?: VipStatus | string | number): string {
+    const normalized = this.normalizeVipStatus(vipStatus);
+    switch (normalized) {
+      case VipStatus.Attendee:
+        return 'bg-gray-100 text-gray-800';
+      case VipStatus.Vip:
+        return 'bg-purple-100 text-purple-800';
+      case VipStatus.VVip:
+        return 'bg-indigo-100 text-indigo-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   }
 }
 

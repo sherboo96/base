@@ -10,6 +10,11 @@ export enum EnrollmentStatus {
   Excuse = 4
 }
 
+export enum EnrollmentType {
+  Onsite = 1,
+  Online = 2
+}
+
 export interface CourseEnrollmentApprovalStep {
   id: number;
   courseEnrollmentId: number;
@@ -56,6 +61,9 @@ export interface CourseEnrollment {
   finalApproval?: boolean;
   status?: EnrollmentStatus;
   isManualEnrollment?: boolean;
+  locationDocumentPath?: string;
+  enrollmentType?: number | string; // 1 or "Onsite" = Onsite, 2 or "Online" = Online
+  questionAnswers?: string; // JSON string storing answers to course enrollment questions
   course?: {
     id: number;
     courseTitle: string;
@@ -103,12 +111,12 @@ export class EnrollmentService {
     return this.http.get<EnrollmentResponse>(`${this.apiUrl}/course/${courseId}?page=${page}&pageSize=${pageSize}`);
   }
 
-  enrollInCourse(courseId: number): Observable<any> {
-    return this.http.post<any>(this.apiUrl, { courseId });
+  enrollInCourse(courseId: number, questionAnswers?: { [key: string]: string }): Observable<any> {
+    return this.http.post<any>(this.apiUrl, { courseId, questionAnswers });
   }
 
-  manualEnroll(courseId: number, userId: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/manual`, { courseId, userId });
+  manualEnroll(courseId: number, userId: string, questionAnswers?: { [key: string]: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/manual`, { courseId, userId, questionAnswers });
   }
 
   cancelEnrollment(enrollmentId: number): Observable<any> {
@@ -119,8 +127,9 @@ export class EnrollmentService {
     return this.http.get<any>(`${this.apiUrl}/check/${courseId}`);
   }
 
-  approveEnrollment(enrollmentId: number): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/${enrollmentId}/approve`, {});
+  approveEnrollment(enrollmentId: number, enrollmentType?: 'onsite' | 'online'): Observable<any> {
+    const params = enrollmentType ? `?enrollmentType=${enrollmentType === 'online' ? 2 : 1}` : '';
+    return this.http.patch<any>(`${this.apiUrl}/${enrollmentId}/approve${params}`, {});
   }
 
   rejectEnrollment(enrollmentId: number): Observable<any> {
@@ -131,12 +140,22 @@ export class EnrollmentService {
     return this.http.patch<any>(`${this.apiUrl}/${enrollmentId}/excuse`, {});
   }
 
-  approveEnrollmentStep(enrollmentId: number, courseTabApprovalId: number, comments?: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/approve-step`, {
+  updateLocationDocument(enrollmentId: number, filePath: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${enrollmentId}/location-document`, {
+      filePath,
+    });
+  }
+
+  approveEnrollmentStep(enrollmentId: number, courseTabApprovalId: number, comments?: string, enrollmentType?: 'onsite' | 'online'): Observable<any> {
+    const body: any = {
       courseEnrollmentId: enrollmentId,
       courseTabApprovalId: courseTabApprovalId,
       comments: comments
-    });
+    };
+    if (enrollmentType) {
+      body.enrollmentType = enrollmentType === 'online' ? 2 : 1;
+    }
+    return this.http.post<any>(`${this.apiUrl}/approve-step`, body);
   }
 
   rejectEnrollmentStep(enrollmentId: number, courseTabApprovalId: number, comments?: string): Observable<any> {

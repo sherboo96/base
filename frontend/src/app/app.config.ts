@@ -10,6 +10,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { LoadingInterceptor } from './interceptors/loading.interceptor';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
+// Dialog configuration will be handled via CSS
 
 // Custom HTTP Loader for translations
 export class CustomTranslateHttpLoader implements TranslateLoader {

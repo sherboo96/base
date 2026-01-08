@@ -5,7 +5,7 @@ import {
   Validators,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { AdoptionUserService, AttendanceType } from '../../../../services/adoption-user.service';
+import { AdoptionUserService } from '../../../../services/adoption-user.service';
 import { ToastrService } from 'ngx-toastr';
 import { DialogRef } from '@ngneat/dialog';
 import { CommonModule } from '@angular/common';
@@ -85,7 +85,6 @@ export class AdoptionUserFormComponent implements OnInit {
   isEdit = false;
   isSubmitting = false;
   organizations: any[] = [];
-  AttendanceType = AttendanceType;
 
   constructor(
     private fb: FormBuilder,
@@ -98,7 +97,6 @@ export class AdoptionUserFormComponent implements OnInit {
     this.form = this.fb.group({
       name: ['', Validators.required],
       nameAr: [''],
-      attendance: [AttendanceType.Optional, Validators.required],
       email: ['', [Validators.required, Validators.email]],
       bio: [''],
       organizationId: [null, Validators.required],
@@ -110,7 +108,6 @@ export class AdoptionUserFormComponent implements OnInit {
       this.form.patchValue({
         name: adoptionUser.name,
         nameAr: adoptionUser.nameAr || '',
-        attendance: typeof adoptionUser.attendance === 'number' ? adoptionUser.attendance : Number(adoptionUser.attendance) || AttendanceType.Optional,
         email: adoptionUser.email,
         bio: adoptionUser.bio || '',
         organizationId: adoptionUser.organizationId,
@@ -132,13 +129,6 @@ export class AdoptionUserFormComponent implements OnInit {
 
     this.isSubmitting = true;
     const formData = { ...this.form.value };
-    
-    // Ensure attendance is sent as a number (enum value)
-    if (typeof formData.attendance === 'string') {
-      formData.attendance = parseInt(formData.attendance, 10);
-    } else if (formData.attendance != null) {
-      formData.attendance = Number(formData.attendance);
-    }
 
     if (this.isEdit) {
       const adoptionUserId = this.dialogRef.data.adoptionUser.id;
@@ -172,16 +162,5 @@ export class AdoptionUserFormComponent implements OnInit {
 
   onCancel(): void {
     this.dialogRef.close(false);
-  }
-
-  getAttendanceText(attendance: AttendanceType): string {
-    switch (attendance) {
-      case AttendanceType.Optional:
-        return this.translationService.instant('adoptionUser.attendance.optional');
-      case AttendanceType.Mandatory:
-        return this.translationService.instant('adoptionUser.attendance.mandatory');
-      default:
-        return '';
-    }
   }
 }

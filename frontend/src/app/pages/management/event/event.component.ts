@@ -13,6 +13,7 @@ import { TranslationService } from '../../../services/translation.service';
 import { EventFormComponent } from './event-form/event-form.component';
 import { DeleteConfirmationDialogComponent } from '../../../components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 import { EventRegistrationsListComponent } from './event-registrations-list/event-registrations-list.component';
+import { SeatingChartComponent } from './event-registrations-list/seating-chart/seating-chart.component';
 import { ImagePreviewComponent } from '../../../components/image-preview/image-preview.component';
 import { AttachmentService } from '../../../services/attachment.service';
 import { EventRegistrationService } from '../../../services/event-registration.service';
@@ -246,6 +247,21 @@ export class EventComponent implements OnInit, OnDestroy {
         );
         this.loadingService.hide();
       },
+    });
+  }
+
+  openSeatingChart(event: Event): void {
+    if (!event.id) return;
+
+    const dialogRef = this.dialogService.open(SeatingChartComponent, {
+      data: { eventId: event.id },
+      width: '90vw',
+      maxWidth: '1200px',
+      height: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: true,
+      draggable: true,
     });
   }
 

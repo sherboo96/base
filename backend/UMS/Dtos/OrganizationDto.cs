@@ -17,3 +17,20 @@ public class OrganizationDto
     
     public bool IsActive { get; set; }
 }
+
+public class BulkOrganizationUploadDto
+{
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string Domain { get; set; } = string.Empty;
+}
+
+public class BulkOrganizationUploadResponse
+{
+    public int TotalProcessed { get; set; }
+    public int SuccessfullyAdded { get; set; }
+    public int Skipped { get; set; }
+    public List<string> SkippedDomains { get; set; } = new();
+    public List<string> Errors { get; set; } = new();
+}

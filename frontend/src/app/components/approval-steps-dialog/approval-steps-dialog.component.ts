@@ -112,6 +112,27 @@ import { TranslateModule } from '@ngx-translate/core';
               *ngIf="!step.isApproved && !step.isRejected && !step.courseTabApproval?.isHeadApproval && data.canApproveStep(step) && !data.enrollment.finalApproval"
               class="step-actions"
             >
+              <!-- Check if this is the first step and course has online seats -->
+              <ng-container *ngIf="isFirstStep(step) && hasOnlineSeats()">
+                <!-- Approve for Onsite -->
+                <button
+                  (click)="approveStep(step, 'onsite')"
+                  class="btn btn-approve-onsite"
+                >
+                  <i class="fas fa-building mr-1"></i>
+                  {{ 'course.approveOnsite' | translate }}
+                </button>
+                <!-- Approve for Online -->
+                <button
+                  (click)="approveStep(step, 'online')"
+                  class="btn btn-approve-online"
+                >
+                  <i class="fas fa-laptop mr-1"></i>
+                  {{ 'course.approveOnline' | translate }}
+                </button>
+              </ng-container>
+              <!-- Generic approve button for non-first steps or courses without online seats -->
+              <ng-container *ngIf="!isFirstStep(step) || !hasOnlineSeats()">
               <button
                 (click)="approveStep(step)"
                 class="btn btn-approve"
@@ -119,6 +140,7 @@ import { TranslateModule } from '@ngx-translate/core';
                 <i class="fas fa-check mr-1"></i>
                 {{ 'course.approve' | translate }}
               </button>
+              </ng-container>
               <button
                 (click)="rejectStep(step)"
                 class="btn btn-reject"
@@ -348,6 +370,28 @@ import { TranslateModule } from '@ngx-translate/core';
       transform: translateY(-1px);
     }
 
+    .btn-approve-onsite {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-approve-onsite:hover {
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-approve-online {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-approve-online:hover {
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+      transform: translateY(-1px);
+    }
+
     .dialog-footer {
       padding: 1rem 1.5rem;
       border-top: 1px solid #e5e7eb;
@@ -389,12 +433,84 @@ export class ApprovalStepsDialogComponent {
     });
   }
 
-  approveStep(step: any): void {
-    this.ref.close({ action: 'approve', step });
+  approveStep(step: any, enrollmentType?: 'onsite' | 'online'): void {
+    this.ref.close({ action: 'approve', step, enrollmentType });
+  }
+
+  isFirstStep(step: any): boolean {
+    if (!this.data.approvalSteps || this.data.approvalSteps.length === 0) {
+      return false;
+    }
+    
+    // Get all non-deleted steps
+    const activeSteps = this.data.approvalSteps.filter((s: any) => !s.isDeleted);
+    if (activeSteps.length === 0) {
+      return false;
+    }
+    
+    // Sort steps by approval order (lowest first)
+    const sortedSteps = [...activeSteps].sort((a: any, b: any) => {
+      const orderA = a.courseTabApproval?.approvalOrder || 0;
+      const orderB = b.courseTabApproval?.approvalOrder || 0;
+      return orderA - orderB;
+    });
+    
+    // Get the step with the lowest approval order (first step)
+    const firstStep = sortedSteps[0];
+    const currentStepOrder = step.courseTabApproval?.approvalOrder || 0;
+    const firstStepOrder = firstStep.courseTabApproval?.approvalOrder || 0;
+    
+    // Check if this is the first step
+    return currentStepOrder === firstStepOrder;
+  }
+
+  isLastStep(step: any): boolean {
+    if (!this.data.approvalSteps || this.data.approvalSteps.length === 0) {
+      return false;
+    }
+    
+    // Get all non-deleted steps
+    const activeSteps = this.data.approvalSteps.filter((s: any) => !s.isDeleted);
+    if (activeSteps.length === 0) {
+      return false;
+    }
+    
+    // Sort steps by approval order (highest first)
+    const sortedSteps = [...activeSteps].sort((a: any, b: any) => {
+      const orderA = a.courseTabApproval?.approvalOrder || 0;
+      const orderB = b.courseTabApproval?.approvalOrder || 0;
+      return orderB - orderA;
+    });
+    
+    // Get the step with the highest approval order
+    const lastStep = sortedSteps[0];
+    const currentStepOrder = step.courseTabApproval?.approvalOrder || 0;
+    const lastStepOrder = lastStep.courseTabApproval?.approvalOrder || 0;
+    
+    // Check if this is the last step and all previous steps are approved
+    if (currentStepOrder === lastStepOrder) {
+      // Check if all previous steps are approved
+      const previousSteps = activeSteps.filter((s: any) => {
+        const sOrder = s.courseTabApproval?.approvalOrder || 0;
+        return sOrder < currentStepOrder;
+      });
+      const allPreviousApproved = previousSteps.every((s: any) => s.isApproved);
+      return allPreviousApproved;
+    }
+    
+    return false;
   }
 
   rejectStep(step: any): void {
     this.ref.close({ action: 'reject', step });
+  }
+
+  hasOnlineSeats(): boolean {
+    if (!this.data || !this.data.course) {
+      return false;
+    }
+    const onlineSeats = this.data.course.availableOnlineSeats;
+    return onlineSeats !== null && onlineSeats !== undefined && onlineSeats > 0;
   }
 
   close(): void {

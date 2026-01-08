@@ -12,5 +12,6 @@ public class CourseAdoptionUser : BaseModel
     public AdoptionUser AdoptionUser { get; set; }
     
     public AdoptionType AdoptionType { get; set; } = AdoptionType.Other;
+    public AttendanceType AttendanceType { get; set; } = AttendanceType.Optional;
 }
 

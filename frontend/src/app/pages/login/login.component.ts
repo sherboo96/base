@@ -17,6 +17,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { LanguageSwitcherComponent } from '../../components/language-switcher/language-switcher.component';
 import { TranslationService } from '../../services/translation.service';
 import { LoadingComponent } from '../../components/loading/loading.component';
+import { DialogService } from '@ngneat/dialog';
+import { SupportDialogComponent } from '../../components/support-dialog/support-dialog.component';
 
 @Component({
   selector: 'app-login',
@@ -31,6 +33,7 @@ export class LoginComponent implements OnInit {
   formSubmitted = false;
   registrationFormSubmitted = false;
   currentLang: 'en' | 'ar' = 'en';
+  currentYear = new Date().getFullYear();
   isOtpMode = false;
   otpSent = false;
   otpRequesting = false;
@@ -50,7 +53,8 @@ export class LoginComponent implements OnInit {
     private validatorService: ValidatorService,
     private userService: UserService,
     private storageService: StorageService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private dialogService: DialogService
   ) { }
 
   ngOnInit(): void {
@@ -574,6 +578,17 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/dashboard'], { replaceUrl: true });
         this.loadingService.hide();
       },
+    });
+  }
+
+  openSupportDialog(): void {
+    this.dialogService.open(SupportDialogComponent, {
+      width: '500px',
+      maxHeight: '90vh',
+      enableClose: true,
+      closeButton: true,
+      resizable: false,
+      draggable: true,
     });
   }
 }

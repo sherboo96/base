@@ -225,6 +225,9 @@ public class CourseEnrollmentsController : ControllerBase
                 FinalApproval = e.FinalApproval,
                 Status = e.Status,
                 IsManualEnrollment = e.IsManualEnrollment,
+                LocationDocumentPath = e.LocationDocumentPath,
+                QuestionAnswers = e.QuestionAnswers,
+                EnrollmentType = e.EnrollmentType,
                 User = new UserEnrollmentDto
                 {
                     Id = e.User.Id,
@@ -578,6 +581,7 @@ public class CourseEnrollmentsController : ControllerBase
                 existingEnrollment.EnrollmentAt = DateTime.Now;
                 existingEnrollment.UpdatedAt = DateTime.Now;
                 existingEnrollment.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+                existingEnrollment.QuestionAnswers = dto.QuestionAnswers != null ? System.Text.Json.JsonSerializer.Serialize(dto.QuestionAnswers) : null;
                 
                 // If no approval steps, auto-approve; otherwise reset to pending
                 if (activeApprovalSteps == 0)
@@ -620,6 +624,7 @@ public class CourseEnrollmentsController : ControllerBase
                     FinalApproval = existingEnrollment.FinalApproval,
                     Status = existingEnrollment.Status,
                     IsManualEnrollment = existingEnrollment.IsManualEnrollment,
+                    QuestionAnswers = existingEnrollment.QuestionAnswers,
                     User = new UserEnrollmentDto
                     {
                         Id = existingEnrollment.User.Id,
@@ -652,11 +657,12 @@ public class CourseEnrollmentsController : ControllerBase
             }
         }
 
-        // Check available seats - count only approved enrollments
-        var approvedEnrollmentCount = await _context.CourseEnrollments
-            .CountAsync(ce => ce.CourseId == dto.CourseId && !ce.IsDeleted && ce.IsActive && ce.Status == EnrollmentStatus.Approve);
+        // Check available seats - count only approved onsite enrollments (not online)
+        var approvedOnsiteEnrollmentCount = await _context.CourseEnrollments
+            .CountAsync(ce => ce.CourseId == dto.CourseId && !ce.IsDeleted && ce.IsActive && ce.Status == EnrollmentStatus.Approve 
+                && (ce.EnrollmentType == null || ce.EnrollmentType == EnrollmentType.Onsite));
 
-        var availableSeats = course.AvailableSeats - approvedEnrollmentCount;
+        var availableSeats = course.AvailableSeats - approvedOnsiteEnrollmentCount;
 
         if (availableSeats < 1)
         {
@@ -675,6 +681,7 @@ public class CourseEnrollmentsController : ControllerBase
             UserId = currentUserId,
             EnrollmentAt = DateTime.Now,
             IsActive = true,
+            QuestionAnswers = dto.QuestionAnswers != null ? System.Text.Json.JsonSerializer.Serialize(dto.QuestionAnswers) : null,
             CreatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System"
         };
 
@@ -743,6 +750,9 @@ public class CourseEnrollmentsController : ControllerBase
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
             IsManualEnrollment = enrollment.IsManualEnrollment,
+            QuestionAnswers = enrollment.QuestionAnswers,
+            LocationDocumentPath = enrollment.LocationDocumentPath,
+            EnrollmentType = enrollment.EnrollmentType,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -821,11 +831,12 @@ public class CourseEnrollmentsController : ControllerBase
             });
         }
 
-        // Check available seats - count only approved enrollments
-        var approvedEnrollmentCount = await _context.CourseEnrollments
-            .CountAsync(ce => ce.CourseId == dto.CourseId && !ce.IsDeleted && ce.IsActive && ce.Status == EnrollmentStatus.Approve);
+        // Check available seats - count only approved onsite enrollments (not online)
+        var approvedOnsiteEnrollmentCount = await _context.CourseEnrollments
+            .CountAsync(ce => ce.CourseId == dto.CourseId && !ce.IsDeleted && ce.IsActive && ce.Status == EnrollmentStatus.Approve 
+                && (ce.EnrollmentType == null || ce.EnrollmentType == EnrollmentType.Onsite));
 
-        var availableSeats = course.AvailableSeats - approvedEnrollmentCount;
+        var availableSeats = course.AvailableSeats - approvedOnsiteEnrollmentCount;
 
         if (availableSeats < 1)
         {
@@ -888,6 +899,7 @@ public class CourseEnrollmentsController : ControllerBase
                 FinalApproval = existingEnrollment.FinalApproval,
                 Status = existingEnrollment.Status,
                 IsManualEnrollment = existingEnrollment.IsManualEnrollment,
+                LocationDocumentPath = existingEnrollment.LocationDocumentPath,
                 User = new UserEnrollmentDto
                 {
                     Id = existingEnrollment.User.Id,
@@ -955,6 +967,9 @@ public class CourseEnrollmentsController : ControllerBase
             IsActive = enrollment.IsActive,
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
+            QuestionAnswers = enrollment.QuestionAnswers,
+            LocationDocumentPath = enrollment.LocationDocumentPath,
+            EnrollmentType = enrollment.EnrollmentType,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1018,12 +1033,25 @@ public class CourseEnrollmentsController : ControllerBase
             IsActive = enrollment.IsActive,
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
+            QuestionAnswers = enrollment.QuestionAnswers,
+            LocationDocumentPath = enrollment.LocationDocumentPath,
+            EnrollmentType = enrollment.EnrollmentType,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
                 FullName = enrollment.User.FullName,
                 Email = enrollment.User.Email ?? "",
-                UserName = enrollment.User.UserName
+                UserName = enrollment.User.UserName,
+                OrganizationId = enrollment.User.OrganizationId,
+                OrganizationName = enrollment.User.Organization?.Name,
+                OrganizationIsMain = enrollment.User.Organization?.IsMain,
+                DepartmentId = enrollment.User.DepartmentId,
+                DepartmentName = enrollment.User.Department != null
+                    ? (enrollment.User.Department.NameEn ?? enrollment.User.Department.NameAr)
+                    : null,
+                JobTitle = enrollment.User.JobTitle != null
+                    ? (enrollment.User.JobTitle.NameEn ?? enrollment.User.JobTitle.NameAr)
+                    : null
             }
         };
 
@@ -1162,16 +1190,7 @@ public class CourseEnrollmentsController : ControllerBase
             });
         }
 
-        // Avoid self-approval
-        if (enrollment.UserId == currentUserId)
-        {
-            return BadRequest(new BaseResponse<CourseEnrollmentApprovalDto>
-            {
-                StatusCode = 400,
-                Message = "You cannot approve your own enrollment."
-            });
-        }
-
+        // Allow self-approval - users can approve their own enrollment if they have the required permissions
         // Check permission to approve
         var currentUser = await _context.Users
             .Include(u => u.UserRoles)
@@ -1230,6 +1249,15 @@ public class CourseEnrollmentsController : ControllerBase
         approvalStep.UpdatedAt = DateTime.Now;
         approvalStep.UpdatedBy = currentUserId;
 
+        if (dto.EnrollmentType == EnrollmentType.Online)
+        {
+            enrollment.EnrollmentType = EnrollmentType.Online;
+        }
+        else if (dto.EnrollmentType == EnrollmentType.Onsite)
+        {
+            enrollment.EnrollmentType = EnrollmentType.Onsite;
+        }
+
         // Check if all steps are approved
         var allSteps = enrollment.ApprovalSteps
             .Where(a => !a.IsDeleted)
@@ -1239,6 +1267,60 @@ public class CourseEnrollmentsController : ControllerBase
         var allApproved = allSteps.All(a => a.IsApproved);
         if (allApproved)
         {
+            // Load course to check seat availability
+            var course = await _context.Courses
+                .FirstOrDefaultAsync(c => c.Id == enrollment.CourseId && !c.IsDeleted);
+            
+            if (course == null)
+            {
+                return NotFound(new BaseResponse<CourseEnrollmentApprovalDto>
+                {
+                    StatusCode = 404,
+                    Message = "Course not found."
+                });
+            }
+            
+            // Check seat availability based on enrollment type and decrease seats
+            if (enrollment.EnrollmentType == EnrollmentType.Online)
+            {
+                // Count approved online enrollments (excluding current enrollment if it's already approved)
+                var approvedOnlineEnrollmentCount = await _context.CourseEnrollments
+                    .CountAsync(ce => ce.CourseId == enrollment.CourseId && !ce.IsDeleted && ce.IsActive 
+                        && ce.Status == EnrollmentStatus.Approve && ce.EnrollmentType == EnrollmentType.Online
+                        && ce.Id != enrollment.Id); // Exclude current enrollment from count
+                
+                var availableOnlineSeats = course.AvailableOnlineSeats - approvedOnlineEnrollmentCount;
+                
+                if (availableOnlineSeats < 1)
+                {
+                    return BadRequest(new BaseResponse<CourseEnrollmentApprovalDto>
+                    {
+                        StatusCode = 400,
+                        Message = "No more online seats available. The course online capacity is full."
+                    });
+                }
+            }
+            else // Onsite (or null/default)
+            {
+                // Count approved onsite enrollments (excluding current enrollment if it's already approved)
+                var approvedOnsiteEnrollmentCount = await _context.CourseEnrollments
+                    .CountAsync(ce => ce.CourseId == enrollment.CourseId && !ce.IsDeleted && ce.IsActive 
+                        && ce.Status == EnrollmentStatus.Approve 
+                        && (ce.EnrollmentType == null || ce.EnrollmentType == EnrollmentType.Onsite)
+                        && ce.Id != enrollment.Id); // Exclude current enrollment from count
+                
+                var availableSeats = course.AvailableSeats - approvedOnsiteEnrollmentCount;
+                
+                if (availableSeats < 1)
+                {
+                    return BadRequest(new BaseResponse<CourseEnrollmentApprovalDto>
+                    {
+                        StatusCode = 400,
+                        Message = "No more onsite seats available. The course is full."
+                    });
+                }
+            }
+            
             enrollment.FinalApproval = true;
             enrollment.Status = EnrollmentStatus.Approve;
             enrollment.UpdatedAt = DateTime.Now;
@@ -1428,16 +1510,7 @@ public class CourseEnrollmentsController : ControllerBase
             });
         }
 
-        // Avoid self-rejection
-        if (enrollment.UserId == currentUserId)
-        {
-            return BadRequest(new BaseResponse<CourseEnrollmentApprovalDto>
-            {
-                StatusCode = 400,
-                Message = "You cannot reject your own enrollment."
-            });
-        }
-
+        // Allow self-rejection - users can reject their own enrollment if they have the required permissions
         // Check permission to reject
         var currentUser = await _context.Users
             .Include(u => u.UserRoles)
@@ -1626,7 +1699,7 @@ public class CourseEnrollmentsController : ControllerBase
     }
 
     [HttpPatch("{id}/approve")]
-    public async Task<IActionResult> ApproveEnrollment(int id)
+    public async Task<IActionResult> ApproveEnrollment(int id, [FromQuery] EnrollmentType? enrollmentType = null)
     {
         var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                           ?? User.FindFirst("UserId")?.Value 
@@ -1676,9 +1749,61 @@ public class CourseEnrollmentsController : ControllerBase
             });
         }
 
+        // Check seat availability and decrease seats based on enrollment type
+        var course = await _context.Courses
+            .FirstOrDefaultAsync(c => c.Id == enrollment.CourseId && !c.IsDeleted);
+        
+        if (course != null)
+        {
+            if (enrollmentType == EnrollmentType.Online)
+            {
+                var approvedOnlineEnrollmentCount = await _context.CourseEnrollments
+                    .CountAsync(ce => ce.CourseId == enrollment.CourseId && !ce.IsDeleted && ce.IsActive 
+                        && ce.Status == EnrollmentStatus.Approve && ce.EnrollmentType == EnrollmentType.Online
+                        && ce.Id != enrollment.Id); // Exclude current enrollment from count
+                
+                var availableOnlineSeats = course.AvailableOnlineSeats - approvedOnlineEnrollmentCount;
+                
+                if (availableOnlineSeats < 1)
+                {
+                    return BadRequest(new BaseResponse<CourseEnrollmentDto>
+                    {
+                        StatusCode = 400,
+                        Message = "No more online seats available. The course online capacity is full."
+                    });
+                }
+                
+                // Decrease online seats
+                course.AvailableOnlineSeats--;
+            }
+            else // Onsite (or null/default)
+            {
+                var approvedOnsiteEnrollmentCount = await _context.CourseEnrollments
+                    .CountAsync(ce => ce.CourseId == enrollment.CourseId && !ce.IsDeleted && ce.IsActive 
+                        && ce.Status == EnrollmentStatus.Approve 
+                        && (ce.EnrollmentType == null || ce.EnrollmentType == EnrollmentType.Onsite)
+                        && ce.Id != enrollment.Id); // Exclude current enrollment from count
+                
+                var availableSeats = course.AvailableSeats - approvedOnsiteEnrollmentCount;
+                
+                if (availableSeats < 1)
+                {
+                    return BadRequest(new BaseResponse<CourseEnrollmentDto>
+                    {
+                        StatusCode = 400,
+                        Message = "No more onsite seats available. The course is full."
+                    });
+                }
+                
+                // Decrease onsite seats
+                course.AvailableSeats--;
+            }
+        }
+
         // Simple approval for enrollments without approval steps
         enrollment.FinalApproval = true;
         enrollment.Status = EnrollmentStatus.Approve;
+        enrollment.EnrollmentType = enrollmentType ?? EnrollmentType.Onsite; // Set enrollment type (Onsite or Online), default to Onsite
         enrollment.UpdatedAt = DateTime.Now;
         enrollment.UpdatedBy = currentUserId;
 
@@ -1708,6 +1833,7 @@ public class CourseEnrollmentsController : ControllerBase
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
             IsManualEnrollment = enrollment.IsManualEnrollment,
+            QuestionAnswers = enrollment.QuestionAnswers,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1814,6 +1940,7 @@ public class CourseEnrollmentsController : ControllerBase
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
             IsManualEnrollment = enrollment.IsManualEnrollment,
+            QuestionAnswers = enrollment.QuestionAnswers,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1833,6 +1960,82 @@ public class CourseEnrollmentsController : ControllerBase
         {
             StatusCode = 200,
             Message = "Enrollment rejected successfully.",
+            Result = enrollmentDto
+        });
+    }
+
+    /// <summary>
+    /// Updates the location document path for a specific enrollment.
+    /// This is called after the signed location document is uploaded via the Attachments API.
+    /// </summary>
+    [HttpPatch("{id}/location-document")]
+    public async Task<IActionResult> UpdateLocationDocument(int id, [FromBody] UpdateLocationDocumentDto dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.FilePath))
+        {
+            return BadRequest(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 400,
+                Message = "File path is required."
+            });
+        }
+
+        var enrollment = await _context.CourseEnrollments
+            .Include(e => e.User)
+                .ThenInclude(u => u.Organization)
+            .Include(e => e.User)
+                .ThenInclude(u => u.Department)
+            .Include(e => e.User)
+                .ThenInclude(u => u.JobTitle)
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+
+        if (enrollment == null)
+        {
+            return NotFound(new BaseResponse<CourseEnrollmentDto>
+            {
+                StatusCode = 404,
+                Message = "Enrollment not found."
+            });
+        }
+
+        enrollment.LocationDocumentPath = dto.FilePath;
+        enrollment.UpdatedAt = DateTime.Now;
+        enrollment.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+
+        await _context.SaveChangesAsync();
+
+        var enrollmentDto = new CourseEnrollmentDto
+        {
+            Id = enrollment.Id,
+            CourseId = enrollment.CourseId,
+            UserId = enrollment.UserId,
+            EnrollmentAt = enrollment.EnrollmentAt,
+            IsActive = enrollment.IsActive,
+            FinalApproval = enrollment.FinalApproval,
+            Status = enrollment.Status,
+            IsManualEnrollment = enrollment.IsManualEnrollment,
+            QuestionAnswers = enrollment.QuestionAnswers,
+            LocationDocumentPath = enrollment.LocationDocumentPath,
+            EnrollmentType = enrollment.EnrollmentType,
+            User = new UserEnrollmentDto
+            {
+                Id = enrollment.User.Id,
+                FullName = enrollment.User.FullName,
+                Email = enrollment.User.Email ?? "",
+                UserName = enrollment.User.UserName,
+                OrganizationId = enrollment.User.OrganizationId,
+                OrganizationName = enrollment.User.Organization?.Name,
+                OrganizationIsMain = enrollment.User.Organization?.IsMain,
+                DepartmentId = enrollment.User.DepartmentId,
+                DepartmentName = enrollment.User.Department != null ? (enrollment.User.Department.NameEn ?? enrollment.User.Department.NameAr) : null,
+                JobTitle = enrollment.User.JobTitle != null ? (enrollment.User.JobTitle.NameEn ?? enrollment.User.JobTitle.NameAr) : null
+            }
+        };
+
+        return Ok(new BaseResponse<CourseEnrollmentDto>
+        {
+            StatusCode = 200,
+            Message = "Location document updated successfully.",
             Result = enrollmentDto
         });
     }
@@ -1939,6 +2142,7 @@ public class CourseEnrollmentsController : ControllerBase
             FinalApproval = enrollment.FinalApproval,
             Status = enrollment.Status,
             IsManualEnrollment = enrollment.IsManualEnrollment,
+            QuestionAnswers = enrollment.QuestionAnswers,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,

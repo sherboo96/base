@@ -32,6 +32,8 @@ public class EventRegistrationDto
     
     [JsonPropertyName("otherOrganization")]
     public string? OtherOrganization { get; set; } // Temporary field for creating new organization
+    public bool IsManual { get; set; } = false; // Flag to indicate manual registration (no email sent)
+    public VipStatus VipStatus { get; set; } = VipStatus.Attendee; // VIP status: Attendee, VIP, or VVIP
     public List<EventAttendeeDto> Attendees { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }

@@ -107,20 +107,45 @@ class APIService {
         }
         
         guard httpResponse.statusCode == 200 else {
-            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
                 throw APIError.serverError(errorResponse.message)
             } else {
-                throw APIError.httpError(httpResponse.statusCode)
+                let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw APIError.serverError("HTTP \(httpResponse.statusCode): \(errorString)")
             }
         }
         
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
-        let baseResponse = try decoder.decode(BaseResponse<[EventRegistration]>.self, from: data)
-        
-        // Return all registrations (not just approved)
-        return baseResponse.result ?? []
+        do {
+            let baseResponse = try decoder.decode(BaseResponse<[EventRegistration]>.self, from: data)
+            
+            // Return all registrations (not just approved)
+            guard let registrations = baseResponse.result else {
+                throw APIError.serverError("No registrations in response")
+            }
+            
+            return registrations
+        } catch let decodingError as DecodingError {
+            let errorDescription: String
+            switch decodingError {
+            case .typeMismatch(let type, let context):
+                errorDescription = "Type mismatch for type \(type) at path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .valueNotFound(let type, let context):
+                errorDescription = "Value not found for type \(type) at path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .keyNotFound(let key, let context):
+                errorDescription = "Key '\(key.stringValue)' not found at path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .dataCorrupted(let context):
+                errorDescription = "Data corrupted at path: \(context.codingPath.map { $0.stringValue }.joined(separator: ".")) - \(context.debugDescription)"
+            @unknown default:
+                errorDescription = "Unknown decoding error: \(decodingError.localizedDescription)"
+            }
+            let jsonString = String(data: data, encoding: .utf8) ?? "Unable to convert to string"
+            throw APIError.serverError("Decoding error: \(errorDescription)\nResponse: \(jsonString.prefix(500))")
+        }
     }
     
     func checkIn(barcode: String) async throws -> EventAttendee {
@@ -307,6 +332,41 @@ class APIService {
                 throw APIError.serverError(errorResponse.message)
             } else {
                 throw APIError.serverError("Failed to send final approval email")
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        let baseResponse = try decoder.decode(BaseResponse<EventRegistration>.self, from: data)
+        
+        guard let result = baseResponse.result else {
+            throw APIError.invalidResponse
+        }
+        
+        return result
+    }
+    
+    // Update registration (for VIP status and other fields)
+    func updateRegistration(id: Int, vipStatus: VipStatus) async throws -> EventRegistration {
+        let url = URL(string: "\(baseURL)/EventRegistrations/\(id)")!
+        let requestBody: [String: Any] = ["vipStatus": vipStatus.rawValue]
+        let body = try JSONSerialization.data(withJSONObject: requestBody)
+        
+        let request = createRequest(url: url, method: "PUT", body: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            if let errorResponse = try? decoder.decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.serverError("Failed to update registration")
             }
         }
         

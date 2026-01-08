@@ -83,7 +83,12 @@
     </div>
     <div class="organization-card relative flex flex-col w-full h-full bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
         <div class="bg-gray-50 py-2 px-3 border-b border-gray-200 flex flex-wrap gap-2 items-center justify-between">
-            <div class="flex items-center justify-end w-full">
+            <div class="flex items-center justify-end w-full gap-2">
+               
+                <button (click)="openBulkUploadDialog()" class="bg-white hover:bg-gray-50 text-accent border-2 border-accent px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors duration-200 text-xs font-semibold">
+                    <i class="fas fa-file-upload text-xs"></i>
+                    <span>{{'organization.bulkUpload'|translate}}</span>
+                </button>
                 <button (click)="addNewOrganization()" class="bg-accent hover:bg-accentDark text-white px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-colors duration-200 text-xs">
                     <span class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -181,9 +186,13 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" [checked]="organization.isActive" (change)="toggleStatus(organization)" class="sr-only peer" />
-                                <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    [checked]="organization.isActive" 
+                                    (change)="toggleStatus(organization)" 
+                                    class="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2 cursor-pointer"
+                                />
                             </label>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">

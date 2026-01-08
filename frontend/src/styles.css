@@ -202,4 +202,27 @@
   .toast-warning {
     @apply bg-yellow-500 text-gray-900;
   }
+
+  /* Dialog container styles - Remove default padding from @ngneat/dialog */
+  .overlay-dialog {
+    padding: 0 !important;
+  }
+
+  /* Remove padding from dialog content wrapper */
+  .overlay-dialog > div,
+  .overlay-dialog .dialog-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Target the dialog container directly */
+  [class*="overlay"] [class*="dialog"] {
+    padding: 0 !important;
+  }
+
+  /* Ensure child components handle their own padding */
+  .overlay-dialog app-support-dialog,
+  .overlay-dialog app-support-dialog > div {
+    margin: 0 !important;
+  }
 }
