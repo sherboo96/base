@@ -1311,6 +1311,137 @@ namespace UMS.Migrations
                     b.ToTable("EventRegistrations");
                 });
 
+            modelBuilder.Entity("UMS.Models.EventSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableSeats")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Banner")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DescriptionAr")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TitleAr")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("EventSessions");
+                });
+
+            modelBuilder.Entity("UMS.Models.EventSessionEnrollment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("ApprovalEmailSent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ApprovalEmailSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Barcode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CheckedInAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("EventOrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EventSessionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCheckedIn")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameAr")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventOrganizationId");
+
+                    b.HasIndex("EventSessionId");
+
+                    b.ToTable("EventSessionEnrollments");
+                });
+
             modelBuilder.Entity("UMS.Models.EventSpeaker", b =>
                 {
                     b.Property<int>("Id")
@@ -2561,6 +2692,34 @@ namespace UMS.Migrations
                     b.Navigation("EventOrganization");
                 });
 
+            modelBuilder.Entity("UMS.Models.EventSession", b =>
+                {
+                    b.HasOne("UMS.Models.Event", "Event")
+                        .WithMany("Sessions")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("UMS.Models.EventSessionEnrollment", b =>
+                {
+                    b.HasOne("UMS.Models.EventOrganization", "EventOrganization")
+                        .WithMany()
+                        .HasForeignKey("EventOrganizationId");
+
+                    b.HasOne("UMS.Models.EventSession", "EventSession")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("EventSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EventOrganization");
+
+                    b.Navigation("EventSession");
+                });
+
             modelBuilder.Entity("UMS.Models.EventSpeaker", b =>
                 {
                     b.HasOne("UMS.Models.Event", "Event")
@@ -2766,6 +2925,8 @@ namespace UMS.Migrations
                 {
                     b.Navigation("Registrations");
 
+                    b.Navigation("Sessions");
+
                     b.Navigation("Speakers");
                 });
 
@@ -2777,6 +2938,11 @@ namespace UMS.Migrations
             modelBuilder.Entity("UMS.Models.EventRegistration", b =>
                 {
                     b.Navigation("Attendees");
+                });
+
+            modelBuilder.Entity("UMS.Models.EventSession", b =>
+                {
+                    b.Navigation("Enrollments");
                 });
 
             modelBuilder.Entity("UMS.Models.JobTitle", b =>

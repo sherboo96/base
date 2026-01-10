@@ -32,9 +32,11 @@ import { CourseComponent } from './pages/management/course/course.component';
 import { CourseDetailsComponent } from './pages/management/course/course-details/course-details.component';
 import { CoursePreviewComponent } from './pages/courses/course-preview/course-preview.component';
 import { EventRegistrationComponent } from './pages/events/event-registration/event-registration.component';
+import { SessionEnrollmentComponent } from './pages/events/session-enrollment/session-enrollment.component';
 import { EventComponent } from './pages/management/event/event.component';
 import { EventOrganizationComponent } from './pages/management/event-organization/event-organization.component';
 import { EventSpeakerComponent } from './pages/management/event-speaker/event-speaker.component';
+import { EventSessionComponent } from './pages/management/event-session/event-session.component';
 import { DigitalLibraryComponent } from './pages/digital-library/digital-library.component';
 import { DigitalLibraryManagementComponent } from './pages/management/digital-library/digital-library-management.component';
 
@@ -54,6 +56,12 @@ export const routes: Routes = [
   {
     path: 'events/:code',
     component: EventRegistrationComponent,
+    data: { hideNavigation: true }, // Hide side-menu and navbar for public routes
+    // No AuthGuard - public route
+  },
+  {
+    path: 'events/massar/:sessionId',
+    component: SessionEnrollmentComponent,
     data: { hideNavigation: true }, // Hide side-menu and navbar for public routes
     // No AuthGuard - public route
   },
@@ -240,6 +248,15 @@ export const routes: Routes = [
   {
     path: 'management/events',
     component: EventComponent,
+    canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
+    data: {
+      redirectIfLoggedIn: false,
+      permission: 'EVENTS_VIEW',
+    },
+  },
+  {
+    path: 'management/event-sessions',
+    component: EventSessionComponent,
     canActivate: [AuthGuard, ProfileCompletionGuard, PermissionGuard],
     data: {
       redirectIfLoggedIn: false,

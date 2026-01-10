@@ -24,5 +24,8 @@ public class Event : BaseModel
 
     [JsonIgnore]
     public ICollection<EventRegistration> Registrations { get; set; } = new List<EventRegistration>();
+
+    [JsonIgnore]
+    public ICollection<EventSession> Sessions { get; set; } = new List<EventSession>();
 }
 

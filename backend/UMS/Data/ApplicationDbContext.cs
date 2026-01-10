@@ -40,6 +40,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<EventOrganization> EventOrganizations { get; set; }
     public DbSet<EventRegistration> EventRegistrations { get; set; }
     public DbSet<EventAttendee> EventAttendees { get; set; }
+    public DbSet<EventSession> EventSessions { get; set; }
+    public DbSet<EventSessionEnrollment> EventSessionEnrollments { get; set; }
     public DbSet<CourseAttendance> CourseAttendances { get; set; }
     public DbSet<Log> Logs { get; set; }
 

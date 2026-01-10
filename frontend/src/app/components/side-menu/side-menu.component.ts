@@ -575,6 +575,11 @@ export class SideMenuComponent implements OnInit, OnDestroy {
     this.router.navigate(['/management/event-speakers']);
   }
 
+  navigateToEventSessions() {
+    this.activeRoute = '/management/event-sessions';
+    this.router.navigate(['/management/event-sessions']);
+  }
+
   navigateToCourseTab() {
     this.activeRoute = '/management/course-tab';
     this.router.navigate(['/management/course-tab']);

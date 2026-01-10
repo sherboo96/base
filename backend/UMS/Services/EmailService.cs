@@ -1161,4 +1161,277 @@ public class EmailService
         public string FromEmail { get; set; } = "";
         public bool EnableSsl { get; set; } = true;
     }
+
+    /// <summary>
+    /// Sends event session enrollment approval email with QR code attachment
+    /// </summary>
+    public async Task<bool> SendEventSessionEnrollmentApprovalAsync(
+        string to,
+        string attendeeName,
+        string sessionName,
+        string? sessionNameAr,
+        DateTime? sessionDateTime,
+        string? eventName,
+        string? eventNameAr,
+        string? barcode,
+        byte[]? qrCodeBytes,
+        string? sessionBannerUrl = null)
+    {
+        try
+        {
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "event-session-enrollment-approval.html");
+            string template;
+            
+            if (System.IO.File.Exists(templatePath))
+            {
+                template = await File.ReadAllTextAsync(templatePath);
+            }
+            else
+            {
+                // Fallback template if file doesn't exist
+                template = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #0b5367; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>Session Enrollment Approved</h1>
+        </div>
+        <div class='content'>
+            <p>Dear {{ATTENDEE_NAME}},</p>
+            <p>Your enrollment for <strong>{{SESSION_NAME}}</strong> has been approved!</p>
+            <p><strong>Session:</strong> {{SESSION_NAME}}</p>
+            <p><strong>Date & Time:</strong> {{SESSION_DATE_TIME}}</p>
+            <p><strong>Event:</strong> {{EVENT_NAME}}</p>
+            <p>We look forward to seeing you at the session!</p>
+        </div>
+        <div class='footer'>
+            <p>Ministry of Oil - Oil Training Center</p>
+        </div>
+    </div>
+</body>
+</html>";
+            }
+
+            // Get organization name and support email
+            var organizationName = await _configService.GetConfigurationValueAsync("Organization:Name") ?? "Ministry of Oil";
+            var supportEmail = await _configService.GetConfigurationValueAsync("Support:Email") ?? "support@example.com";
+
+            // Format session date/time
+            var sessionDateTimeText = "TBA";
+            if (sessionDateTime.HasValue)
+            {
+                var date = sessionDateTime.Value;
+                var dayName = date.ToString("dddd");
+                var day = date.Day;
+                var monthName = date.ToString("MMMM");
+                var year = date.Year;
+                var hour = date.ToString("HH:mm");
+                var daySuffix = GetDaySuffix(day);
+                sessionDateTimeText = $"{dayName}, {day}{daySuffix} {monthName} {year} at {hour}";
+            }
+
+            // Generate calendar link
+            var calendarLink = GenerateGoogleCalendarLink(
+                sessionName,
+                $"Session: {sessionName}\nEvent: {eventName ?? "Event"}",
+                "TBA",
+                sessionDateTime,
+                sessionDateTime?.AddHours(2) // Assume 2 hour session
+            );
+
+            // Load session banner image if provided (for inline embedding)
+            byte[]? bannerImageBytes = null;
+            string? bannerContentId = null;
+            string? bannerContentType = null;
+            string bannerSection = "";
+            
+            if (!string.IsNullOrWhiteSpace(sessionBannerUrl))
+            {
+                try
+                {
+                    string bannerPath = "";
+                    
+                    // If it's a full URL, try to extract the path
+                    if (sessionBannerUrl.StartsWith("http://") || sessionBannerUrl.StartsWith("https://"))
+                    {
+                        var uri = new Uri(sessionBannerUrl);
+                        bannerPath = uri.AbsolutePath.TrimStart('/');
+                    }
+                    else
+                    {
+                        // Remove leading slash if present
+                        bannerPath = sessionBannerUrl.TrimStart('/');
+                    }
+                    
+                    // Get the full file path
+                    string fullPath;
+                    if (!string.IsNullOrEmpty(_env.WebRootPath))
+                    {
+                        fullPath = Path.Combine(_env.WebRootPath, bannerPath);
+                    }
+                    else
+                    {
+                        var wwwrootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                        fullPath = Path.Combine(wwwrootPath, bannerPath);
+                    }
+                    
+                    // Check if file exists
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        bannerImageBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+                        
+                        var extension = Path.GetExtension(fullPath).ToLowerInvariant();
+                        bannerContentType = extension switch
+                        {
+                            ".jpg" or ".jpeg" => MediaTypeNames.Image.Jpeg,
+                            ".png" => "image/png",
+                            ".gif" => MediaTypeNames.Image.Gif,
+                            ".webp" => "image/webp",
+                            _ => MediaTypeNames.Image.Jpeg
+                        };
+                        
+                        bannerContentId = $"session-banner-{Guid.NewGuid()}";
+                        bannerSection = $"<img src=\"cid:{bannerContentId}\" alt=\"{sessionName}\" style=\"width:100%;max-width:600px;height:auto;display:block;margin:0;\" />";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, $"Failed to load session banner image: {sessionBannerUrl}");
+                }
+            }
+
+            // Replace placeholders - handle conditional sections
+            var body = template
+                .Replace("{{ATTENDEE_NAME}}", attendeeName)
+                .Replace("{{SESSION_NAME}}", sessionName)
+                .Replace("{{SESSION_NAME_AR}}", sessionNameAr ?? sessionName)
+                .Replace("{{SESSION_DATE_TIME}}", sessionDateTimeText)
+                .Replace("{{EVENT_NAME}}", eventName ?? "")
+                .Replace("{{EVENT_NAME_AR}}", eventNameAr ?? "")
+                .Replace("{{BARCODE}}", barcode ?? "")
+                .Replace("{{ORGANIZATION_NAME}}", organizationName)
+                .Replace("{{SUPPORT_EMAIL}}", supportEmail)
+                .Replace("{{CALENDAR_LINK}}", calendarLink)
+                .Replace("{{YEAR}}", DateTime.Now.Year.ToString())
+                .Replace("{{BANNER_SECTION}}", bannerSection);
+
+            // Handle conditional blocks - remove {{#if}} and {{/if}} markers and conditionally include content
+            // Arabic section conditionals
+            if (!string.IsNullOrWhiteSpace(sessionNameAr))
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if SESSION_NAME_AR\}\}(.*?)\{\{/if\}\}",
+                    "$1",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+            else
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if SESSION_NAME_AR\}\}.*?\{\{/if\}\}",
+                    "",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(eventNameAr))
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if EVENT_NAME_AR\}\}(.*?)\{\{/if\}\}",
+                    "$1",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+            else
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if EVENT_NAME_AR\}\}.*?\{\{/if\}\}",
+                    "",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(eventName))
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if EVENT_NAME\}\}(.*?)\{\{/if\}\}",
+                    "$1",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+            else
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if EVENT_NAME\}\}.*?\{\{/if\}\}",
+                    "",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(barcode))
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if BARCODE\}\}(.*?)\{\{/if\}\}",
+                    "$1",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+            else
+            {
+                body = System.Text.RegularExpressions.Regex.Replace(
+                    body,
+                    @"\{\{#if BARCODE\}\}.*?\{\{/if\}\}",
+                    "",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+
+            var subject = $"Session Enrollment Approved - {sessionName}";
+
+            // Send email with banner as inline image if available
+            if (bannerImageBytes != null && !string.IsNullOrEmpty(bannerContentId))
+            {
+                return await SendEmailWithAttachmentAsync(
+                    to,
+                    subject,
+                    body,
+                    null, // No attachment
+                    null,
+                    null,
+                    true, // isHtml
+                    bannerImageBytes, // inlineImageBytes
+                    bannerContentId, // inlineImageContentId
+                    bannerContentType ?? MediaTypeNames.Image.Jpeg // inlineImageContentType
+                );
+            }
+            else
+            {
+                // Send email without banner
+                return await SendEmailAsync(to, subject, body, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send session enrollment approval email to {to}");
+            return false;
+        }
+    }
 }

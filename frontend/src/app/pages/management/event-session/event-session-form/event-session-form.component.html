@@ -1,0 +1,121 @@
+<div class="p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <div class="mb-8">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-accent/10 rounded-lg">
+                <i class="fas fa-calendar-day text-accent text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-textDark font-poppins">
+                    {{ isEdit ? ('eventSession.editSession' | translate) : ('eventSession.addSession' | translate) }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-1 font-poppins">
+                    {{ isEdit ? ('eventSession.editSessionDescription' | translate) : ('eventSession.addSessionDescription' | translate) }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Event -->
+        <div class="space-y-2">
+            <label for="eventId" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.event'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <select id="eventId" formControlName="eventId" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 bg-white font-poppins" [class.border-red-500]="form.get('eventId')?.invalid && form.get('eventId')?.touched">
+                <option [value]="null">{{'common.select'|translate}}...</option>
+                <option *ngFor="let event of events; trackBy: trackByEventId" [value]="event.id">{{event.name}}</option>
+            </select>
+            <div *ngIf="form.get('eventId')?.invalid && form.get('eventId')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="space-y-2">
+            <label for="title" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.title'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <input id="title" type="text" formControlName="title" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [class.border-red-500]="form.get('title')?.invalid && form.get('title')?.touched" [placeholder]="'eventSession.titlePlaceholder' | translate" />
+            <div *ngIf="form.get('title')?.invalid && form.get('title')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- Title (Arabic) -->
+        <div class="space-y-2">
+            <label for="titleAr" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.titleAr'|translate}}
+            </label>
+            <input id="titleAr" type="text" formControlName="titleAr" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" dir="rtl" [placeholder]="'eventSession.titleArPlaceholder' | translate" />
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-2">
+            <label for="description" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.description'|translate}}
+            </label>
+            <textarea id="description" formControlName="description" rows="3" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [placeholder]="'eventSession.descriptionPlaceholder' | translate"></textarea>
+        </div>
+
+        <!-- Description (Arabic) -->
+        <div class="space-y-2">
+            <label for="descriptionAr" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.descriptionAr'|translate}}
+            </label>
+            <textarea id="descriptionAr" formControlName="descriptionAr" rows="3" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" dir="rtl" [placeholder]="'eventSession.descriptionArPlaceholder' | translate"></textarea>
+        </div>
+
+        <!-- Available Seats -->
+        <div class="space-y-2">
+            <label for="availableSeats" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.availableSeats'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <input id="availableSeats" type="number" formControlName="availableSeats" min="0" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [class.border-red-500]="form.get('availableSeats')?.invalid && form.get('availableSeats')?.touched" />
+            <div *ngIf="form.get('availableSeats')?.invalid && form.get('availableSeats')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- DateTime -->
+        <div class="space-y-2">
+            <label for="dateTime" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.dateTime'|translate}} <span class="text-red-500">*</span>
+            </label>
+            <input id="dateTime" type="datetime-local" formControlName="dateTime" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" [class.border-red-500]="form.get('dateTime')?.invalid && form.get('dateTime')?.touched" />
+            <div *ngIf="form.get('dateTime')?.invalid && form.get('dateTime')?.touched" class="flex items-center text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                {{'common.thisFieldRequired'|translate}}
+            </div>
+        </div>
+
+        <!-- Banner -->
+        <div class="space-y-2">
+            <label for="banner" class="block text-sm font-medium text-gray-700 font-poppins">
+                {{'eventSession.banner'|translate}}
+            </label>
+            <div *ngIf="bannerPreview" class="mb-3">
+                <img [src]="bannerPreview" alt="Banner preview" class="w-full max-w-md h-48 object-cover rounded-lg border-2 border-gray-300">
+                <button type="button" (click)="removeBanner()" class="mt-2 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm">
+                    <i class="fas fa-trash mr-1"></i>{{'common.remove'|translate}}
+                </button>
+            </div>
+            <input id="banner" type="file" accept="image/*" (change)="onBannerFileChange($event)" class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins" />
+            <p class="text-xs text-gray-500 mt-1">{{'eventSession.bannerHint'|translate}}</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <button type="button" (click)="cancel()" class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium text-sm font-poppins">
+                {{'common.cancel'|translate}}
+            </button>
+            <button type="submit" [disabled]="isSubmitting || form.invalid" class="px-6 py-2.5 bg-accent text-white rounded-lg hover:bg-accentDark transition-colors duration-200 font-medium text-sm font-poppins disabled:opacity-50 disabled:cursor-not-allowed">
+                <span *ngIf="!isSubmitting">{{isEdit ? ('common.update'|translate) : ('common.create'|translate)}}</span>
+                <span *ngIf="isSubmitting">{{'common.saving'|translate}}...</span>
+            </button>
+        </div>
+    </form>
+</div>
+

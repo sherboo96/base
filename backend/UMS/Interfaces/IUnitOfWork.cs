@@ -29,6 +29,8 @@ public interface IUnitOfWork : IDisposable
     IBaseRepository<EventOrganization, EventOrganizationDto> EventOrganizations { get; }
     IBaseRepository<EventRegistration, EventRegistrationDto> EventRegistrations { get; }
     IBaseRepository<EventAttendee, EventAttendeeDto> EventAttendees { get; }
+    IBaseRepository<EventSession, EventSessionDto> EventSessions { get; }
+    IBaseRepository<EventSessionEnrollment, EventSessionEnrollmentDto> EventSessionEnrollments { get; }
 
     IBaseRepository<UserRole, UserRoleDto> UserRoles { get; }
     IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; }

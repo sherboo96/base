@@ -40,6 +40,8 @@ public class UnitOfWork : IUnitOfWork
         EventOrganizations = new BaseRepository<EventOrganization, EventOrganizationDto>(_context, _mapper);
         EventRegistrations = new BaseRepository<EventRegistration, EventRegistrationDto>(_context, _mapper);
         EventAttendees = new BaseRepository<EventAttendee, EventAttendeeDto>(_context, _mapper);
+        EventSessions = new BaseRepository<EventSession, EventSessionDto>(_context, _mapper);
+        EventSessionEnrollments = new BaseRepository<EventSessionEnrollment, EventSessionEnrollmentDto>(_context, _mapper);
 
         UserRoles = new BaseRepository<UserRole, UserRoleDto>(_context, _mapper);
         RolePermissions = new BaseRepository<RolePermission, RolePermissionDto>(_context, _mapper);
@@ -69,6 +71,8 @@ public class UnitOfWork : IUnitOfWork
     public IBaseRepository<EventOrganization, EventOrganizationDto> EventOrganizations { get; private set; }
     public IBaseRepository<EventRegistration, EventRegistrationDto> EventRegistrations { get; private set; }
     public IBaseRepository<EventAttendee, EventAttendeeDto> EventAttendees { get; private set; }
+    public IBaseRepository<EventSession, EventSessionDto> EventSessions { get; private set; }
+    public IBaseRepository<EventSessionEnrollment, EventSessionEnrollmentDto> EventSessionEnrollments { get; private set; }
 
     public IBaseRepository<UserRole, UserRoleDto> UserRoles { get; private set; }
     public IBaseRepository<RolePermission, RolePermissionDto> RolePermissions { get; private set; }

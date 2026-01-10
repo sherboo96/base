@@ -142,6 +142,20 @@ public class Mapping: Profile
 
         // EventAttendee
         CreateMap<EventAttendee, EventAttendeeDto>().ReverseMap();
+
+        // EventSession
+        CreateMap<EventSession, EventSessionDto>()
+            .ForMember(dest => dest.Event, opt => opt.MapFrom(src => src.Event))
+            .ReverseMap()
+            .ForMember(dest => dest.Event, opt => opt.Ignore());
+
+        // EventSessionEnrollment
+        CreateMap<EventSessionEnrollment, EventSessionEnrollmentDto>()
+            .ForMember(dest => dest.EventSession, opt => opt.MapFrom(src => src.EventSession))
+            .ForMember(dest => dest.EventOrganization, opt => opt.MapFrom(src => src.EventOrganization))
+            .ReverseMap()
+            .ForMember(dest => dest.EventSession, opt => opt.Ignore())
+            .ForMember(dest => dest.EventOrganization, opt => opt.Ignore());
         
         // Digital Library
         CreateMap<DigitalLibraryItem, DigitalLibraryItemDto>()
