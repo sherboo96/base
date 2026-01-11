@@ -713,6 +713,139 @@ public class EmailService
     }
 
     /// <summary>
+    /// Sends event registration rejection email
+    /// </summary>
+    public async Task<bool> SendEventRegistrationRejectedAsync(
+        string to,
+        string attendeeName,
+        string eventName,
+        string? eventNameAr,
+        string? eventPosterUrl = null)
+    {
+        try
+        {
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "event-registration-rejected.html");
+            var template = await File.ReadAllTextAsync(templatePath);
+
+            // Load event poster image if provided (for inline embedding)
+            byte[]? posterImageBytes = null;
+            string? posterContentId = null;
+            string? posterContentType = null;
+            
+            if (!string.IsNullOrWhiteSpace(eventPosterUrl))
+            {
+                try
+                {
+                    string posterPath = "";
+                    
+                    // If it's a full URL, try to extract the path
+                    if (eventPosterUrl.StartsWith("http://") || eventPosterUrl.StartsWith("https://"))
+                    {
+                        var uri = new Uri(eventPosterUrl);
+                        posterPath = uri.AbsolutePath.TrimStart('/');
+                    }
+                    else
+                    {
+                        // Remove leading slash if present
+                        posterPath = eventPosterUrl.TrimStart('/');
+                    }
+                    
+                    // Get the full file path
+                    string fullPath;
+                    if (!string.IsNullOrEmpty(_env.WebRootPath))
+                    {
+                        fullPath = Path.Combine(_env.WebRootPath, posterPath);
+                    }
+                    else
+                    {
+                        var wwwrootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                        fullPath = Path.Combine(wwwrootPath, posterPath);
+                    }
+                    
+                    // Check if file exists
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        posterImageBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+                        
+                        // Determine MIME type based on file extension
+                        var extension = Path.GetExtension(fullPath).ToLowerInvariant();
+                        posterContentType = extension switch
+                        {
+                            ".jpg" or ".jpeg" => MediaTypeNames.Image.Jpeg,
+                            ".png" => "image/png",
+                            ".gif" => MediaTypeNames.Image.Gif,
+                            ".webp" => "image/webp",
+                            _ => MediaTypeNames.Image.Jpeg
+                        };
+                        
+                        posterContentId = $"event-poster-{Guid.NewGuid()}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error reading event poster image for registration rejected email. URL: {eventPosterUrl}");
+                }
+            }
+
+            // Replace placeholders - use cid: reference for inline image
+            var posterCid = posterContentId != null ? $"cid:{posterContentId}" : "";
+            
+            // If no poster, remove the entire poster section from template
+            var body = template;
+            if (string.IsNullOrEmpty(posterCid))
+            {
+                var posterSectionMarker = "<!-- Header - Event Poster -->";
+                var startIndex = body.IndexOf(posterSectionMarker);
+                if (startIndex >= 0)
+                {
+                    var trStart = body.IndexOf("<tr>", startIndex);
+                    if (trStart >= 0)
+                    {
+                        var trEnd = body.IndexOf("</tr>", trStart);
+                        if (trEnd >= 0)
+                        {
+                            var endIndex = trEnd + 5;
+                            if (endIndex < body.Length && body[endIndex] == '\n')
+                            {
+                                endIndex++;
+                            }
+                            body = body.Remove(startIndex, endIndex - startIndex);
+                        }
+                    }
+                }
+            }
+            
+            body = body
+                .Replace("{{EVENT_NAME}}", eventName)
+                .Replace("{{EVENT_NAME_AR}}", eventNameAr ?? eventName)
+                .Replace("{{EVENT_POSTER}}", posterCid)
+                .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
+
+            var subject = $"Registration Status - {eventName}";
+
+            return await SendEmailWithAttachmentAsync(
+                to,
+                subject,
+                body,
+                null, // No attachment
+                null,
+                null,
+                true, // HTML email
+                posterImageBytes,
+                posterContentId,
+                posterContentType
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send event registration rejected email to {to}");
+            // Fallback to simple email if template not found
+            var simpleBody = $"Dear {attendeeName},\n\nWe regret to inform you that all available seats for {eventName} have been filled, and we were unable to accept your registration for this edition of the event.\n\nThank you for your understanding.\n\nMinistry of Oil - State of Kuwait";
+            return await SendEmailAsync(to, $"Registration Status - {eventName}", simpleBody, false);
+        }
+    }
+
+    /// <summary>
     /// Sends event final approval email with badge and agenda attachments
     /// </summary>
     public async Task<bool> SendEventFinalApprovalAsync(
@@ -869,7 +1002,7 @@ public class EmailService
                 .Replace("{{SHARE_LINK}}", shareLink ?? "")
                 .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
 
-            var subject = $"Final Approval - {eventName} - Seat {seatNumber ?? "TBA"}";
+            var subject = $"Final Approval - {eventName}";
 
             // Send email with badge and agenda attachments
             return await SendEmailWithMultipleAttachmentsAsync(

@@ -91,11 +91,11 @@
             </label>
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-calendar text-gray-400"></i>
+                    <i class="fas fa-calendar-alt text-gray-400"></i>
                 </div>
                 <input
                     id="date"
-                    type="date"
+                    type="datetime-local"
                     formControlName="date"
                     class="form-control w-full border-2 border-gray-300 rounded-lg py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 font-poppins"
                 />
@@ -238,22 +238,35 @@
             </label>
             <div class="flex items-center gap-4">
                 <div class="relative">
+                    <!-- Image Preview -->
                     <div
-                        *ngIf="agendaFileName"
+                        *ngIf="agendaPreview"
+                        class="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-300"
+                    >
+                        <img
+                            [src]="agendaPreview"
+                            alt="Agenda preview"
+                            class="w-full h-full object-cover"
+                        />
+                    </div>
+                    <!-- PDF File Name Display -->
+                    <div
+                        *ngIf="agendaFileName && !agendaPreview"
                         class="px-4 py-3 rounded-lg border-2 border-gray-300 bg-gray-50 flex items-center gap-2 min-w-[200px]"
                     >
                         <i class="fas fa-file-pdf text-red-500 text-xl"></i>
                         <span class="text-sm text-gray-700 font-medium truncate">{{ agendaFileName }}</span>
                     </div>
+                    <!-- Empty State -->
                     <div
-                        *ngIf="!agendaFileName"
+                        *ngIf="!agendaFileName && !agendaPreview"
                         class="px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 min-w-[200px]"
                     >
-                        <i class="fas fa-file-pdf text-gray-400 text-2xl"></i>
+                        <i class="fas fa-file text-gray-400 text-2xl"></i>
                     </div>
                     <input
                         type="file"
-                        accept=".pdf,application/pdf"
+                        accept=".pdf,application/pdf,image/*"
                         (change)="onAgendaSelected($event)"
                         class="hidden"
                         id="agendaInput"

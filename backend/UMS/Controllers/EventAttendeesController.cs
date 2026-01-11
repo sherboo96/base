@@ -6,6 +6,7 @@ using UMS.Dtos.Shared;
 using UMS.Interfaces;
 using UMS.Models;
 using UMS.Data;
+using System;
 
 namespace UMS.Controllers;
 
@@ -21,6 +22,33 @@ public class EventAttendeesController : ControllerBase
     {
         _unitOfWork = unitOfWork;
         _context = context;
+    }
+
+    /// <summary>
+    /// Gets Kuwait local time (UTC+3)
+    /// </summary>
+    private DateTime GetKuwaitLocalTime()
+    {
+        try
+        {
+            // Try Windows timezone ID first
+            var kuwaitTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, kuwaitTimeZone);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            try
+            {
+                // Try Linux/Unix timezone ID
+                var kuwaitTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kuwait");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, kuwaitTimeZone);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                // Fallback: Add 3 hours to UTC (Kuwait is UTC+3)
+                return DateTime.UtcNow.AddHours(3);
+            }
+        }
     }
 
     [HttpPost("checkin")]
@@ -48,8 +76,11 @@ public class EventAttendeesController : ControllerBase
             });
         }
 
-        // Check if already checked in today
-        var today = DateTime.Now.Date;
+        // Get Kuwait local time (UTC+3)
+        var localTime = GetKuwaitLocalTime();
+
+        // Check if already checked in today (using Kuwait local time)
+        var today = localTime.Date;
         var existingAttendee = registration.Attendees?.FirstOrDefault(a =>
             a.CheckInDateTime.HasValue &&
             a.CheckInDateTime.Value.Date == today &&
@@ -68,7 +99,7 @@ public class EventAttendeesController : ControllerBase
         var attendee = new EventAttendee
         {
             EventRegistrationId = registration.Id,
-            CheckInDateTime = DateTime.Now,
+            CheckInDateTime = localTime,
             CreatedBy = currentUser
         };
 
@@ -113,8 +144,11 @@ public class EventAttendeesController : ControllerBase
             });
         }
 
-        // Find today's check-in
-        var today = DateTime.Now.Date;
+        // Get Kuwait local time (UTC+3)
+        var localTime = GetKuwaitLocalTime();
+
+        // Find today's check-in (using Kuwait local time)
+        var today = localTime.Date;
         var attendee = registration.Attendees?.FirstOrDefault(a =>
             a.CheckInDateTime.HasValue &&
             a.CheckInDateTime.Value.Date == today &&
@@ -131,8 +165,8 @@ public class EventAttendeesController : ControllerBase
             });
         }
 
-        attendee.CheckOutDateTime = DateTime.Now;
-        attendee.UpdatedAt = DateTime.Now;
+        attendee.CheckOutDateTime = localTime;
+        attendee.UpdatedAt = localTime;
         attendee.UpdatedBy = currentUser;
 
         await _unitOfWork.EventAttendees.UpdateAsync(attendee);

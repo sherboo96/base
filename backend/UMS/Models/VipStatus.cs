@@ -4,8 +4,11 @@ public enum VipStatus
 {
     Attendee = 0,
     Vip = 1,
-    VVip = 2
+    VVip = 2,
+    Honored = 3
 }
+
+
 
 
 

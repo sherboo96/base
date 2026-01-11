@@ -121,6 +121,7 @@ import { TranslationService } from '../../../../../services/translation.service'
               <option [value]="0">{{ 'eventRegistration.attendee' | translate }}</option>
               <option [value]="1">{{ 'eventRegistration.vip' | translate }}</option>
               <option [value]="2">{{ 'eventRegistration.vVip' | translate }}</option>
+              <option [value]="3">{{ 'eventRegistration.honored' | translate }}</option>
             </select>
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
               <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -247,9 +248,11 @@ export class EventRegistrationEditFormComponent implements OnInit {
         'Vip': VipStatus.Vip,
         'VVIP': VipStatus.VVip,
         'VVip': VipStatus.VVip,
+        'Honored': VipStatus.Honored,
         '0': VipStatus.Attendee,
         '1': VipStatus.Vip,
-        '2': VipStatus.VVip
+        '2': VipStatus.VVip,
+        '3': VipStatus.Honored
       };
       return statusMap[vipStatus] ?? Number(vipStatus) ?? VipStatus.Attendee;
     }

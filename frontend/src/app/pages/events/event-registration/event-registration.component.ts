@@ -127,10 +127,10 @@ export class EventRegistrationComponent implements OnInit, OnDestroy {
         if (response.statusCode === 200 && response.result) {
           this.event = response.result;
           if (!this.event.published) {
-            this.errorMessage = 'eventRegistration.eventNotPublished';
+            this.errorMessage = 'eventRegistration.registrationClosed';
           }
         } else {
-          this.errorMessage = 'eventRegistration.eventNotFound';
+          this.errorMessage = 'eventRegistration.registrationClosed';
         }
         this.isLoading = false;
         this.loadingService.hide();
@@ -141,15 +141,15 @@ export class EventRegistrationComponent implements OnInit, OnDestroy {
         
         // Handle different error scenarios
         if (error.status === 404) {
-          this.errorMessage = 'eventRegistration.eventNotFound';
+          this.errorMessage = 'eventRegistration.registrationClosed';
         } else if (error.status === 401) {
-          // For public routes, 401 might mean event is not published or not found
-          this.errorMessage = 'eventRegistration.eventNotAccessible';
+          // For public routes, 401 might mean event is not published or registration is closed
+          this.errorMessage = 'eventRegistration.registrationClosed';
         } else if (error.status === 0) {
           // Network error
           this.errorMessage = 'eventRegistration.networkError';
         } else {
-          this.errorMessage = 'eventRegistration.loadError';
+          this.errorMessage = 'eventRegistration.registrationClosed';
         }
         
         // Don't redirect - show error in view

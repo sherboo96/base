@@ -39,6 +39,7 @@ export class EventFormComponent implements OnInit {
   badgePreview: string | null = null;
   selectedAgendaFile: File | null = null;
   agendaFileName: string | null = null;
+  agendaPreview: string | null = null;
   locations: Location[] = [];
 
   constructor(
@@ -81,8 +82,18 @@ export class EventFormComponent implements OnInit {
           if (this.dialogRef.data?.event) {
             this.isEdit = true;
             const event = this.dialogRef.data.event;
-            // Format date for input (YYYY-MM-DD)
-            const eventDate = event.date ? new Date(event.date).toISOString().split('T')[0] : null;
+            // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+            let eventDate = null;
+            if (event.date) {
+              const date = new Date(event.date);
+              // Format as YYYY-MM-DDTHH:mm for datetime-local input
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              eventDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
             
             this.form.patchValue({
               name: event.name || '',
@@ -105,6 +116,14 @@ export class EventFormComponent implements OnInit {
             }
             if (event.agenda) {
               this.agendaFileName = event.agenda.split('/').pop() || 'agenda.pdf';
+              // Check if agenda is an image and show preview
+              const agendaUrl = this.attachmentService.getFileUrl(event.agenda);
+              const agendaExtension = event.agenda.split('.').pop()?.toLowerCase();
+              if (agendaExtension && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(agendaExtension)) {
+                this.agendaPreview = agendaUrl;
+              } else {
+                this.agendaPreview = null;
+              }
             }
           }
           
@@ -118,8 +137,18 @@ export class EventFormComponent implements OnInit {
         if (this.dialogRef.data?.event) {
           this.isEdit = true;
           const event = this.dialogRef.data.event;
-          // Format date for input (YYYY-MM-DD)
-          const eventDate = event.date ? new Date(event.date).toISOString().split('T')[0] : null;
+          // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+          let eventDate = null;
+          if (event.date) {
+            const date = new Date(event.date);
+            // Format as YYYY-MM-DDTHH:mm for datetime-local input
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            eventDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+          }
           
           this.form.patchValue({
             name: event.name || '',
@@ -142,6 +171,14 @@ export class EventFormComponent implements OnInit {
           }
           if (event.agenda) {
             this.agendaFileName = event.agenda.split('/').pop() || 'agenda.pdf';
+            // Check if agenda is an image and show preview
+            const agendaUrl = this.attachmentService.getFileUrl(event.agenda);
+            const agendaExtension = event.agenda.split('.').pop()?.toLowerCase();
+            if (agendaExtension && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(agendaExtension)) {
+              this.agendaPreview = agendaUrl;
+            } else {
+              this.agendaPreview = null;
+            }
           }
         }
       },
@@ -195,18 +232,34 @@ export class EventFormComponent implements OnInit {
   onAgendaSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
-      // Validate file type (PDF only)
-      if (file.type !== 'application/pdf') {
-        this.toastr.error(this.translationService.instant('event.agendaMustBePdf'));
+      // Validate file type (PDF or image)
+      const isPdf = file.type === 'application/pdf';
+      const isImage = file.type.startsWith('image/');
+      
+      if (!isPdf && !isImage) {
+        this.toastr.error(this.translationService.instant('event.agendaMustBePdfOrImage'));
         return;
       }
+      
       this.selectedAgendaFile = file;
       this.agendaFileName = file.name;
+      
+      // If it's an image, show preview
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.agendaPreview = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.agendaPreview = null;
+      }
     }
   }
 
   removeAgenda(): void {
     this.agendaFileName = null;
+    this.agendaPreview = null;
     this.selectedAgendaFile = null;
     this.form.patchValue({ agenda: '' });
   }
@@ -234,7 +287,15 @@ export class EventFormComponent implements OnInit {
     Promise.all([posterUploadPromise, badgeUploadPromise, agendaUploadPromise])
       .then(([imagePath, badgePath, agendaPath]) => {
         // Format date for API (ISO string or null)
-        const dateValue = this.form.value.date ? new Date(this.form.value.date).toISOString() : null;
+        // datetime-local format is YYYY-MM-DDTHH:mm, convert to ISO string
+        let dateValue = null;
+        if (this.form.value.date) {
+          // datetime-local input returns YYYY-MM-DDTHH:mm format
+          // Create Date object from it (will be in local time)
+          const date = new Date(this.form.value.date);
+          // Convert to ISO string for API
+          dateValue = date.toISOString();
+        }
         
         const formData: Event = {
           ...this.form.value,

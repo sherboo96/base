@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { DialogRef, DialogService } from '@ngneat/dialog';
 import { EventRegistrationService, EventRegistration, EventRegistrationListResponse, EventRegistrationStatus, VipStatus, EventAttendee } from '../../../../services/event-registration.service';
+import { EventAttendeeService } from '../../../../services/event-attendee.service';
 import { LoadingService } from '../../../../services/loading.service';
 import { ToastrService } from 'ngx-toastr';
 import { TranslationService } from '../../../../services/translation.service';
@@ -163,6 +164,7 @@ import { EventRegistrationManualFormComponent } from './event-registration-manua
               <option [ngValue]="VipStatus.Attendee">{{ 'eventRegistration.attendee' | translate }}</option>
               <option [ngValue]="VipStatus.Vip">{{ 'eventRegistration.vip' | translate }}</option>
               <option [ngValue]="VipStatus.VVip">{{ 'eventRegistration.vVip' | translate }}</option>
+              <option [ngValue]="VipStatus.Honored">{{ 'eventRegistration.honored' | translate }}</option>
             </select>
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
               <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -418,6 +420,16 @@ import { EventRegistrationManualFormComponent } from './event-registration-manua
                       <i class="fas fa-print mr-1.5 text-xs text-purple-500"></i>
                       <span>{{ 'eventRegistration.printBadge' | translate }}</span>
                     </button>
+                    <!-- Send Final Email Button -->
+                    <button
+                      *ngIf="normalizeStatus(registration.status) === 1 && !registration.isManual"
+                      (click)="sendFinalApproval(registration); $event.stopPropagation()"
+                      class="inline-flex items-center px-3 py-2 border-2 border-green-500 rounded-lg text-green-600 bg-white hover:bg-green-50 hover:border-green-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                      [title]="'eventRegistration.sendFinalEmail' | translate"
+                    >
+                      <i class="fas fa-envelope-check mr-1.5 text-xs text-green-500"></i>
+                      <span>{{ 'eventRegistration.sendFinalEmail' | translate }}</span>
+                    </button>
                     <!-- Approve Button -->
                     <button
                       *ngIf="normalizeStatus(registration.status) === 0"
@@ -489,6 +501,7 @@ import { EventRegistrationManualFormComponent } from './event-registration-manua
             <option [value]="50">50 {{ 'common.perPage' | translate }}</option>
             <option [value]="100">100 {{ 'common.perPage' | translate }}</option>
             <option [value]="200">200 {{ 'common.perPage' | translate }}</option>
+            <option [value]="1000">1000 {{ 'common.perPage' | translate }}</option>
           </select>
           <div class="flex space-x-1">
             <button class="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-medium hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" [disabled]="currentPage === 1" (click)="goToPage(1)" [title]="'common.firstPage' | translate">
@@ -564,6 +577,16 @@ import { EventRegistrationManualFormComponent } from './event-registration-manua
           <span>{{ 'eventRegistration.vVip' | translate }}</span>
           <i *ngIf="normalizeVipStatus(registration.vipStatus) === VipStatus.VVip" class="fas fa-check text-indigo-600 ml-auto"></i>
         </button>
+        <button
+          type="button"
+          (click)="updateVipStatusTo(registration, VipStatus.Honored); $event.stopPropagation()"
+          class="w-full text-left px-4 py-2 text-xs text-amber-700 hover:bg-amber-50 transition-colors flex items-center gap-2"
+          [class.bg-amber-50]="normalizeVipStatus(registration.vipStatus) === VipStatus.Honored"
+        >
+          <i class="fas fa-crown text-amber-500 text-xs"></i>
+          <span>{{ 'eventRegistration.honored' | translate }}</span>
+          <i *ngIf="normalizeVipStatus(registration.vipStatus) === VipStatus.Honored" class="fas fa-check text-amber-600 ml-auto"></i>
+        </button>
       </ng-container>
     </div>
     
@@ -592,6 +615,14 @@ import { EventRegistrationManualFormComponent } from './event-registration-manua
         >
           <i class="fas fa-paper-plane text-purple-500"></i>
           <span>{{ 'eventRegistration.resendEmail' | translate }}</span>
+        </button>
+        <button
+          *ngIf="normalizeStatus(registration.status) === 1 && !registration.isManual"
+          (click)="sendFinalApproval(registration); closeMenu()"
+          class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+        >
+          <i class="fas fa-envelope-check text-green-500"></i>
+          <span>{{ 'eventRegistration.sendFinalEmail' | translate }}</span>
         </button>
         <hr class="my-1 border-gray-200">
         <button
@@ -691,7 +722,7 @@ export class EventRegistrationsListComponent implements OnInit {
   groupedRegistrations: { [key: string]: EventRegistration[] } = {};
   organizationNames: string[] = [];
   isLoading = false;
-  pageSize = 200;
+  pageSize = 1000;
   currentPage = 1;
   totalPages = 1;
   totalItems = 0;
@@ -723,6 +754,7 @@ export class EventRegistrationsListComponent implements OnInit {
   constructor(
     public dialogRef: DialogRef<{ eventId: number; eventName: string }>,
     private eventRegistrationService: EventRegistrationService,
+    private eventAttendeeService: EventAttendeeService,
     public loadingService: LoadingService,
     private toastr: ToastrService,
     private translationService: TranslationService,
@@ -935,14 +967,16 @@ export class EventRegistrationsListComponent implements OnInit {
         return dateString;
       }
       
-      // Format: DD/MM/YYYY HH:MM
+      // Format: DD/MM/YYYY HH:MM AM/PM (12-hour format)
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
+      const hours24 = date.getHours();
+      const hours12 = hours24 === 0 ? 12 : (hours24 > 12 ? hours24 - 12 : hours24);
       const minutes = date.getMinutes().toString().padStart(2, '0');
+      const ampm = hours24 >= 12 ? 'pm' : 'am';
       
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
+      return `${day}/${month}/${year} ${hours12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
     } catch (error) {
       return dateString;
     }
@@ -975,6 +1009,57 @@ export class EventRegistrationsListComponent implements OnInit {
       return;
     }
 
+    // Check in the user before printing
+    this.eventAttendeeService.checkIn(registration.barcode).subscribe({
+      next: (response) => {
+        if (response.statusCode === 200) {
+          // Check-in successful - reload registration to update UI
+          if (registration.id) {
+            this.eventRegistrationService.getById(registration.id).subscribe({
+              next: (regResponse) => {
+                if (regResponse.result) {
+                  // Update the registration in the local array
+                  const index = this.registrations.findIndex(r => r.id === registration.id);
+                  if (index !== -1) {
+                    this.registrations[index] = regResponse.result;
+                    this.groupRegistrationsByOrganization();
+                    this.cdr.detectChanges();
+                  }
+                }
+              },
+              error: () => {
+                // If reload fails, just refresh the entire list
+                this.fetchRegistrations();
+              }
+            });
+          }
+        }
+        // Continue with printing even if check-in fails (e.g., already checked in)
+        this.performPrint(registration);
+      },
+      error: (error) => {
+        // If already checked in or other error, still allow printing
+        if (error.status === 400 && error.error?.message?.includes('Already checked in')) {
+          // Silently continue - user is already checked in
+        } else {
+          // Show warning but still allow printing
+          this.toastr.warning(
+            error.error?.message || this.translationService.instant('eventRegistration.checkInError'),
+            '',
+            { timeOut: 3000 }
+          );
+        }
+        // Continue with printing
+        this.performPrint(registration);
+      }
+    });
+  }
+
+  private performPrint(registration: EventRegistration): void {
+    if (!registration.barcode) {
+      return;
+    }
+
     // Create a print-optimized window
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     if (!printWindow) {
@@ -983,9 +1068,10 @@ export class EventRegistrationsListComponent implements OnInit {
     }
 
     const barcode = registration.barcode;
-    const name = registration.name || '';
+    const name = registration.nameAr || registration.name || '';
+    const jobTitle = registration.jobTitle || '';
 
-    // Create print-optimized HTML
+    // Create print-optimized HTML for A6 (10×15 cm)
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -993,7 +1079,7 @@ export class EventRegistrationsListComponent implements OnInit {
           <title>Badge - ${name}</title>
           <style>
             @page {
-              size: 3.375in 2.125in;
+              size: 10cm 15cm;
               margin: 0;
             }
             * {
@@ -1003,15 +1089,13 @@ export class EventRegistrationsListComponent implements OnInit {
             }
             body {
               font-family: 'Poppins', Arial, sans-serif;
-              width: 3.375in;
-              height: 2.125in;
+              width: 10cm;
+              height: 15cm;
               display: flex;
-              flex-direction: column;
               align-items: center;
-              justify-content: flex-start;
-              padding: 0.2in 0.2in 0.1in 0.2in;
-              padding-top: 0.4in;
+              justify-content: center;
               background: white;
+              overflow: hidden;
             }
             .badge-container {
               width: 100%;
@@ -1020,8 +1104,9 @@ export class EventRegistrationsListComponent implements OnInit {
               flex-direction: column;
               align-items: center;
               justify-content: flex-start;
-              gap: 8px;
-              margin-top: 0.2in;
+              gap: 12px;
+              padding: 1cm;
+              padding-top: 6cm;
             }
             .qr-code {
               width: 120px;
@@ -1036,7 +1121,7 @@ export class EventRegistrationsListComponent implements OnInit {
               object-fit: contain;
             }
             .barcode-text {
-              font-size: 14px;
+              font-size: 16px;
               font-weight: bold;
               color: #333;
               text-align: center;
@@ -1044,16 +1129,23 @@ export class EventRegistrationsListComponent implements OnInit {
               letter-spacing: 1px;
             }
             .name {
-              font-size: 18px;
+              font-size: 22px;
               font-weight: bold;
               color: #000;
               text-align: center;
-              margin-top: 4px;
+              margin-top: 8px;
+            }
+            .job-title {
+              font-size: 16px;
+              font-weight: normal;
+              color: #666;
+              text-align: center;
+              margin-top: 0px;
             }
             @media print {
               body {
-                width: 3.375in;
-                height: 2.125in;
+                width: 10cm;
+                height: 15cm;
               }
               .badge-container {
                 page-break-inside: avoid;
@@ -1064,10 +1156,11 @@ export class EventRegistrationsListComponent implements OnInit {
         <body>
           <div class="badge-container">
             <div class="qr-code">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(barcode)}" alt="QR Code" />
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(barcode)}" alt="QR Code" />
             </div>
             <div class="barcode-text">${barcode}</div>
             <div class="name">${name}</div>
+            ${jobTitle ? `<div class="job-title">${jobTitle}</div>` : ''}
           </div>
           <script>
             window.onload = function() {
@@ -1116,7 +1209,8 @@ export class EventRegistrationsListComponent implements OnInit {
 
       const registration = registrationsWithBarcodes[currentIndex];
       const barcode = registration.barcode || '';
-      const name = registration.name || '';
+      const name = registration.nameAr || registration.name || '';
+      const jobTitle = registration.jobTitle || '';
 
       // Create a print-optimized window for this badge
       const printWindow = window.open('', '_blank', 'width=400,height=600');
@@ -1125,7 +1219,7 @@ export class EventRegistrationsListComponent implements OnInit {
         return;
       }
 
-      // Create print-optimized HTML for single badge
+      // Create print-optimized HTML for single badge - A6 (10×15 cm)
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -1133,7 +1227,7 @@ export class EventRegistrationsListComponent implements OnInit {
             <title>Badge - ${name}</title>
             <style>
               @page {
-                size: 3.375in 2.125in;
+                size: 10cm 15cm;
                 margin: 0;
               }
               * {
@@ -1143,15 +1237,13 @@ export class EventRegistrationsListComponent implements OnInit {
               }
               body {
                 font-family: 'Poppins', Arial, sans-serif;
-                width: 3.375in;
-                height: 2.125in;
+                width: 10cm;
+                height: 15cm;
                 display: flex;
-                flex-direction: column;
                 align-items: center;
-                justify-content: flex-start;
-                padding: 0.2in 0.2in 0.1in 0.2in;
-                padding-top: 0.4in;
+                justify-content: center;
                 background: white;
+                overflow: hidden;
               }
               .badge-container {
                 width: 100%;
@@ -1159,13 +1251,13 @@ export class EventRegistrationsListComponent implements OnInit {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                justify-content: flex-start;
-                gap: 8px;
-                margin-top: 0.2in;
+                justify-content: center;
+                gap: 12px;
+                padding: 1cm;
               }
               .qr-code {
-                width: 120px;
-                height: 120px;
+                width: 150px;
+                height: 150px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -1176,7 +1268,7 @@ export class EventRegistrationsListComponent implements OnInit {
                 object-fit: contain;
               }
               .barcode-text {
-                font-size: 14px;
+                font-size: 16px;
                 font-weight: bold;
                 color: #333;
                 text-align: center;
@@ -1184,16 +1276,23 @@ export class EventRegistrationsListComponent implements OnInit {
                 letter-spacing: 1px;
               }
               .name {
-                font-size: 18px;
+                font-size: 22px;
                 font-weight: bold;
                 color: #000;
+                text-align: center;
+                margin-top: 8px;
+              }
+              .job-title {
+                font-size: 16px;
+                font-weight: normal;
+                color: #666;
                 text-align: center;
                 margin-top: 4px;
               }
               @media print {
                 body {
-                  width: 3.375in;
-                  height: 2.125in;
+                  width: 10cm;
+                  height: 15cm;
                 }
                 .badge-container {
                   page-break-inside: avoid;
@@ -1208,6 +1307,7 @@ export class EventRegistrationsListComponent implements OnInit {
               </div>
               <div class="barcode-text">${barcode}</div>
               <div class="name">${name}</div>
+              ${jobTitle ? `<div class="job-title">${jobTitle}</div>` : ''}
             </div>
             <script>
               window.onload = function() {
@@ -1441,6 +1541,8 @@ export class EventRegistrationsListComponent implements OnInit {
           if (index !== -1) {
             this.registrations[index].emailSent = response.result.emailSent;
             this.registrations[index].emailSentAt = response.result.emailSentAt;
+            this.registrations[index].finalApprovalEmailSent = response.result.finalApprovalEmailSent;
+            this.registrations[index].finalApprovalEmailSentAt = response.result.finalApprovalEmailSentAt;
             // Re-group registrations
             this.groupRegistrationsByOrganization();
             this.cdr.detectChanges();
@@ -1670,6 +1772,8 @@ export class EventRegistrationsListComponent implements OnInit {
         return 'bg-purple-100 text-purple-700 border border-purple-300 hover:bg-purple-200 focus:ring-purple-500';
       case VipStatus.VVip:
         return 'bg-indigo-100 text-indigo-700 border border-indigo-300 hover:bg-indigo-200 focus:ring-indigo-500';
+      case VipStatus.Honored:
+        return 'bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200 focus:ring-amber-500';
       default:
         return 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 focus:ring-gray-500';
     }
@@ -2107,9 +2211,11 @@ export class EventRegistrationsListComponent implements OnInit {
         'Vip': VipStatus.Vip,
         'VVIP': VipStatus.VVip,
         'VVip': VipStatus.VVip,
+        'Honored': VipStatus.Honored,
         '0': VipStatus.Attendee,
         '1': VipStatus.Vip,
-        '2': VipStatus.VVip
+        '2': VipStatus.VVip,
+        '3': VipStatus.Honored
       };
       return statusMap[vipStatus] ?? Number(vipStatus) ?? VipStatus.Attendee;
     }
@@ -2125,6 +2231,8 @@ export class EventRegistrationsListComponent implements OnInit {
         return this.translationService.instant('eventRegistration.vip');
       case VipStatus.VVip:
         return this.translationService.instant('eventRegistration.vVip');
+      case VipStatus.Honored:
+        return this.translationService.instant('eventRegistration.honored');
       default:
         return this.translationService.instant('eventRegistration.attendee');
     }
@@ -2139,6 +2247,8 @@ export class EventRegistrationsListComponent implements OnInit {
         return 'bg-purple-100 text-purple-800';
       case VipStatus.VVip:
         return 'bg-indigo-100 text-indigo-800';
+      case VipStatus.Honored:
+        return 'bg-amber-100 text-amber-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }

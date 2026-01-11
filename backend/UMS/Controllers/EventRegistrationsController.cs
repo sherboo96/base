@@ -961,6 +961,41 @@ public class EventRegistrationsController : ControllerBase
         var updatedRegistration = await _unitOfWork.EventRegistrations.UpdateAsync(registration);
         await _unitOfWork.CompleteAsync();
 
+        // Send rejection email if email address is provided
+        if (!string.IsNullOrWhiteSpace(registration.Email) && registration.Event != null)
+        {
+            try
+            {
+                var eventName = registration.Event.Name;
+                var eventNameAr = registration.Event.NameAr;
+                var eventPoster = !string.IsNullOrWhiteSpace(registration.Event.Poster)
+                    ? registration.Event.Poster
+                    : null;
+
+                var emailSent = await _emailService.SendEventRegistrationRejectedAsync(
+                    registration.Email,
+                    registration.Name ?? "Guest",
+                    eventName,
+                    eventNameAr,
+                    eventPoster
+                );
+
+                if (emailSent)
+                {
+                    _logger.LogInformation($"Rejection email sent successfully to {registration.Email} for registration ID {id}");
+                }
+                else
+                {
+                    _logger.LogWarning($"Failed to send rejection email to {registration.Email} for registration ID {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error sending rejection email to {registration.Email} for registration ID {id}");
+                // Don't fail the request if email sending fails
+            }
+        }
+
         return Ok(new BaseResponse<EventRegistrationDto>
         {
             StatusCode = 200,
@@ -1221,6 +1256,7 @@ public class EventRegistrationsController : ControllerBase
                         VipStatus.Attendee => "Attendee",
                         VipStatus.Vip => "VIP",
                         VipStatus.VVip => "V VIP",
+                        VipStatus.Honored => "Honored",
                         _ => "Attendee"
                     },
                     registration.IsManual ? "Yes" : "No",
