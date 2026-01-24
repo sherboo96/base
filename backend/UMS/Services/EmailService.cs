@@ -4,6 +4,7 @@ using System.Text;
 using System.Net.Mime;
 using UMS.Interfaces;
 using Microsoft.AspNetCore.Hosting;
+using UMS.Models;
 
 namespace UMS.Services;
 
@@ -1141,16 +1142,56 @@ public class EmailService
         DateTime? startDate,
         DateTime? endDate,
         string? location,
-        string organizationName)
+        string organizationName,
+        EnrollmentType enrollmentType = EnrollmentType.Onsite,
+        byte[]? badgeImageBytes = null,
+        string? barcode = null,
+        string? courseNameAr = null,
+        string? courseDescriptionAr = null,
+        string? locationAr = null,
+        string? courseCode = null)
     {
         try
         {
             var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "course-approval-confirmation.html");
             var template = await File.ReadAllTextAsync(templatePath);
 
-            // Format dates
-            var startDateText = startDate.HasValue ? startDate.Value.ToString("dddd, MMMM dd, yyyy hh:mm tt") : "TBA";
-            var endDateText = endDate.HasValue ? endDate.Value.ToString("dddd, MMMM dd, yyyy hh:mm tt") : "TBA";
+            // Format dates with time (English)
+            var startDateText = startDate.HasValue ? startDate.Value.ToString("dddd, MMMM dd, yyyy 'at' hh:mm tt") : "TBA";
+            var endDateText = endDate.HasValue ? endDate.Value.ToString("dddd, MMMM dd, yyyy 'at' hh:mm tt") : "TBA";
+
+            // Format dates with time (Arabic)
+            var arCulture = new System.Globalization.CultureInfo("ar-KW");
+            var startDateTextAr = "سيتم الإعلان لاحقاً";
+            var endDateTextAr = "سيتم الإعلان لاحقاً";
+            
+            if (startDate.HasValue)
+            {
+                var date = startDate.Value;
+                var dayNameAr = date.ToString("dddd", arCulture);
+                var day = date.Day;
+                var monthNameAr = date.ToString("MMMM", arCulture);
+                var year = date.Year;
+                var hour = date.Hour;
+                var minute = date.Minute;
+                var hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+                var amPm = hour < 12 ? "ص" : "م";
+                startDateTextAr = $"{dayNameAr} الموافق {day} {monthNameAr} {year}م الساعة {hour12:D2}:{minute:D2} {amPm}";
+            }
+            
+            if (endDate.HasValue)
+            {
+                var date = endDate.Value;
+                var dayNameAr = date.ToString("dddd", arCulture);
+                var day = date.Day;
+                var monthNameAr = date.ToString("MMMM", arCulture);
+                var year = date.Year;
+                var hour = date.Hour;
+                var minute = date.Minute;
+                var hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+                var amPm = hour < 12 ? "ص" : "م";
+                endDateTextAr = $"{dayNameAr} الموافق {day} {monthNameAr} {year}م الساعة {hour12:D2}:{minute:D2} {amPm}";
+            }
 
             // Get support email from configuration
             var supportEmail = await _configService.GetConfigurationValueAsync("Support:Email") ?? "otc@moo.gov.kw";
@@ -1164,22 +1205,170 @@ public class EmailService
                 endDate
             );
 
+            // Load event poster image (course code + .jpg)
+            var posterFileName = !string.IsNullOrEmpty(courseCode) ? $"{courseCode}.jpg" : "default.jpg";
+            var posterPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", posterFileName);
+            byte[]? posterImageBytes = null;
+            string? posterContentId = null;
+            string? posterContentType = null;
+
+            if (System.IO.File.Exists(posterPath))
+            {
+                posterImageBytes = await System.IO.File.ReadAllBytesAsync(posterPath);
+                posterContentId = "event-poster";
+                posterContentType = "image/jpeg";
+            }
+
+            // Build conditional messages based on enrollment type (English)
+            string onlineMessage = "";
+            string onsiteMessage = "";
+
+            // Build conditional messages based on enrollment type (Arabic)
+            string onlineMessageAr = "";
+            string onsiteMessageAr = "";
+
+            if (enrollmentType == EnrollmentType.Online)
+            {
+                onlineMessage = @"<div style='background:#e0f2fe;border-left:4px solid #0ea5e9;padding:16px;margin:20px 0;border-radius:4px;'>
+                                    <p style='margin:0;color:#0c4a6e;font-weight:600;'>📱 Online Attendance via Microsoft Teams</p>
+                                    <p style='margin:8px 0 0;color:#075985;font-size:13px;'>
+                                        You will attend this course only via Microsoft Teams. You will receive a Teams meeting invitation soon. 
+                                        Please be on time on your laptop to attend the course.
+                                    </p>
+                                  </div>";
+                
+                onlineMessageAr = @"<div style='background:#e0f2fe;border-left:4px solid #0ea5e9;padding:16px;margin:20px 0;border-radius:4px;'>
+                                      <p style='margin:0;color:#0c4a6e;font-weight:600;'>📱 الحضور عبر Microsoft Teams</p>
+                                      <p style='margin:8px 0 0;color:#075985;font-size:13px;'>
+                                        ستحضر هذه الدورة التدريبية عبر Microsoft Teams فقط. ستصلك دعوة للاجتماع عبر Teams قريباً. 
+                                        يرجى الحضور في الوقت المحدد على جهاز الكمبيوتر المحمول الخاص بك.
+                                      </p>
+                                    </div>";
+            }
+            else
+            {
+                onsiteMessage = @"<div style='background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;margin:20px 0;border-radius:4px;'>
+                                    <p style='margin:0;color:#92400e;font-weight:600;'>📍 Onsite Attendance</p>
+                                    <p style='margin:8px 0 0;color:#78350f;font-size:13px;'>
+                                        Please be at the Ministry of Oil before the course time with at least 30 minutes. 
+                                        Your badge with QR code and your name is attached to this email. Please bring it (printed or digital) to the course.
+                                    </p>
+                                  </div>";
+                
+                onsiteMessageAr = @"<div style='background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;margin:20px 0;border-radius:4px;'>
+                                      <p style='margin:0;color:#92400e;font-weight:600;'>📍 الحضور في الموقع</p>
+                                      <p style='margin:8px 0 0;color:#78350f;font-size:13px;'>
+                                        يرجى الحضور إلى وزارة النفط قبل وقت الدورة التدريبية بثلاثين دقيقة على الأقل. 
+                                        تم إرفاق بطاقتك مع رمز QR واسمك في هذا البريد الإلكتروني. يرجى إحضارها (مطبوعة أو رقمية) إلى الدورة التدريبية.
+                                      </p>
+                                    </div>";
+            }
+
+            // For Arabic placeholders, use provided Arabic versions or fallback to English
+            var fullNameAr = fullName; // Could be fetched from User model if available
+            var courseNameArValue = !string.IsNullOrWhiteSpace(courseNameAr) ? courseNameAr : courseName;
+            var courseDescriptionArValue = !string.IsNullOrWhiteSpace(courseDescriptionAr) ? courseDescriptionAr : (courseDescription ?? "لا يوجد وصف متاح");
+            var locationArValue = !string.IsNullOrWhiteSpace(locationAr) ? locationAr : (location ?? "سيتم الإعلان لاحقاً");
+            var organizationNameAr = organizationName; // Could be fetched from Organization model if available
+
+            // Prepare attachments
+            var attachments = new List<(byte[] bytes, string fileName, string contentType)>();
+
+            // Generate ICS file for calendar invite and create data URI
+            string icsDataUri = "#";
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                // Determine location based on enrollment type
+                var icsLocation = enrollmentType == EnrollmentType.Online 
+                    ? "Microsoft Teams" 
+                    : (location ?? "TBA");
+                
+                var icsContent = GenerateIcsFile(
+                    courseName,
+                    courseDescription ?? "Course training session",
+                    icsLocation,
+                    startDate.Value,
+                    endDate.Value,
+                    fullName,
+                    organizationName
+                );
+                
+                if (!string.IsNullOrEmpty(icsContent))
+                {
+                    var icsBytes = System.Text.Encoding.UTF8.GetBytes(icsContent);
+                    var icsFileName = $"course-invite-{courseName.Replace(" ", "-").Replace("/", "-")}.ics";
+                    
+                    // Add as attachment
+                    attachments.Add((icsBytes, icsFileName, "text/calendar"));
+                    
+                    // Generate data URI for direct download/open in email
+                    var base64Ics = Convert.ToBase64String(icsBytes);
+                    icsDataUri = $"data:text/calendar;charset=utf-8;base64,{base64Ics}";
+                }
+            }
+
+            // Add badge attachment for onsite enrollments
+            if (enrollmentType == EnrollmentType.Onsite && badgeImageBytes != null && badgeImageBytes.Length > 0)
+            {
+                var badgeFileName = !string.IsNullOrEmpty(barcode) 
+                    ? $"badge-{barcode}.png" 
+                    : $"badge-{fullName.Replace(" ", "-")}.png";
+                attachments.Add((badgeImageBytes, badgeFileName, "image/png"));
+            }
+
             // Replace placeholders
             var body = template
                 .Replace("{{FULL_NAME}}", fullName)
+                .Replace("{{FULL_NAME_AR}}", fullNameAr)
                 .Replace("{{COURSE_NAME}}", courseName)
+                .Replace("{{COURSE_NAME_AR}}", courseNameArValue)
                 .Replace("{{COURSE_DESCRIPTION}}", courseDescription ?? "No description available")
+                .Replace("{{COURSE_DESCRIPTION_AR}}", courseDescriptionArValue)
                 .Replace("{{START_DATE}}", startDateText)
+                .Replace("{{START_DATE_AR}}", startDateTextAr)
                 .Replace("{{END_DATE}}", endDateText)
+                .Replace("{{END_DATE_AR}}", endDateTextAr)
                 .Replace("{{COURSE_LOCATION}}", location ?? "TBA")
+                .Replace("{{COURSE_LOCATION_AR}}", locationArValue)
                 .Replace("{{ORGANIZATION_NAME}}", organizationName)
+                .Replace("{{ORGANIZATION_NAME_AR}}", organizationNameAr)
                 .Replace("{{SUPPORT_EMAIL}}", supportEmail)
-                .Replace("{{CALENDAR_LINK}}", calendarLink)
+                .Replace("{{CALENDAR_LINK}}", icsDataUri) // Use ICS data URI instead of Google Calendar link
+                .Replace("{{ONLINE_MESSAGE}}", onlineMessage)
+                .Replace("{{ONLINE_MESSAGE_AR}}", onlineMessageAr)
+                .Replace("{{ONSITE_MESSAGE}}", onsiteMessage)
+                .Replace("{{ONSITE_MESSAGE_AR}}", onsiteMessageAr)
                 .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
+
+            // Replace poster placeholder with CID reference
+            if (posterContentId != null)
+            {
+                body = body.Replace("{{EVENT_POSTER}}", $"cid:{posterContentId}");
+            }
+            else
+            {
+                body = body.Replace("{{EVENT_POSTER}}", "");
+            }
 
             var subject = $"Course Approval Confirmation - {courseName}";
 
-            return await SendEmailAsync(to, subject, body, true);
+            // Send email with attachments and embedded poster
+            if (attachments.Any() || posterImageBytes != null)
+            {
+                return await SendEmailWithMultipleAttachmentsAsync(
+                    to,
+                    subject,
+                    body,
+                    attachments,
+                    posterImageBytes,
+                    posterContentId,
+                    posterContentType
+                );
+            }
+            else
+            {
+                return await SendEmailAsync(to, subject, body, true);
+            }
         }
         catch (Exception ex)
         {
@@ -1282,6 +1471,75 @@ public class EmailService
                          $"&output=xml";
 
         return calendarUrl;
+    }
+
+    /// <summary>
+    /// Generates an ICS (iCalendar) file content for calendar invite
+    /// </summary>
+    private string GenerateIcsFile(
+        string title,
+        string description,
+        string location,
+        DateTime startDate,
+        DateTime endDate,
+        string attendeeName,
+        string organizerName)
+    {
+        try
+        {
+            // Format dates in UTC (ICS format: yyyyMMddTHHmmssZ)
+            var startUtc = startDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+            var endUtc = endDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+            var createdUtc = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
+            
+            // Generate unique UID for the event
+            var uid = $"{Guid.NewGuid()}@otc.moo.gov.kw";
+            
+            // Escape special characters in text fields for ICS format
+            var escapeText = new Func<string, string>(text => 
+                text?.Replace("\\", "\\\\")
+                     .Replace(",", "\\,")
+                     .Replace(";", "\\;")
+                     .Replace("\n", "\\n")
+                     .Replace("\r", "") ?? "");
+            
+            var escapedTitle = escapeText(title);
+            var escapedDescription = escapeText(description);
+            var escapedLocation = escapeText(location);
+            var escapedOrganizer = escapeText(organizerName);
+            
+            // Build ICS content
+            var icsContent = $@"BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Ministry of Oil//Course Management System//EN
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:{createdUtc}
+DTSTART:{startUtc}
+DTEND:{endUtc}
+SUMMARY:{escapedTitle}
+DESCRIPTION:{escapedDescription}
+LOCATION:{escapedLocation}
+ORGANIZER;CN={escapedOrganizer}:mailto:otc@moo.gov.kw
+STATUS:CONFIRMED
+SEQUENCE:0
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder: {escapedTitle}
+END:VALARM
+END:VEVENT
+END:VCALENDAR";
+
+            return icsContent;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating ICS file");
+            return string.Empty;
+        }
     }
 
     private class SmtpConfig

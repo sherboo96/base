@@ -122,6 +122,9 @@ export interface Course {
   targetOrganizationIds?: number[];
   targetSegmentIds?: number[];
   questions?: CourseQuestion[]; // JSON array of course enrollment questions
+  teamsEventId?: string; // Microsoft Graph Event ID
+  teamsJoinUrl?: string; // Teams meeting join URL
+  teamsMeetingCreatedAt?: string; // When the Teams meeting was created
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;

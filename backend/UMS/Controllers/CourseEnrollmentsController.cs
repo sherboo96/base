@@ -10,6 +10,14 @@ using UMS.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.Hosting;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.Fonts;
+using QRCoder;
 
 namespace UMS.Controllers;
 
@@ -22,17 +30,20 @@ public class CourseEnrollmentsController : ControllerBase
     private readonly OrganizationAccessService _orgAccessService;
     private readonly EmailService _emailService;
     private readonly ILogger<CourseEnrollmentsController> _logger;
+    private readonly IWebHostEnvironment _env;
 
     public CourseEnrollmentsController(
         ApplicationDbContext context, 
         OrganizationAccessService orgAccessService,
         EmailService emailService,
-        ILogger<CourseEnrollmentsController> logger)
+        ILogger<CourseEnrollmentsController> logger,
+        IWebHostEnvironment env)
     {
         _context = context;
         _orgAccessService = orgAccessService;
         _emailService = emailService;
         _logger = logger;
+        _env = env;
     }
 
     [HttpGet("course/{courseId}")]
@@ -203,6 +214,7 @@ public class CourseEnrollmentsController : ControllerBase
                         CourseTabId = a.CourseTabApproval.CourseTabId,
                         ApprovalOrder = a.CourseTabApproval.ApprovalOrder,
                         IsHeadApproval = a.CourseTabApproval.IsHeadApproval,
+                        IsFinalApproval = a.CourseTabApproval.IsFinalApproval,
                         RoleId = a.CourseTabApproval.RoleId,
                         Role = a.CourseTabApproval.Role != null ? new RoleDto
                         {
@@ -466,6 +478,7 @@ public class CourseEnrollmentsController : ControllerBase
                             CourseTabId = a.CourseTabApproval.CourseTabId,
                             ApprovalOrder = a.CourseTabApproval.ApprovalOrder,
                             IsHeadApproval = a.CourseTabApproval.IsHeadApproval,
+                            IsFinalApproval = a.CourseTabApproval.IsFinalApproval,
                             RoleId = a.CourseTabApproval.RoleId,
                             Role = a.CourseTabApproval.Role != null ? new RoleDto
                             {
@@ -1265,11 +1278,17 @@ public class CourseEnrollmentsController : ControllerBase
             .ToList();
 
         var allApproved = allSteps.All(a => a.IsApproved);
+        
+        // Check if the current step is marked as the final approval step
+        var isFinalStep = approvalStep.CourseTabApproval.IsFinalApproval;
+        
         if (allApproved)
         {
-            // Load course to check seat availability
-            var course = await _context.Courses
-                .FirstOrDefaultAsync(c => c.Id == enrollment.CourseId && !c.IsDeleted);
+                // Load course to check seat availability
+                var course = await _context.Courses
+                    .Include(c => c.Location)
+                    .Include(c => c.Organization)
+                    .FirstOrDefaultAsync(c => c.Id == enrollment.CourseId && !c.IsDeleted);
             
             if (course == null)
             {
@@ -1330,8 +1349,8 @@ public class CourseEnrollmentsController : ControllerBase
         await _context.SaveChangesAsync();
 
 
-        // Send confirmation email if final approval is granted and email hasn't been sent yet
-        if (allApproved && !enrollment.ConfirmationEmailSent)
+        // Send confirmation email only when the final approval step (marked as IsFinalApproval) is completed and all steps are approved
+        if (isFinalStep)
         {
             try
             {
@@ -1341,6 +1360,12 @@ public class CourseEnrollmentsController : ControllerBase
                 if (enrollment.User == null)
                 {
                     await _context.Entry(enrollment).Reference(e => e.User).LoadAsync();
+                }
+                
+                // Load User's Organization if not loaded
+                if (enrollment.User != null && enrollment.User.Organization == null)
+                {
+                    await _context.Entry(enrollment.User).Reference(u => u.Organization).LoadAsync();
                 }
 
                 // Load course and location details
@@ -1365,6 +1390,17 @@ public class CourseEnrollmentsController : ControllerBase
                 {
                     _logger.LogInformation($"Sending confirmation email to {enrollment.User.Email} for course {course.CourseTitle}");
                     
+                    // Generate badge for onsite enrollments
+                    byte[]? badgeBytes = null;
+                    string? barcode = null;
+                    
+                    if (enrollment.EnrollmentType == EnrollmentType.Onsite)
+                    {
+                        // Generate barcode from course ID and user ID
+                        barcode = $"{course.Id}_{enrollment.UserId}";
+                        badgeBytes = await GenerateCourseBadgeImage(enrollment, course, barcode);
+                    }
+                    
                     var emailSent = await _emailService.SendCourseApprovalConfirmationAsync(
                         enrollment.User.Email,
                         enrollment.User.FullName,
@@ -1373,7 +1409,14 @@ public class CourseEnrollmentsController : ControllerBase
                         course.StartDateTime,
                         course.EndDateTime,
                         course.Location?.Name,
-                        course.Organization?.Name ?? "Ministry of Oil"
+                        course.Organization?.Name ?? "Ministry of Oil",
+                        enrollment.EnrollmentType ?? EnrollmentType.Onsite,
+                        badgeBytes,
+                        barcode,
+                        course.CourseTitleAr,
+                        course.DescriptionAr,
+                        course.Location?.NameAr,
+                        course.Code
                     );
 
                     if (emailSent)
@@ -1425,6 +1468,7 @@ public class CourseEnrollmentsController : ControllerBase
                 CourseTabId = approvalStep.CourseTabApproval.CourseTabId,
                 ApprovalOrder = approvalStep.CourseTabApproval.ApprovalOrder,
                 IsHeadApproval = approvalStep.CourseTabApproval.IsHeadApproval,
+                IsFinalApproval = approvalStep.CourseTabApproval.IsFinalApproval,
                 RoleId = approvalStep.CourseTabApproval.RoleId,
                 Role = approvalStep.CourseTabApproval.Role != null ? new RoleDto
                 {
@@ -1600,6 +1644,7 @@ public class CourseEnrollmentsController : ControllerBase
                 CourseTabId = approvalStep.CourseTabApproval.CourseTabId,
                 ApprovalOrder = approvalStep.CourseTabApproval.ApprovalOrder,
                 IsHeadApproval = approvalStep.CourseTabApproval.IsHeadApproval,
+                IsFinalApproval = approvalStep.CourseTabApproval.IsFinalApproval,
                 RoleId = approvalStep.CourseTabApproval.RoleId,
                 Role = approvalStep.CourseTabApproval.Role != null ? new RoleDto
                 {
@@ -1625,6 +1670,7 @@ public class CourseEnrollmentsController : ControllerBase
     {
         var enrollment = await _context.CourseEnrollments
             .Include(e => e.User)
+                .ThenInclude(u => u.Organization)
             .Include(e => e.Course)
                 .ThenInclude(c => c.Organization)
             .Include(e => e.Course)
@@ -1652,6 +1698,17 @@ public class CourseEnrollmentsController : ControllerBase
 
         try
         {
+            // Generate badge for onsite enrollments
+            byte[]? badgeBytes = null;
+            string? barcode = null;
+            
+            if (enrollment.EnrollmentType == EnrollmentType.Onsite)
+            {
+                // Generate barcode from course ID and user ID
+                barcode = $"{enrollment.Course.Id}_{enrollment.UserId}";
+                badgeBytes = await GenerateCourseBadgeImage(enrollment, enrollment.Course, barcode);
+            }
+            
             var emailSent = await _emailService.SendCourseApprovalConfirmationAsync(
                 enrollment.User.Email,
                 enrollment.User.FullName,
@@ -1660,7 +1717,14 @@ public class CourseEnrollmentsController : ControllerBase
                 enrollment.Course.StartDateTime,
                 enrollment.Course.EndDateTime,
                 enrollment.Course.Location?.Name,
-                enrollment.Course.Organization?.Name ?? "Ministry of Oil"
+                enrollment.Course.Organization?.Name ?? "Ministry of Oil",
+                enrollment.EnrollmentType ?? EnrollmentType.Onsite,
+                badgeBytes,
+                barcode,
+                enrollment.Course.CourseTitleAr,
+                enrollment.Course.DescriptionAr,
+                enrollment.Course.Location?.NameAr,
+                enrollment.Course.Code
             );
 
             if (emailSent)
@@ -2390,6 +2454,137 @@ public class CourseEnrollmentsController : ControllerBase
                 Result = false
             });
         }
+    }
+
+    private async Task<byte[]> GenerateCourseBadgeImage(CourseEnrollment enrollment, Course course, string barcode)
+    {
+        Image<Rgba32> badgeImage;
+        int badgeWidth;
+        int badgeHeight;
+
+        // Load badge template (badge.jpg)
+        var badgePath = System.IO.Path.Combine(_env.WebRootPath ?? System.IO.Path.Combine(_env.ContentRootPath, "wwwroot"), "badge.jpg");
+        
+        if (System.IO.File.Exists(badgePath))
+        {
+            badgeImage = await Image.LoadAsync<Rgba32>(badgePath);
+            badgeWidth = badgeImage.Width;
+            badgeHeight = badgeImage.Height;
+        }
+        else
+        {
+            // Fallback: create white background if template not found
+            badgeWidth = 800;
+            badgeHeight = 600;
+            badgeImage = new Image<Rgba32>(badgeWidth, badgeHeight, SixLabors.ImageSharp.Color.White);
+        }
+
+        // Generate QR Code
+        using var qrGenerator = new QRCodeGenerator();
+        var qrData = qrGenerator.CreateQrCode(barcode, QRCodeGenerator.ECCLevel.M);
+        using var qrCode = new PngByteQRCode(qrData);
+        var qrCodeBytes = qrCode.GetGraphic(20);
+        
+        using var qrCodeImage = await Image.LoadAsync<Rgba32>(new MemoryStream(qrCodeBytes));
+        
+        // Resize QR code to appropriate size for badge (about 25% of badge width)
+        var qrSize = (int)(badgeWidth * 0.25);
+        qrCodeImage.Mutate(x => x.Resize(new ResizeOptions
+        {
+            Size = new SixLabors.ImageSharp.Size(qrSize, qrSize),
+            Mode = ResizeMode.Stretch
+        }));
+
+        // Calculate positions - center in the white mid-section area
+        // Based on badge layout: header ~25%, mid-section ~50%, footer ~25%
+        // Place QR code in upper part of mid-section, name below it
+        var midSectionStartY = (int)(badgeHeight * 0.25); // Start of mid-section
+        var midSectionHeight = (int)(badgeHeight * 0.50); // Height of mid-section
+        var qrX = (badgeWidth - qrSize) / 2; // Centered horizontally
+        var qrY = midSectionStartY + (int)(midSectionHeight * 0.15); // Upper part of mid-section
+
+        // Draw QR code and text on badge
+        badgeImage.Mutate(ctx =>
+        {
+            // Draw white background for QR code with padding
+            var qrPadding = 10;
+            ctx.Fill(SixLabors.ImageSharp.Color.White, new RectangleF(qrX - qrPadding, qrY - qrPadding, qrSize + (qrPadding * 2), qrSize + (qrPadding * 2)));
+            
+            // Draw QR code
+            ctx.DrawImage(qrCodeImage, new SixLabors.ImageSharp.Point(qrX, qrY), 1f);
+
+            // Calculate name position - below QR code in mid-section
+            var nameY = qrY + qrSize + 30; // Space between QR and name
+            
+            // Try to use Poppins font, fallback to Arial if not available
+            Font fontForName;
+            Font fontForOrganization;
+            
+            try
+            {
+                // Use smaller font for name (reduced from 0.08 to 0.06)
+                fontForName = SystemFonts.CreateFont("Poppins", (float)(badgeHeight * 0.06), FontStyle.Bold);
+                // Use smaller font for organization name with semi-bold
+                fontForOrganization = SystemFonts.CreateFont("Poppins", (float)(badgeHeight * 0.045), FontStyle.Bold);
+            }
+            catch
+            {
+                // Fallback to Arial if Poppins is not available
+                fontForName = SystemFonts.CreateFont("Arial", (float)(badgeHeight * 0.06), FontStyle.Bold);
+                fontForOrganization = SystemFonts.CreateFont("Arial", (float)(badgeHeight * 0.045), FontStyle.Bold);
+            }
+            
+            // Extract first name and last name from FullName
+            var fullName = enrollment.User.FullName ?? "";
+            var nameParts = fullName.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var displayName = "";
+            
+            if (nameParts.Length >= 2)
+            {
+                // First name and last name
+                displayName = $"{nameParts[0]} {nameParts[nameParts.Length - 1]}";
+            }
+            else if (nameParts.Length == 1)
+            {
+                // Only one name part, use it as is
+                displayName = nameParts[0];
+            }
+            else
+            {
+                // Fallback to full name if parsing fails
+                displayName = fullName;
+            }
+            
+            // Get organization name
+            var organizationName = enrollment.User.Organization?.Name ?? course.Organization?.Name ?? "";
+            
+            // Draw name below QR code (centered)
+            var nameTextOptions = new RichTextOptions(fontForName)
+            {
+                Origin = new SixLabors.ImageSharp.PointF(badgeWidth / 2f, nameY),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+            ctx.DrawText(nameTextOptions, displayName, SixLabors.ImageSharp.Color.Black);
+            
+            // Draw organization name below the name
+            if (!string.IsNullOrEmpty(organizationName))
+            {
+                var orgY = nameY + (int)(badgeHeight * 0.08); // Space between name and organization
+                var orgTextOptions = new RichTextOptions(fontForOrganization)
+                {
+                    Origin = new SixLabors.ImageSharp.PointF(badgeWidth / 2f, orgY),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+                ctx.DrawText(orgTextOptions, organizationName, SixLabors.ImageSharp.Color.DarkGray);
+            }
+        });
+
+        // Convert to byte array
+        using var ms = new MemoryStream();
+        await badgeImage.SaveAsync(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+        return ms.ToArray();
     }
 }
 

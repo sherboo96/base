@@ -57,6 +57,11 @@ public class Course : BaseModel
     public string? TargetSegmentIds { get; set; } // JSON array of segment IDs, e.g., "[1,2,3]"
     public string? Questions { get; set; } // JSON array of course enrollment questions
 
+    // Teams Meeting Integration
+    public string? TeamsEventId { get; set; } // Microsoft Graph Event ID
+    public string? TeamsJoinUrl { get; set; } // Teams meeting join URL
+    public DateTime? TeamsMeetingCreatedAt { get; set; } // When the Teams meeting was created
+
     [JsonIgnore]
     public ICollection<CourseLearningOutcome> LearningOutcomes { get; set; } = new List<CourseLearningOutcome>();
 

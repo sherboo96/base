@@ -134,6 +134,7 @@ builder.Services.AddScoped<SystemConfigurationService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<DataSeeder>();
+builder.Services.AddScoped<TeamsMeetingService>();
 
 var app = builder.Build();
 

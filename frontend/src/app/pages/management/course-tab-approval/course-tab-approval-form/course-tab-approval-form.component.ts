@@ -105,6 +105,7 @@ export class CourseTabApprovalFormComponent implements OnInit {
       courseTabId: [null, Validators.required],
       approvalOrder: [1, [Validators.required, Validators.min(1)]],
       isHeadApproval: [false],
+      isFinalApproval: [false],
       roleId: [null],
     });
   }
@@ -120,6 +121,7 @@ export class CourseTabApprovalFormComponent implements OnInit {
         courseTabId: approval.courseTabId,
         approvalOrder: approval.approvalOrder,
         isHeadApproval: approval.isHeadApproval,
+        isFinalApproval: approval.isFinalApproval || false,
         roleId: approval.roleId || null,
       });
       // Disable courseTabId in edit mode
@@ -197,6 +199,7 @@ export class CourseTabApprovalFormComponent implements OnInit {
       courseTabId: formValue.courseTabId,
       approvalOrder: formValue.approvalOrder,
       isHeadApproval: formValue.isHeadApproval,
+      isFinalApproval: formValue.isFinalApproval,
       roleId: formValue.roleId || null,
     };
 
@@ -205,6 +208,7 @@ export class CourseTabApprovalFormComponent implements OnInit {
       const updatePayload = {
         approvalOrder: payload.approvalOrder,
         isHeadApproval: payload.isHeadApproval,
+        isFinalApproval: payload.isFinalApproval,
         roleId: payload.roleId,
       };
       this.courseTabApprovalService

@@ -8,6 +8,7 @@ export interface CourseTabApproval {
   courseTabId: number;
   approvalOrder: number;
   isHeadApproval: boolean;
+  isFinalApproval: boolean;
   roleId?: number;
   role?: {
     id: number;
@@ -73,7 +74,7 @@ export class CourseTabApprovalService {
 
   updateCourseTabApproval(
     id: number,
-    approval: { approvalOrder: number; isHeadApproval: boolean; roleId?: number | null }
+    approval: { approvalOrder: number; isHeadApproval: boolean; isFinalApproval: boolean; roleId?: number | null }
   ): Observable<CourseTabApproval> {
     return this.http.put<CourseTabApproval>(`${this.apiUrl}/${id}`, approval);
   }

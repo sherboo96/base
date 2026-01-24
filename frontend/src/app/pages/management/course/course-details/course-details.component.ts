@@ -24,6 +24,7 @@ import { CourseAttendanceComponent } from '../course-attendance/course-attendanc
 import { CourseManualEnrollmentComponent } from '../course-manual-enrollment/course-manual-enrollment.component';
 import { CourseQuestionFormComponent } from '../course-question-form/course-question-form.component';
 import { EnrollmentAnswersDialogComponent } from './enrollment-answers-dialog/enrollment-answers-dialog.component';
+import { TeamsMeetingService } from '../../../../services/teams-meeting.service';
 
 @Component({
   selector: 'app-course-details',
@@ -41,7 +42,7 @@ export class CourseDetailsComponent implements OnInit {
   course: Course | null = null;
   isLoading = false;
   CourseStatus = CourseStatus;
-  activeTab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' | 'questions' | 'targetUsers' = 'overview';
+  activeTab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' | 'questions' | 'teamsMeeting' | 'targetUsers' = 'overview';
   enrollments: CourseEnrollment[] = [];
   groupedEnrollments: { [key: string]: CourseEnrollment[] } = {};
   enrollmentOrganizations: string[] = [];
@@ -66,6 +67,11 @@ export class CourseDetailsComponent implements OnInit {
   targetOrganizations: Organization[] = [];
   targetSegments: Segment[] = [];
   isLoadingTargetUsers = false;
+  isCreatingTeamsMeeting = false;
+  teamsMeeting: any = null;
+  isLoadingTeamsMeeting = false;
+  attendeesPage = 1;
+  attendeesPageSize = 20;
 
   constructor(
     private route: ActivatedRoute,
@@ -83,6 +89,7 @@ export class CourseDetailsComponent implements OnInit {
     private segmentService: SegmentService,
     private organizationService: OrganizationService,
     private courseQuestionService: CourseQuestionService,
+    private teamsMeetingService: TeamsMeetingService,
     private cdr: ChangeDetectorRef
   ) {
     // Get current language
@@ -115,6 +122,12 @@ export class CourseDetailsComponent implements OnInit {
         this.loadQuestions();
         // Always load enrollments to calculate available seats
         this.loadEnrollmentsForSeats();
+        // Load Teams meeting if it exists
+        if (this.course?.teamsEventId) {
+          this.loadTeamsMeeting();
+        }
+        // Trigger change detection to update button visibility and tab visibility
+        this.cdr.detectChanges();
         // Load full enrollments if on enrollments tab
         if (this.activeTab === 'enrollments') {
           this.loadEnrollments();
@@ -278,7 +291,7 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' | 'questions' | 'targetUsers'): void {
+  switchTab(tab: 'overview' | 'instructor' | 'enrollments' | 'adoptionUsers' | 'courseContacts' | 'attendance' | 'questions' | 'teamsMeeting' | 'targetUsers'): void {
     this.activeTab = tab;
     if (tab === 'enrollments' && this.enrollments.length === 0) {
       this.loadEnrollments();
@@ -286,6 +299,8 @@ export class CourseDetailsComponent implements OnInit {
       this.loadAdoptionUsers();
     } else if (tab === 'targetUsers') {
       this.loadTargetUsersDetails();
+    } else if (tab === 'teamsMeeting') {
+      this.loadTeamsMeeting();
     }
   }
 
@@ -1061,6 +1076,8 @@ export class CourseDetailsComponent implements OnInit {
   private normalizeCourseStatus(status?: CourseStatus | string | number): number {
     if (!status) return CourseStatus.Draft;
     if (typeof status === 'string') {
+      // Handle both "RegistrationClosed" and "Registration Closed" (with space) by removing spaces
+      const normalizedStatus = status.replace(/\s+/g, '');
       const statusMap: { [key: string]: number } = {
         'Draft': CourseStatus.Draft,
         'Published': CourseStatus.Published,
@@ -1071,7 +1088,7 @@ export class CourseDetailsComponent implements OnInit {
         'Archived': CourseStatus.Archived,
         'Rescheduled': CourseStatus.Rescheduled
       };
-      return statusMap[status] ?? Number(status);
+      return statusMap[normalizedStatus] ?? Number(status);
     }
     return Number(status);
   }
@@ -1305,6 +1322,18 @@ export class CourseDetailsComponent implements OnInit {
     });
   }
 
+  getPaginatedAttendees(): any[] {
+    if (!this.teamsMeeting?.attendees) return [];
+    const start = (this.attendeesPage - 1) * this.attendeesPageSize;
+    const end = start + this.attendeesPageSize;
+    return this.teamsMeeting.attendees.slice(start, end);
+  }
+
+  getTotalAttendeesPages(): number {
+    if (!this.teamsMeeting?.attendees) return 0;
+    return Math.ceil((this.teamsMeeting.attendees.length || 0) / this.attendeesPageSize);
+  }
+
   formatDateTime(dateString: string | undefined): string {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleString('en-US', {
@@ -1402,6 +1431,10 @@ export class CourseDetailsComponent implements OnInit {
     dialogRef.afterClosed$.subscribe((result) => {
       if (result && this.course) {
         this.loadCourse(this.course.id!);
+        // If Teams meeting exists, update it with new course details
+        if (this.course.teamsEventId) {
+          this.updateTeamsMeetingAfterEdit();
+        }
       }
     });
   }
@@ -2074,6 +2107,222 @@ export class CourseDetailsComponent implements OnInit {
     // This method is no longer needed as questions are saved individually via the API
     // Keeping it for backward compatibility but it does nothing
     // Questions are now managed through addQuestion, editQuestion, and deleteQuestion methods
+  }
+
+  /**
+   * Check if Teams meeting button should be shown
+   * Shows when: Course status is RegistrationClosed AND course has online seats AND no Teams meeting exists yet
+   */
+  shouldShowTeamsMeetingButton(): boolean {
+    if (!this.course) {
+      return false;
+    }
+    
+    // Don't show button if Teams meeting already exists
+    if (this.course.teamsEventId) {
+      return false;
+    }
+    
+    // Normalize status to handle both string and number values from API
+    const normalizedStatus = this.normalizeCourseStatus(this.course.status);
+    const isRegistrationClosed = normalizedStatus === CourseStatus.RegistrationClosed;
+    
+    // Check if course has online seats available
+    const hasOnlineSeats = (this.course.availableOnlineSeats ?? 0) > 0;
+    
+    return isRegistrationClosed && hasOnlineSeats;
+  }
+
+  /**
+   * Create Teams meeting for course online enrollments
+   */
+  createTeamsMeeting(): void {
+    if (!this.course?.id) {
+      this.toastr.error(this.translationService.instant('course.courseNotFound'));
+      return;
+    }
+
+    // Confirm action
+    const confirmed = confirm(
+      this.translationService.instant('course.createTeamsMeetingConfirm') || 
+      'Are you sure you want to create a Teams meeting for all approved online enrollments?'
+    );
+
+    if (!confirmed) return;
+
+    this.isCreatingTeamsMeeting = true;
+    this.loadingService.show();
+
+    this.teamsMeetingService.createTeamsMeetingForCourse(this.course.id).subscribe({
+      next: (response) => {
+        this.isCreatingTeamsMeeting = false;
+        this.loadingService.hide();
+        
+        if (response.statusCode === 200) {
+          this.toastr.success(
+            response.message || this.translationService.instant('course.teamsMeetingCreated')
+          );
+          
+          // Update course with Teams meeting data immediately from API response
+          if (this.course && response.result) {
+            this.course.teamsEventId = response.result.eventId;
+            this.course.teamsJoinUrl = response.result.joinUrl;
+            this.course.teamsMeetingCreatedAt = new Date().toISOString();
+          }
+          
+          // Show join URL if available
+          if (response.result?.joinUrl) {
+            const openLink = confirm(
+              (this.translationService.instant('course.teamsMeetingJoinUrl') || 
+              'Teams meeting created successfully! Would you like to open the join URL?')
+            );
+            if (openLink) {
+              window.open(response.result.joinUrl, '_blank');
+            }
+          }
+          
+          // Load Teams meeting details immediately
+          if (this.course?.id) {
+            this.loadTeamsMeeting();
+          }
+          
+          // Force change detection to update UI (button visibility, tab visibility)
+          this.cdr.detectChanges();
+          
+          // Reload course in background to ensure all data is synced
+          if (this.course?.id) {
+            this.loadCourse(this.course.id);
+          }
+        } else {
+          this.toastr.error(
+            response.message || this.translationService.instant('course.teamsMeetingError')
+          );
+        }
+      },
+      error: (error) => {
+        this.isCreatingTeamsMeeting = false;
+        this.loadingService.hide();
+        this.toastr.error(
+          error.error?.message || 
+          this.translationService.instant('course.teamsMeetingError') ||
+          'Failed to create Teams meeting'
+        );
+      },
+    });
+  }
+
+  loadTeamsMeeting(): void {
+    if (!this.course?.id) return;
+
+    this.isLoadingTeamsMeeting = true;
+    this.cdr.detectChanges(); // Update UI to show loading state
+    
+    this.teamsMeetingService.getTeamsMeetingForCourse(this.course.id).subscribe({
+      next: (response) => {
+        this.isLoadingTeamsMeeting = false;
+        if (response.statusCode === 200) {
+          this.teamsMeeting = response.result;
+        } else {
+          this.teamsMeeting = null;
+        }
+        // Force change detection to update UI
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.isLoadingTeamsMeeting = false;
+        this.teamsMeeting = null;
+        // Don't show error if meeting doesn't exist (404)
+        if (error.status !== 404) {
+          this.toastr.error(
+            error.error?.message || 
+            this.translationService.instant('course.teamsMeetingLoadError') ||
+            'Failed to load Teams meeting'
+          );
+        }
+        // Force change detection even on error
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  cancelTeamsMeeting(): void {
+    if (!this.course?.id) return;
+
+    const confirmed = confirm(
+      this.translationService.instant('course.cancelTeamsMeetingConfirm') || 
+      'Are you sure you want to cancel this Teams meeting? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    this.loadingService.show();
+    this.teamsMeetingService.cancelTeamsMeetingForCourse(this.course.id).subscribe({
+      next: (response) => {
+        this.loadingService.hide();
+        if (response.statusCode === 200) {
+          this.toastr.success(
+            response.message || this.translationService.instant('course.teamsMeetingCancelled')
+          );
+          
+          // Clear Teams meeting data immediately
+          this.teamsMeeting = null;
+          if (this.course) {
+            this.course.teamsEventId = undefined;
+            this.course.teamsJoinUrl = undefined;
+            this.course.teamsMeetingCreatedAt = undefined;
+          }
+          
+          // Force change detection to update UI (hide tab, show button)
+          this.cdr.detectChanges();
+          
+          // Reload course in background to ensure all data is synced
+          if (this.course?.id) {
+            this.loadCourse(this.course.id);
+          }
+        } else {
+          this.toastr.error(
+            response.message || this.translationService.instant('course.teamsMeetingCancelError')
+          );
+        }
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.toastr.error(
+          error.error?.message || 
+          this.translationService.instant('course.teamsMeetingCancelError') ||
+          'Failed to cancel Teams meeting'
+        );
+      },
+    });
+  }
+
+  updateTeamsMeetingAfterEdit(): void {
+    if (!this.course?.id || !this.course.teamsEventId) return;
+
+    this.loadingService.show();
+    this.teamsMeetingService.updateTeamsMeetingForCourse(this.course.id).subscribe({
+      next: (response) => {
+        this.loadingService.hide();
+        if (response.statusCode === 200) {
+          this.toastr.success(
+            response.message || this.translationService.instant('course.teamsMeetingUpdated')
+          );
+          // Reload Teams meeting data if on the tab
+          if (this.activeTab === 'teamsMeeting') {
+            this.loadTeamsMeeting();
+          }
+        } else {
+          this.toastr.warning(
+            response.message || this.translationService.instant('course.teamsMeetingUpdateWarning')
+          );
+        }
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        // Don't show error, just log it - course was updated successfully
+        console.warn('Failed to update Teams meeting:', error);
+      },
+    });
   }
 }
 

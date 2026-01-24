@@ -24,17 +24,20 @@ public class CoursesController : ControllerBase
     private readonly OrganizationAccessService _orgAccessService;
     private readonly ApplicationDbContext _context;
     private readonly EmailService _emailService;
+    private readonly TeamsMeetingService _teamsMeetingService;
 
     public CoursesController(
         IUnitOfWork unitOfWork, 
         OrganizationAccessService orgAccessService, 
         ApplicationDbContext context,
-        EmailService emailService)
+        EmailService emailService,
+        TeamsMeetingService teamsMeetingService)
     {
         _unitOfWork = unitOfWork;
         _orgAccessService = orgAccessService;
         _context = context;
         _emailService = emailService;
+        _teamsMeetingService = teamsMeetingService;
     }
 
     [HttpGet]
@@ -810,7 +813,11 @@ public class CoursesController : ControllerBase
             CreatedAt = course.CreatedOn,
             CreatedBy = course.CreatedBy,
             UpdatedAt = course.UpdatedAt,
-            UpdatedBy = course.UpdatedBy
+            UpdatedBy = course.UpdatedBy,
+            // Teams Meeting Integration
+            TeamsEventId = course.TeamsEventId,
+            TeamsJoinUrl = course.TeamsJoinUrl,
+            TeamsMeetingCreatedAt = course.TeamsMeetingCreatedAt
         };
     }
 
@@ -1025,5 +1032,103 @@ public class CoursesController : ControllerBase
         }
 
         return filteredCourses;
+    }
+
+    [HttpPost("{id}/create-teams-meeting")]
+    public async Task<IActionResult> CreateTeamsMeeting(int id)
+    {
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("UserId")?.Value;
+
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            return Unauthorized(new BaseResponse<object>
+            {
+                StatusCode = 401,
+                Message = "User not authenticated."
+            });
+        }
+
+        var result = await _teamsMeetingService.CreateTeamsMeetingForCourseAsync(id, currentUserId);
+
+        if (result.StatusCode == 200)
+        {
+            return Ok(result);
+        }
+        else if (result.StatusCode == 404)
+        {
+            return NotFound(result);
+        }
+        else
+        {
+            return BadRequest(result);
+        }
+    }
+
+    [HttpGet("{id}/teams-meeting")]
+    public async Task<IActionResult> GetTeamsMeeting(int id)
+    {
+        var result = await _teamsMeetingService.GetTeamsMeetingForCourseAsync(id);
+
+        if (result.StatusCode == 200)
+        {
+            return Ok(result);
+        }
+        else if (result.StatusCode == 404)
+        {
+            return NotFound(result);
+        }
+        else
+        {
+            return BadRequest(result);
+        }
+    }
+
+    [HttpDelete("{id}/teams-meeting")]
+    public async Task<IActionResult> CancelTeamsMeeting(int id)
+    {
+        var result = await _teamsMeetingService.CancelTeamsMeetingForCourseAsync(id);
+
+        if (result.StatusCode == 200)
+        {
+            return Ok(result);
+        }
+        else if (result.StatusCode == 404)
+        {
+            return NotFound(result);
+        }
+        else
+        {
+            return BadRequest(result);
+        }
+    }
+
+    [HttpPut("{id}/update-teams-meeting")]
+    public async Task<IActionResult> UpdateTeamsMeeting(int id)
+    {
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("UserId")?.Value;
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            return Unauthorized(new BaseResponse<object>
+            {
+                StatusCode = 401,
+                Message = "User not authenticated."
+            });
+        }
+
+        var result = await _teamsMeetingService.UpdateTeamsMeetingForCourseAsync(id, currentUserId);
+
+        if (result.StatusCode == 200)
+        {
+            return Ok(result);
+        }
+        else if (result.StatusCode == 404)
+        {
+            return NotFound(result);
+        }
+        else
+        {
+            return BadRequest(result);
+        }
     }
 }

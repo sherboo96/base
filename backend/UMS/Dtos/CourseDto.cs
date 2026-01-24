@@ -59,6 +59,11 @@ public class CourseDto
     // Enrollment counts
     public int OnlineEnrollmentsCount { get; set; } = 0; // Number of approved online enrollments
     public int OnsiteEnrollmentsCount { get; set; } = 0; // Number of approved onsite enrollments
+    
+    // Teams Meeting Integration
+    public string? TeamsEventId { get; set; } // Microsoft Graph Event ID
+    public string? TeamsJoinUrl { get; set; } // Teams meeting join URL
+    public DateTime? TeamsMeetingCreatedAt { get; set; } // When the Teams meeting was created
 }
 
 public class CourseLearningOutcomeDto

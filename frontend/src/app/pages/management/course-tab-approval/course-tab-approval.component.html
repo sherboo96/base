@@ -174,6 +174,10 @@
               {{ 'courseTabApproval.isHeadApproval' | translate }}
             </th>
             <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
+              <i class="fas fa-flag-checkered mr-1.5 text-accent text-xs"></i>
+              {{ 'courseTabApproval.isFinalApproval' | translate }}
+            </th>
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-bold text-textDark uppercase tracking-wider">
               <i class="fas fa-user-shield mr-1.5 text-accent text-xs"></i>
               {{ 'courseTabApproval.role' | translate }}
             </th>
@@ -199,6 +203,15 @@
                 {{ 'courseTabApproval.yes' | translate }}
               </span>
               <span *ngIf="!approval.isHeadApproval" class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
+                {{ 'courseTabApproval.no' | translate }}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              <span *ngIf="approval.isFinalApproval" class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                <i class="fas fa-flag-checkered mr-1"></i>
+                {{ 'courseTabApproval.yes' | translate }}
+              </span>
+              <span *ngIf="!approval.isFinalApproval" class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
                 {{ 'courseTabApproval.no' | translate }}
               </span>
             </td>

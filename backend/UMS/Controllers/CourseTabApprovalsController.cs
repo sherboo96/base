@@ -61,6 +61,7 @@ public class CourseTabApprovalsController : ControllerBase
             CourseTabId = a.CourseTabId,
             ApprovalOrder = a.ApprovalOrder,
             IsHeadApproval = a.IsHeadApproval,
+            IsFinalApproval = a.IsFinalApproval,
             RoleId = a.RoleId,
             Role = a.Role != null ? new RoleDto
             {
@@ -128,6 +129,7 @@ public class CourseTabApprovalsController : ControllerBase
             CourseTabId = a.CourseTabId,
             ApprovalOrder = a.ApprovalOrder,
             IsHeadApproval = a.IsHeadApproval,
+            IsFinalApproval = a.IsFinalApproval,
             RoleId = a.RoleId,
             Role = a.Role != null ? new RoleDto
             {
@@ -203,6 +205,7 @@ public class CourseTabApprovalsController : ControllerBase
             CourseTabId = dto.CourseTabId,
             ApprovalOrder = dto.ApprovalOrder,
             IsHeadApproval = dto.IsHeadApproval,
+            IsFinalApproval = dto.IsFinalApproval,
             RoleId = dto.RoleId,
             CreatedBy = currentUserId,
             CreatedOn = DateTime.Now
@@ -223,6 +226,7 @@ public class CourseTabApprovalsController : ControllerBase
             CourseTabId = result.CourseTabId,
             ApprovalOrder = result.ApprovalOrder,
             IsHeadApproval = result.IsHeadApproval,
+            IsFinalApproval = result.IsFinalApproval,
             RoleId = result.RoleId,
             Role = result.Role != null ? new RoleDto
             {
@@ -299,6 +303,7 @@ public class CourseTabApprovalsController : ControllerBase
 
         existing.ApprovalOrder = dto.ApprovalOrder;
         existing.IsHeadApproval = dto.IsHeadApproval;
+        existing.IsFinalApproval = dto.IsFinalApproval;
         existing.RoleId = dto.RoleId;
         existing.UpdatedBy = currentUserId;
         existing.UpdatedAt = DateTime.Now;
@@ -317,6 +322,7 @@ public class CourseTabApprovalsController : ControllerBase
             CourseTabId = result.CourseTabId,
             ApprovalOrder = result.ApprovalOrder,
             IsHeadApproval = result.IsHeadApproval,
+            IsFinalApproval = result.IsFinalApproval,
             RoleId = result.RoleId,
             Role = result.Role != null ? new RoleDto
             {
