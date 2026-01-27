@@ -470,6 +470,13 @@
                         <i class="fas fa-file-excel text-xs"></i>
                         <span class="text-xs">{{ 'course.exportApprovedEnrollments' | translate }}</span>
                       </button>
+                      <button (click)="openSendEmailDialog()"
+                        class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-all duration-200 flex items-center gap-1 shadow-sm hover:shadow font-medium text-xs"
+                        [title]="'course.sendEmail' | translate"
+                        [disabled]="!enrollments || enrollments.length === 0">
+                        <i class="fas fa-envelope text-xs"></i>
+                        <span class="text-xs">{{ 'course.sendEmail' | translate }}</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -590,6 +597,23 @@
                             [title]="'course.viewApprovalSteps' | translate">
                             <i class="fas fa-tasks mr-1"></i>
                             {{ 'course.approvalSteps' | translate }}
+                          </button>
+                            <button *ngIf="isApprovedEnrollment(enrollment) && !isOnlineEnrollment(enrollment)"
+                            (click)="printBadge(enrollment); $event.stopPropagation()"
+                              class="px-3 py-1.5 border-2 border-orange-500 rounded-lg text-orange-600 bg-white hover:bg-orange-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs"
+                            [title]="'course.printBadge' | translate">
+                            <i class="fas fa-print mr-1"></i>
+                            {{ 'course.printBadge' | translate }}
+                          </button>
+                            <button *ngIf="enrollment.emailHistoryCount && enrollment.emailHistoryCount > 0"
+                            (click)="viewEmailHistory(enrollment)"
+                              class="px-3 py-1.5 border-2 border-blue-500 rounded-lg text-blue-600 bg-white hover:bg-blue-500 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-sm hover:shadow-md font-medium text-xs relative"
+                            [title]="'course.viewEmails' | translate">
+                            <i class="fas fa-envelope mr-1"></i>
+                            {{ 'course.emails' | translate }}
+                            <span class="ml-1 px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-xs font-bold">
+                              {{ enrollment.emailHistoryCount }}
+                            </span>
                           </button>
                             <button *ngIf="enrollment.finalApproval && isApprovedEnrollment(enrollment) && !hasCheckedIn(enrollment)"
                             (click)="resendConfirmationEmail(enrollment)"

@@ -47,11 +47,11 @@ struct HomeView: View {
                                 .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: viewModel.isLoading)
                         }
                         
-                        Text("Loading events...")
+                        Text("Loading...")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.systemTextDark)
                     }
-                } else if viewModel.events.isEmpty {
+                } else if viewModel.events.isEmpty && viewModel.courses.isEmpty && viewModel.coursesLoadError == nil {
                     VStack(spacing: 24) {
                         ZStack {
                             Circle()
@@ -70,106 +70,163 @@ struct HomeView: View {
                         }
                         
                         VStack(spacing: 12) {
-                            Text("No Events")
+                            Text("No Events or Courses")
                                 .font(.system(size: 26, weight: .bold))
                                 .foregroundColor(.systemTextDark)
                             
-                            Text("There are no published events at the moment.\nCheck back soon for upcoming events!")
+                            Text("There are no active events or courses for check-in at the moment.\nCheck back when a course or event is within its scan window.")
                                 .font(.system(size: 16))
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(4)
                                 .padding(.horizontal, 40)
+                            
+                            Text("Tip: Courses need Status=Active; events need published=true. On a physical device, use your computer's IP instead of localhost.")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                                .padding(.top, 8)
+                            
+                            Button(action: {
+                                Task { await viewModel.loadData() }
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Refresh")
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentDark]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(12)
+                            }
+                            .padding(.top, 16)
                         }
                     }
                 } else {
                     ScrollView {
-                        VStack(spacing: 20) {
-                            // Premium Header Card
-                            ZStack {
-                                // Gradient Background
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentDark]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                .cornerRadius(20)
-                                
-                                // Pattern Overlay
-                                GeometryReader { geometry in
-                                    Path { path in
-                                        let width = geometry.size.width
-                                        let height = geometry.size.height
-                                        path.move(to: CGPoint(x: width * 0.7, y: 0))
-                                        path.addQuadCurve(
-                                            to: CGPoint(x: width, y: height * 0.3),
-                                            control: CGPoint(x: width * 0.9, y: height * 0.1)
+                        VStack(spacing: 24) {
+                            // Active Events Section
+                            if !viewModel.events.isEmpty {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    // Events Header Card
+                                    ZStack {
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentDark]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
                                         )
-                                        path.addLine(to: CGPoint(x: width, y: 0))
-                                        path.closeSubpath()
-                                    }
-                                    .fill(Color.white.opacity(0.1))
-                                }
-                                .cornerRadius(20)
-                                
-                                HStack(alignment: .top, spacing: 16) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Active Events")
-                                            .font(.system(size: 32, weight: .bold))
-                                            .foregroundColor(.white)
+                                        .cornerRadius(20)
                                         
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "calendar.badge.clock")
-                                                .font(.system(size: 14, weight: .semibold))
-                                            
-                                            Text("\(viewModel.events.count) event\(viewModel.events.count == 1 ? "" : "s") available")
-                                                .font(.system(size: 16, weight: .medium))
+                                        HStack(alignment: .top, spacing: 16) {
+                                            VStack(alignment: .leading, spacing: 8) {
+                                                Text("Active Events")
+                                                    .font(.system(size: 22, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: "calendar.badge.clock")
+                                                        .font(.system(size: 14, weight: .semibold))
+                                                    Text("\(viewModel.events.count) event\(viewModel.events.count == 1 ? "" : "s")")
+                                                        .font(.system(size: 14, weight: .medium))
+                                                }
+                                                .foregroundColor(.white.opacity(0.9))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(Color.white.opacity(0.2))
+                                                .cornerRadius(10)
+                                            }
+                                            Spacer()
                                         }
-                                        .foregroundColor(.white.opacity(0.9))
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.white.opacity(0.2))
-                                        .cornerRadius(12)
+                                        .padding(20)
                                     }
+                                    .frame(height: 100)
+                                    .shadow(color: Color.systemAccent.opacity(0.3), radius: 10, x: 0, y: 4)
                                     
-                                    Spacer()
-                                    
-                                    // Logo with glow effect
-                                    Image("logo")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 60, height: 60)
-                                        .clipShape(Circle())
-                                        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 2))
-                                        .shadow(color: Color.white.opacity(0.3), radius: 10, x: 0, y: 0)
+                                    LazyVStack(spacing: 16) {
+                                        ForEach(Array(viewModel.events.enumerated()), id: \.element.id) { _, event in
+                                            NavigationLink(destination: EventRegistrationsView(event: event)) {
+                                                EventCardView(event: event)
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                    }
                                 }
-                                .padding(24)
+                                .padding(.horizontal, 16)
                             }
-                            .frame(height: 140)
-                            .shadow(color: Color.systemAccent.opacity(0.3), radius: 15, x: 0, y: 8)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 12)
                             
-                            // Events List
-                            LazyVStack(spacing: 16) {
-                                ForEach(Array(viewModel.events.enumerated()), id: \.element.id) { index, event in
-                                    NavigationLink(destination: EventRegistrationsView(event: event)) {
-                                        EventCardView(event: event)
-                                            .transition(.asymmetric(
-                                                insertion: .scale.combined(with: .opacity),
-                                                removal: .opacity
-                                            ))
+                            // Active Courses Section
+                            if !viewModel.courses.isEmpty || viewModel.coursesLoadError != nil {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    ZStack {
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentDark]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                        .cornerRadius(20)
+                                        
+                                        HStack(alignment: .top, spacing: 16) {
+                                            VStack(alignment: .leading, spacing: 8) {
+                                                Text("Active Courses")
+                                                    .font(.system(size: 22, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: "book.closed.fill")
+                                                        .font(.system(size: 14, weight: .semibold))
+                                                    Text(viewModel.courses.isEmpty && viewModel.coursesLoadError != nil ? "Error" : "\(viewModel.courses.count) course\(viewModel.courses.count == 1 ? "" : "s")")
+                                                        .font(.system(size: 14, weight: .medium))
+                                                }
+                                                .foregroundColor(.white.opacity(0.9))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(Color.white.opacity(0.2))
+                                                .cornerRadius(10)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(20)
                                     }
-                                    .buttonStyle(PlainButtonStyle())
+                                    .frame(height: 100)
+                                    .shadow(color: Color.systemAccent.opacity(0.3), radius: 10, x: 0, y: 4)
+                                    
+                                    if let err = viewModel.coursesLoadError, viewModel.courses.isEmpty {
+                                        Text(err)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(20)
+                                        Text("Pull to refresh.")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.systemAccent)
+                                    } else {
+                                        LazyVStack(spacing: 16) {
+                                            ForEach(viewModel.courses) { course in
+                                                NavigationLink(destination: CourseAttendanceView(course: course)) {
+                                                    CourseCardView(course: course)
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                        }
+                                    }
                                 }
+                                .padding(.horizontal, 16)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 100)
                         }
-                        .padding(.top, 8)
+                        .padding(.top, 12)
+                        .padding(.bottom, 100)
                     }
                     .refreshable {
-                        await viewModel.loadEvents()
+                        await viewModel.loadData()
                     }
                     .overlay(
                         // Floating Logout Button
@@ -218,7 +275,7 @@ struct HomeView: View {
                 Text("Are you sure you want to log out?")
             }
             .task {
-                await viewModel.loadEvents()
+                await viewModel.loadData()
             }
         }
     }
@@ -499,33 +556,134 @@ struct EventCardView: View {
     }
 }
 
+// MARK: - Course Card (for Active Courses / attendance)
+struct CourseCardView: View {
+    let course: CourseForAttendance
+    @State private var isPressed = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 0) {
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentLight]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(width: 5)
+                .cornerRadius(2)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text(course.courseTitle)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.systemTextDark)
+                            .lineLimit(2)
+                        Spacer()
+                        HStack(spacing: 4) {
+                            Circle().fill(Color.green).frame(width: 8, height: 8)
+                            Text("Active").font(.system(size: 12, weight: .semibold)).foregroundColor(.green)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(12)
+                    }
+                    if let ar = course.courseTitleAr, !ar.isEmpty {
+                        Text(ar).font(.system(size: 15, weight: .medium)).foregroundColor(.secondary).lineLimit(2)
+                    }
+                    Rectangle()
+                        .fill(LinearGradient(gradient: Gradient(colors: [Color.systemAccent.opacity(0.3), Color.systemAccent.opacity(0.1), Color.clear]), startPoint: .leading, endPoint: .trailing))
+                        .frame(height: 1)
+                        .padding(.vertical, 10)
+                    VStack(spacing: 10) {
+                        if let start = course.startDateTime {
+                            row(icon: "calendar", label: "Start", value: formatDate(start))
+                        }
+                        if let end = course.endDateTime {
+                            row(icon: "clock", label: "End", value: formatDate(end))
+                        }
+                        if let loc = course.locationName ?? course.locationNameAr, !loc.isEmpty {
+                            row(icon: "location.fill", label: "Location", value: loc, iconColor: .red)
+                        }
+                        row(icon: "barcode", label: "Code", value: course.code, iconColor: .purple)
+                    }
+                    HStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Text("Check-In / Out").font(.system(size: 14, weight: .bold))
+                            Image(systemName: "qrcode.viewfinder").font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(LinearGradient(gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentDark]), startPoint: .leading, endPoint: .trailing))
+                        .cornerRadius(12)
+                    }
+                    .padding(.top, 12)
+                }
+                .padding(20)
+            }
+        }
+        .background(Color(.systemBackground))
+        .cornerRadius(18)
+        .shadow(color: Color.black.opacity(isPressed ? 0.15 : 0.08), radius: isPressed ? 12 : 10, x: 0, y: isPressed ? 6 : 4)
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(LinearGradient(gradient: Gradient(colors: [Color.systemAccent.opacity(0.2), Color.systemAccent.opacity(0.05)]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1))
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+    }
+
+    private func row(icon: String, label: String, value: String, iconColor: Color = .systemAccent) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(LinearGradient(gradient: Gradient(colors: [iconColor.opacity(0.15), iconColor.opacity(0.05)]), startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon).font(.system(size: 16, weight: .semibold)).foregroundColor(iconColor)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label).font(.system(size: 12, weight: .medium)).foregroundColor(.secondary)
+                Text(value).font(.system(size: 15, weight: .semibold)).foregroundColor(.primary).lineLimit(2)
+            }
+            Spacer()
+        }
+    }
+
+    private func formatDate(_ s: String) -> String {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var d = f.date(from: s)
+        if d == nil { f.formatOptions = [.withInternetDateTime]; d = f.date(from: s) }
+        guard let d = d else { return s }
+        let out = DateFormatter()
+        out.dateFormat = "MMM dd, hh:mm a"
+        return out.string(from: d)
+    }
+}
 
 class HomeViewModel: ObservableObject {
     @Published var events: [Event] = []
+    @Published var courses: [CourseForAttendance] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    func loadEvents() async {
-        await MainActor.run {
-            isLoading = true
-        }
-        
+    @Published var coursesLoadError: String?
+
+    func loadData() async {
+        await MainActor.run { isLoading = true; coursesLoadError = nil; errorMessage = nil }
+        var loadedEvents: [Event] = []
+        var loadedCourses: [CourseForAttendance] = []
         do {
-            let loadedEvents = try await APIService.shared.getActiveEvents()
-            await MainActor.run {
-                events = loadedEvents
-                isLoading = false
-                errorMessage = nil
-            }
+            loadedEvents = try await APIService.shared.getActiveEvents()
         } catch {
-            await MainActor.run {
-                if let apiError = error as? APIError {
-                    errorMessage = apiError.errorDescription
-                } else {
-                    errorMessage = error.localizedDescription
-                }
-                isLoading = false
-            }
+            await MainActor.run { errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription }
+        }
+        do {
+            loadedCourses = try await APIService.shared.getActiveCoursesForAttendance()
+        } catch {
+            await MainActor.run { coursesLoadError = (error as? APIError)?.errorDescription ?? error.localizedDescription }
+        }
+        await MainActor.run {
+            events = loadedEvents
+            courses = loadedCourses
+            isLoading = false
         }
     }
 }

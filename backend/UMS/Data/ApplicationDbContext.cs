@@ -34,6 +34,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
     public DbSet<CourseTabApproval> CourseTabApprovals { get; set; }
     public DbSet<CourseEnrollmentApproval> CourseEnrollmentApprovals { get; set; }
+    public DbSet<EnrollmentEmailHistory> EnrollmentEmailHistories { get; set; }
     public DbSet<CourseQuestion> CourseQuestions { get; set; }
     public DbSet<Event> Events { get; set; }
     public DbSet<EventSpeaker> EventSpeakers { get; set; }

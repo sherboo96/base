@@ -13,16 +13,13 @@ class APIService {
     private func createRequest(url: URL, method: String, body: Data? = nil) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
         if let token = token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        
         if let body = body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = body
         }
-        
         return request
     }
     
@@ -73,13 +70,13 @@ class APIService {
     func getActiveEvents() async throws -> [Event] {
         let url = URL(string: "\(baseURL)/Events?published=true&page=1&pageSize=100")!
         let request = createRequest(url: url, method: "GET")
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-        
+
         guard httpResponse.statusCode == 200 else {
             if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
                 throw APIError.serverError(errorResponse.message)
@@ -87,13 +84,177 @@ class APIService {
                 throw APIError.httpError(httpResponse.statusCode)
             }
         }
-        
+
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        
+
         let baseResponse = try decoder.decode(BaseResponse<[Event]>.self, from: data)
-        
+
         return baseResponse.result ?? []
+    }
+
+    // MARK: - Active Courses for Attendance (check-in/check-out by QR)
+
+    func getActiveCoursesForAttendance() async throws -> [CourseForAttendance] {
+        let url = URL(string: "\(baseURL)/Courses/active-for-attendance")!
+        let request = createRequest(url: url, method: "GET")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.httpError(httpResponse.statusCode)
+            }
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let baseResponse = try decoder.decode(BaseResponse<[CourseForAttendance]>.self, from: data)
+        return baseResponse.result ?? []
+    }
+
+    func getCourseAttendance(courseId: Int) async throws -> [CourseAttendanceRecord] {
+        let url = URL(string: "\(baseURL)/CourseAttendance/course/\(courseId)")!
+        let request = createRequest(url: url, method: "GET")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.httpError(httpResponse.statusCode)
+            }
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let baseResponse = try decoder.decode(BaseResponse<[CourseAttendanceRecord]>.self, from: data)
+        return baseResponse.result ?? []
+    }
+
+    /// All approved onsite enrollments for a course, with latest check-in/out. For mobile attendance with search and filter by organization.
+    func getCourseEnrollmentsForAttendance(courseId: Int) async throws -> [CourseEnrollmentForAttendance] {
+        let url = URL(string: "\(baseURL)/CourseAttendance/course/\(courseId)/enrollments")!
+        let request = createRequest(url: url, method: "GET")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(BaseResponse<String>.self, from: data) {
+                throw APIError.serverError(errorResponse.message)
+            } else {
+                throw APIError.httpError(httpResponse.statusCode)
+            }
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let baseResponse = try decoder.decode(BaseResponse<[CourseEnrollmentForAttendance]>.self, from: data)
+        return baseResponse.result ?? []
+    }
+
+    func courseManualCheckIn(enrollmentId: Int) async throws {
+        let url = URL(string: "\(baseURL)/CourseAttendance/check-in/\(enrollmentId)")!
+        let request = createRequest(url: url, method: "POST")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            if let err = try? decoder.decode(BaseResponse<Bool>.self, from: data), !err.message.isEmpty {
+                throw APIError.serverError(err.message)
+            }
+            throw APIError.serverError("Check-in failed")
+        }
+    }
+
+    func courseManualCheckOut(enrollmentId: Int) async throws {
+        let url = URL(string: "\(baseURL)/CourseAttendance/check-out/\(enrollmentId)")!
+        let request = createRequest(url: url, method: "POST")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            if let err = try? decoder.decode(BaseResponse<Bool>.self, from: data), !err.message.isEmpty {
+                throw APIError.serverError(err.message)
+            }
+            throw APIError.serverError("Check-out failed")
+        }
+    }
+
+    func courseCheckIn(barcode: String) async throws {
+        let url = URL(string: "\(baseURL)/CourseAttendance/checkin-by-barcode")!
+        let requestBody = ["barcode": barcode]
+        let body = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let request = createRequest(url: url, method: "POST", body: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            if let err = try? decoder.decode(BaseResponse<Bool>.self, from: data), !err.message.isEmpty {
+                throw APIError.serverError(err.message)
+            }
+            throw APIError.serverError("Check-in failed")
+        }
+    }
+
+    func courseCheckOut(barcode: String) async throws {
+        let url = URL(string: "\(baseURL)/CourseAttendance/checkout-by-barcode")!
+        let requestBody = ["barcode": barcode]
+        let body = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let request = createRequest(url: url, method: "POST", body: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            if let err = try? decoder.decode(BaseResponse<Bool>.self, from: data), !err.message.isEmpty {
+                throw APIError.serverError(err.message)
+            }
+            throw APIError.serverError("Check-out failed")
+        }
     }
     
     func getEventRegistrations(eventId: Int) async throws -> [EventRegistration] {

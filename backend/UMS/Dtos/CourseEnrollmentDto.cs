@@ -19,6 +19,7 @@ public class CourseEnrollmentDto
     public string? LocationDocumentPath { get; set; } // Path to uploaded signed location document
     public EnrollmentType? EnrollmentType { get; set; } // Onsite or Online enrollment type
     public List<CourseEnrollmentApprovalDto>? ApprovalSteps { get; set; }
+    public int EmailHistoryCount { get; set; } = 0; // Count of emails sent to this enrollment
     public object? _Debug { get; set; } // Diagnostic info for troubleshooting approval steps
 }
 

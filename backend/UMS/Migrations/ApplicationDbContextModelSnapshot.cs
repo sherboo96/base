@@ -1067,6 +1067,67 @@ namespace UMS.Migrations
                     b.ToTable("DigitalLibraryItems");
                 });
 
+            modelBuilder.Entity("UMS.Models.EnrollmentEmailHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseEnrollmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmailBody")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSuccess")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SentBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TemplateFileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseEnrollmentId");
+
+                    b.ToTable("EnrollmentEmailHistories");
+                });
+
             modelBuilder.Entity("UMS.Models.Event", b =>
                 {
                     b.Property<int>("Id")
@@ -2663,6 +2724,17 @@ namespace UMS.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("UMS.Models.EnrollmentEmailHistory", b =>
+                {
+                    b.HasOne("UMS.Models.CourseEnrollment", "CourseEnrollment")
+                        .WithMany()
+                        .HasForeignKey("CourseEnrollmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseEnrollment");
                 });
 
             modelBuilder.Entity("UMS.Models.Event", b =>

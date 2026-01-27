@@ -168,6 +168,14 @@ public class CourseEnrollmentsController : ControllerBase
                 .ToListAsync();
         }
 
+        // Get email history counts for enrollments
+        var enrollmentIdsForCounts = enrollments.Select(e => e.Id).ToList();
+        var emailCountsForEnrollments = await _context.EnrollmentEmailHistories
+            .Where(eh => enrollmentIdsForCounts.Contains(eh.CourseEnrollmentId) && !eh.IsDeleted && eh.IsSuccess)
+            .GroupBy(eh => eh.CourseEnrollmentId)
+            .Select(g => new { EnrollmentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.EnrollmentId, x => x.Count);
+
         var enrollmentDtos = enrollments.Select(e =>
         {
             var activeApprovalIds = _context.CourseTabApprovals
@@ -240,6 +248,7 @@ public class CourseEnrollmentsController : ControllerBase
                 LocationDocumentPath = e.LocationDocumentPath,
                 QuestionAnswers = e.QuestionAnswers,
                 EnrollmentType = e.EnrollmentType,
+                EmailHistoryCount = emailCountsForEnrollments.GetValueOrDefault(e.Id, 0),
                 User = new UserEnrollmentDto
                 {
                     Id = e.User.Id,
@@ -1698,11 +1707,12 @@ public class CourseEnrollmentsController : ControllerBase
 
         try
         {
-            // Generate badge for onsite enrollments
+            // Generate badge for onsite enrollments (treat null EnrollmentType as Onsite)
             byte[]? badgeBytes = null;
             string? barcode = null;
+            var effectiveType = enrollment.EnrollmentType ?? EnrollmentType.Onsite;
             
-            if (enrollment.EnrollmentType == EnrollmentType.Onsite)
+            if (effectiveType == EnrollmentType.Onsite)
             {
                 // Generate barcode from course ID and user ID
                 barcode = $"{enrollment.Course.Id}_{enrollment.UserId}";
@@ -1718,7 +1728,7 @@ public class CourseEnrollmentsController : ControllerBase
                 enrollment.Course.EndDateTime,
                 enrollment.Course.Location?.Name,
                 enrollment.Course.Organization?.Name ?? "Ministry of Oil",
-                enrollment.EnrollmentType ?? EnrollmentType.Onsite,
+                effectiveType,
                 badgeBytes,
                 barcode,
                 enrollment.Course.CourseTitleAr,
@@ -2246,6 +2256,14 @@ public class CourseEnrollmentsController : ControllerBase
                 .Include(ce => ce.User)
                     .ThenInclude(u => u.JobTitle)
                 .Where(ce => ce.CourseId == courseId && !ce.IsDeleted);
+            
+            // Get email history counts for all enrollments
+            var enrollmentIds = await query.Select(ce => ce.Id).ToListAsync();
+            var emailCounts = await _context.EnrollmentEmailHistories
+                .Where(eh => enrollmentIds.Contains(eh.CourseEnrollmentId) && !eh.IsDeleted && eh.IsSuccess)
+                .GroupBy(eh => eh.CourseEnrollmentId)
+                .Select(g => new { EnrollmentId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.EnrollmentId, x => x.Count);
 
             // Apply organization filter for course
             if (orgFilter.HasValue)
@@ -2285,6 +2303,7 @@ public class CourseEnrollmentsController : ControllerBase
                 "Job Title",
                 "Enrollment Date",
                 "Status",
+                "Enrollment Type",
                 "Final Approval"
             };
             csvRows.Add(string.Join(",", headers.Select(h => $"\"{h}\"")));
@@ -2301,6 +2320,13 @@ public class CourseEnrollmentsController : ControllerBase
                     _ => "Unknown"
                 };
 
+                var enrollmentTypeText = enrollment.EnrollmentType switch
+                {
+                    EnrollmentType.Onsite => "Onsite",
+                    EnrollmentType.Online => "Online",
+                    _ => "Not Specified"
+                };
+
                 var row = new[]
                 {
                     enrollment.User?.Organization?.Name ?? "No Organization",
@@ -2314,6 +2340,7 @@ public class CourseEnrollmentsController : ControllerBase
                         : "",
                     enrollment.EnrollmentAt.ToString("yyyy-MM-dd HH:mm:ss"),
                     statusText,
+                    enrollmentTypeText,
                     enrollment.FinalApproval ? "Yes" : "No"
                 };
 
@@ -2357,6 +2384,430 @@ public class CourseEnrollmentsController : ControllerBase
                 StatusCode = 500,
                 Message = $"Error exporting enrollments: {ex.Message}",
                 Result = false
+            });
+        }
+    }
+
+    [HttpGet("email-templates")]
+    [Authorize]
+    public async Task<IActionResult> GetEmailTemplates()
+    {
+        try
+        {
+            var templatesPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates");
+            var templateFiles = Directory.GetFiles(templatesPath, "*.html")
+                .Select(f => new EmailTemplateDto
+                {
+                    FileName = System.IO.Path.GetFileName(f),
+                    DisplayName = System.IO.Path.GetFileNameWithoutExtension(f).Replace("-", " "),
+                    Description = $"Email template: {System.IO.Path.GetFileNameWithoutExtension(f)}"
+                })
+                .OrderBy(t => t.DisplayName)
+                .ToList();
+
+            return Ok(new BaseResponse<List<EmailTemplateDto>>
+            {
+                StatusCode = 200,
+                Message = "Templates retrieved successfully.",
+                Result = templateFiles
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving email templates");
+            return StatusCode(500, new BaseResponse<List<EmailTemplateDto>>
+            {
+                StatusCode = 500,
+                Message = $"Error retrieving templates: {ex.Message}",
+                Result = new List<EmailTemplateDto>()
+            });
+        }
+    }
+
+    [HttpPost("send-bulk-email")]
+    [Authorize]
+    public async Task<IActionResult> SendBulkEmail([FromBody] SendBulkEmailRequest request)
+    {
+        try
+        {
+            if (request.EnrollmentIds == null || !request.EnrollmentIds.Any())
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "At least one enrollment ID is required.",
+                    Result = false
+                });
+            }
+
+            if (string.IsNullOrEmpty(request.TemplateFileName))
+            {
+                return BadRequest(new BaseResponse<bool>
+                {
+                    StatusCode = 400,
+                    Message = "Template file name is required.",
+                    Result = false
+                });
+            }
+
+            // Load template
+            var templatePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", request.TemplateFileName);
+            if (!System.IO.File.Exists(templatePath))
+            {
+                return NotFound(new BaseResponse<bool>
+                {
+                    StatusCode = 404,
+                    Message = $"Template file '{request.TemplateFileName}' not found.",
+                    Result = false
+                });
+            }
+
+            var template = await System.IO.File.ReadAllTextAsync(templatePath);
+
+            // Get enrollments with related data
+            var enrollments = await _context.CourseEnrollments
+                .Include(ce => ce.User)
+                    .ThenInclude(u => u.Organization)
+                .Include(ce => ce.User)
+                    .ThenInclude(u => u.Department)
+                .Include(ce => ce.User)
+                    .ThenInclude(u => u.JobTitle)
+                .Include(ce => ce.Course)
+                    .ThenInclude(c => c.Location)
+                .Include(ce => ce.Course)
+                    .ThenInclude(c => c.Organization)
+                .Where(ce => request.EnrollmentIds.Contains(ce.Id) && !ce.IsDeleted)
+                .ToListAsync();
+
+            if (!enrollments.Any())
+            {
+                return NotFound(new BaseResponse<bool>
+                {
+                    StatusCode = 404,
+                    Message = "No enrollments found.",
+                    Result = false
+                });
+            }
+
+            var successCount = 0;
+            var failCount = 0;
+            var errors = new List<string>();
+
+            // Send email to each enrollment
+            foreach (var enrollment in enrollments)
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(enrollment.User?.Email))
+                    {
+                        errors.Add($"Enrollment {enrollment.Id}: User email is missing");
+                        failCount++;
+                        continue;
+                    }
+
+                    // Replace template variables
+                    var emailBody = template;
+                    var emailSubject = request.Subject;
+
+                    // Default template variables
+                    var variables = new Dictionary<string, string>
+                    {
+                        { "{{FULL_NAME}}", enrollment.User.FullName ?? "" },
+                        { "{{FULL_NAME_AR}}", enrollment.User.FullName ?? "" },
+                        { "{{COURSE_NAME}}", enrollment.Course?.CourseTitle ?? "" },
+                        { "{{COURSE_NAME_AR}}", enrollment.Course?.CourseTitleAr ?? enrollment.Course?.CourseTitle ?? "" },
+                        { "{{COURSE_DESCRIPTION}}", enrollment.Course?.Description ?? "" },
+                        { "{{COURSE_DESCRIPTION_AR}}", enrollment.Course?.DescriptionAr ?? enrollment.Course?.Description ?? "" },
+                        { "{{COURSE_LOCATION}}", enrollment.Course?.Location?.Name ?? "" },
+                        { "{{COURSE_LOCATION_AR}}", enrollment.Course?.Location?.NameAr ?? enrollment.Course?.Location?.Name ?? "" },
+                        { "{{ORGANIZATION_NAME}}", enrollment.User.Organization?.Name ?? "" },
+                        { "{{ORGANIZATION_NAME_AR}}", enrollment.User.Organization?.Name ?? "" },
+                        { "{{ENROLLMENT_DATE}}", enrollment.EnrollmentAt.ToString("yyyy-MM-dd HH:mm:ss") },
+                        { "{{ENROLLMENT_STATUS}}", enrollment.Status.ToString() },
+                        { "{{YEAR}}", DateTime.Now.Year.ToString() }
+                    };
+
+                    // Add custom template variables if provided
+                    if (request.TemplateVariables != null)
+                    {
+                        foreach (var kvp in request.TemplateVariables)
+                        {
+                            variables[$"{{{{{kvp.Key}}}}}"] = kvp.Value;
+                        }
+                    }
+
+                    // Replace all variables in template
+                    foreach (var variable in variables)
+                    {
+                        emailBody = emailBody.Replace(variable.Key, variable.Value);
+                        emailSubject = emailSubject.Replace(variable.Key, variable.Value);
+                    }
+
+                    // Prepare inline images
+                    byte[]? posterImageBytes = null;
+                    string? posterContentId = null;
+                    string? posterContentType = null;
+                    var additionalInlineImages = new List<(byte[] bytes, string contentId, string contentType)>();
+
+                    // Handle event poster placeholder (if exists in template)
+                    if (emailBody.Contains("{{EVENT_POSTER}}"))
+                    {
+                        // Try to load course code image or default
+                        var courseCode = enrollment.Course?.Code;
+                        var posterFileName = !string.IsNullOrEmpty(courseCode) ? $"{courseCode}.jpg" : "microsoft.jpeg";
+                        var posterPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", posterFileName);
+                        
+                        if (System.IO.File.Exists(posterPath))
+                        {
+                            posterImageBytes = await System.IO.File.ReadAllBytesAsync(posterPath);
+                            posterContentId = "event-poster";
+                            posterContentType = "image/jpeg";
+                            emailBody = emailBody.Replace("{{EVENT_POSTER}}", $"cid:{posterContentId}");
+                        }
+                        else
+                        {
+                            emailBody = emailBody.Replace("{{EVENT_POSTER}}", "");
+                        }
+                    }
+
+                    // Handle GitHub Copilot setup image (if exists in template)
+                    if (emailBody.Contains("cid:github-copilot-setup"))
+                    {
+                        var copilotImagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "placeholderr.png");
+                        if (System.IO.File.Exists(copilotImagePath))
+                        {
+                            var copilotImageBytes = await System.IO.File.ReadAllBytesAsync(copilotImagePath);
+                            additionalInlineImages.Add((copilotImageBytes, "github-copilot-setup", "image/png"));
+                        }
+                    }
+
+                    // Handle VS Code screenshot (GIF) for course-microsoft-final template
+                    if (emailBody.Contains("cid:vscode-screenshot"))
+                    {
+                        var vscodeImagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "microsoft", "2026-01-26_12-36-43.gif");
+                        if (System.IO.File.Exists(vscodeImagePath))
+                        {
+                            var vscodeImageBytes = await System.IO.File.ReadAllBytesAsync(vscodeImagePath);
+                            additionalInlineImages.Add((vscodeImageBytes, "vscode-screenshot", "image/gif"));
+                        }
+                    }
+
+                    // Handle GitHub Admin screenshots for course-microsoft-final template
+                    if (emailBody.Contains("cid:github-admin-3"))
+                    {
+                        var admin3ImagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "microsoft", "3.png");
+                        if (System.IO.File.Exists(admin3ImagePath))
+                        {
+                            var admin3ImageBytes = await System.IO.File.ReadAllBytesAsync(admin3ImagePath);
+                            additionalInlineImages.Add((admin3ImageBytes, "github-admin-3", "image/png"));
+                        }
+                    }
+
+                    if (emailBody.Contains("cid:github-admin-2"))
+                    {
+                        var admin2ImagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "microsoft", "2.png");
+                        if (System.IO.File.Exists(admin2ImagePath))
+                        {
+                            var admin2ImageBytes = await System.IO.File.ReadAllBytesAsync(admin2ImagePath);
+                            additionalInlineImages.Add((admin2ImageBytes, "github-admin-2", "image/png"));
+                        }
+                    }
+
+                    if (emailBody.Contains("cid:github-admin-1"))
+                    {
+                        var admin1ImagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "microsoft", "1.png");
+                        if (System.IO.File.Exists(admin1ImagePath))
+                        {
+                            var admin1ImageBytes = await System.IO.File.ReadAllBytesAsync(admin1ImagePath);
+                            additionalInlineImages.Add((admin1ImageBytes, "github-admin-1", "image/png"));
+                        }
+                    }
+
+                    // Send email with inline images if any
+                    bool emailSent = false;
+                    string? errorMsg = null;
+                    
+                    try
+                    {
+                        if (posterImageBytes != null || additionalInlineImages.Any())
+                        {
+                            emailSent = await _emailService.SendEmailWithMultipleAttachmentsAsync(
+                                enrollment.User.Email,
+                                emailSubject,
+                                emailBody,
+                                new List<(byte[] bytes, string fileName, string contentType)>(), // no attachments
+                                posterImageBytes,
+                                posterContentId,
+                                posterContentType,
+                                additionalInlineImages.Any() ? additionalInlineImages : null
+                            );
+                        }
+                        else
+                        {
+                            emailSent = await _emailService.SendEmailAsync(enrollment.User.Email, emailSubject, emailBody, true);
+                        }
+                    }
+                    catch (Exception emailEx)
+                    {
+                        errorMsg = emailEx.Message;
+                        emailSent = false;
+                    }
+
+                    // Save email history
+                    var emailHistory = new EnrollmentEmailHistory
+                    {
+                        CourseEnrollmentId = enrollment.Id,
+                        TemplateFileName = request.TemplateFileName,
+                        Subject = emailSubject,
+                        EmailBody = emailBody, // Store the rendered template
+                        SentAt = DateTime.Now,
+                        IsSuccess = emailSent,
+                        ErrorMessage = errorMsg,
+                        SentBy = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "System"
+                    };
+                    
+                    _context.EnrollmentEmailHistories.Add(emailHistory);
+
+                    if (emailSent)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                        errors.Add($"Enrollment {enrollment.Id}: {errorMsg ?? "Failed to send email"}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error sending email to enrollment {enrollment.Id}");
+                    errors.Add($"Enrollment {enrollment.Id}: {ex.Message}");
+                    failCount++;
+                }
+            }
+
+            // Save all email history records
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving email history");
+            }
+
+            return Ok(new BaseResponse<object>
+            {
+                StatusCode = 200,
+                Message = $"Emails sent: {successCount} successful, {failCount} failed.",
+                Result = new
+                {
+                    SuccessCount = successCount,
+                    FailCount = failCount,
+                    Errors = errors
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending bulk emails");
+            return StatusCode(500, new BaseResponse<bool>
+            {
+                StatusCode = 500,
+                Message = $"Error sending emails: {ex.Message}",
+                Result = false
+            });
+        }
+    }
+
+    [HttpGet("{enrollmentId}/badge")]
+    [Authorize]
+    public async Task<IActionResult> GetBadge(int enrollmentId)
+    {
+        var enrollment = await _context.CourseEnrollments
+            .Include(e => e.User)
+                .ThenInclude(u => u.Organization)
+            .Include(e => e.Course)
+                .ThenInclude(c => c.Organization)
+            .FirstOrDefaultAsync(e => e.Id == enrollmentId && !e.IsDeleted);
+
+        if (enrollment == null)
+        {
+            return NotFound(new BaseResponse<string>
+            {
+                StatusCode = 404,
+                Message = "Enrollment not found.",
+                Result = null
+            });
+        }
+
+        if (enrollment.Course == null)
+        {
+            return BadRequest(new BaseResponse<string>
+            {
+                StatusCode = 400,
+                Message = "Course not found for this enrollment.",
+                Result = null
+            });
+        }
+
+        try
+        {
+            var barcode = $"{enrollment.CourseId}_{enrollment.UserId}";
+            var badgeImage = await GeneratePrintBadgeImage(enrollment, enrollment.Course, barcode);
+            var userName = enrollment.User?.FullName?.Replace(" ", "-") ?? "User";
+            return File(badgeImage, "image/png", $"badge-{barcode}-{userName}.png");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error generating badge for enrollment {enrollmentId}");
+            return StatusCode(500, new BaseResponse<string>
+            {
+                StatusCode = 500,
+                Message = $"Error generating badge: {ex.Message}",
+                Result = null
+            });
+        }
+    }
+
+    [HttpGet("{enrollmentId}/email-history")]
+    [Authorize]
+    public async Task<IActionResult> GetEnrollmentEmailHistory(int enrollmentId)
+    {
+        try
+        {
+            var emailHistory = await _context.EnrollmentEmailHistories
+                .Where(eh => eh.CourseEnrollmentId == enrollmentId && !eh.IsDeleted)
+                .OrderByDescending(eh => eh.SentAt)
+                .Select(eh => new EnrollmentEmailHistoryDto
+                {
+                    Id = eh.Id,
+                    CourseEnrollmentId = eh.CourseEnrollmentId,
+                    TemplateFileName = eh.TemplateFileName,
+                    Subject = eh.Subject,
+                    EmailBody = eh.EmailBody,
+                    SentAt = eh.SentAt,
+                    IsSuccess = eh.IsSuccess,
+                    ErrorMessage = eh.ErrorMessage,
+                    SentBy = eh.SentBy
+                })
+                .ToListAsync();
+
+            return Ok(new BaseResponse<List<EnrollmentEmailHistoryDto>>
+            {
+                StatusCode = 200,
+                Message = "Email history retrieved successfully.",
+                Result = emailHistory
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error retrieving email history for enrollment {enrollmentId}");
+            return StatusCode(500, new BaseResponse<List<EnrollmentEmailHistoryDto>>
+            {
+                StatusCode = 500,
+                Message = $"Error retrieving email history: {ex.Message}",
+                Result = new List<EnrollmentEmailHistoryDto>()
             });
         }
     }
@@ -2555,10 +3006,7 @@ public class CourseEnrollmentsController : ControllerBase
                 displayName = fullName;
             }
             
-            // Get organization name
-            var organizationName = enrollment.User.Organization?.Name ?? course.Organization?.Name ?? "";
-            
-            // Draw name below QR code (centered)
+            // Draw name on top (centered)
             var nameTextOptions = new RichTextOptions(fontForName)
             {
                 Origin = new SixLabors.ImageSharp.PointF(badgeWidth / 2f, nameY),
@@ -2566,19 +3014,99 @@ public class CourseEnrollmentsController : ControllerBase
                 VerticalAlignment = VerticalAlignment.Top
             };
             ctx.DrawText(nameTextOptions, displayName, SixLabors.ImageSharp.Color.Black);
+        });
+
+        // Draw QR code below name
+        badgeImage.Mutate(ctx =>
+        {
+            ctx.DrawImage(qrCodeImage, new SixLabors.ImageSharp.Point(qrX, qrY), 1f);
+        });
+
+        // Convert to byte array
+        using var ms = new MemoryStream();
+        await badgeImage.SaveAsync(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+        return ms.ToArray();
+    }
+
+    private async Task<byte[]> GeneratePrintBadgeImage(CourseEnrollment enrollment, Course course, string barcode)
+    {
+        // Create white background for 4" x 6" print (2:3 aspect ratio, 200 DPI)
+        int badgeWidth = 800;
+        int badgeHeight = 1200; // 4x6 aspect
+        var badgeImage = new Image<Rgba32>(badgeWidth, badgeHeight, SixLabors.ImageSharp.Color.White);
+
+        // Generate QR Code
+        using var qrGenerator = new QRCodeGenerator();
+        var qrData = qrGenerator.CreateQrCode(barcode, QRCodeGenerator.ECCLevel.M);
+        using var qrCode = new PngByteQRCode(qrData);
+        var qrCodeBytes = qrCode.GetGraphic(20);
+        
+        using var qrCodeImage = await Image.LoadAsync<Rgba32>(new MemoryStream(qrCodeBytes));
+        
+        // Resize QR code for Print Badge (about 45% of badge width for better scannability)
+        var qrSize = (int)(badgeWidth * 0.45);
+        qrCodeImage.Mutate(x => x.Resize(new ResizeOptions
+        {
+            Size = new SixLabors.ImageSharp.Size(qrSize, qrSize),
+            Mode = ResizeMode.Stretch
+        }));
+
+        // Calculate positions - Name on top, QR code below (moved slightly down, less gap)
+        var nameY = (int)(badgeHeight * 0.26); // Slightly lower than before
+        
+        // QR code position - below name with reduced gap, centered
+        var qrX = (badgeWidth - qrSize) / 2; // Centered horizontally
+        var qrY = nameY + (int)(badgeHeight * 0.06); // Reduced space between name and QR
+
+        // Draw QR code and text on badge
+        badgeImage.Mutate(ctx =>
+        {
+            // Try to use Poppins font, fallback to Arial if not available
+            Font fontForName;
             
-            // Draw organization name below the name
-            if (!string.IsNullOrEmpty(organizationName))
+            try
             {
-                var orgY = nameY + (int)(badgeHeight * 0.08); // Space between name and organization
-                var orgTextOptions = new RichTextOptions(fontForOrganization)
-                {
-                    Origin = new SixLabors.ImageSharp.PointF(badgeWidth / 2f, orgY),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Top
-                };
-                ctx.DrawText(orgTextOptions, organizationName, SixLabors.ImageSharp.Color.DarkGray);
+                // Use font for name
+                fontForName = SystemFonts.CreateFont("Poppins", (float)(badgeHeight * 0.06), FontStyle.Bold);
             }
+            catch
+            {
+                // Fallback to Arial if Poppins is not available
+                fontForName = SystemFonts.CreateFont("Arial", (float)(badgeHeight * 0.06), FontStyle.Bold);
+            }
+            
+            // Extract first name and last name from FullName
+            var fullName = enrollment.User.FullName ?? "";
+            var nameParts = fullName.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var displayName = "";
+            
+            if (nameParts.Length >= 2)
+            {
+                // First name and last name
+                displayName = $"{nameParts[0]} {nameParts[nameParts.Length - 1]}";
+            }
+            else if (nameParts.Length == 1)
+            {
+                // Only one name part, use it as is
+                displayName = nameParts[0];
+            }
+            else
+            {
+                // Fallback to full name if parsing fails
+                displayName = fullName;
+            }
+            
+            // Draw name on top (centered)
+            var nameTextOptions = new RichTextOptions(fontForName)
+            {
+                Origin = new SixLabors.ImageSharp.PointF(badgeWidth / 2f, nameY),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+            ctx.DrawText(nameTextOptions, displayName, SixLabors.ImageSharp.Color.Black);
+
+            // Draw QR code below name (no padding needed since background is already white)
+            ctx.DrawImage(qrCodeImage, new SixLabors.ImageSharp.Point(qrX, qrY), 1f);
         });
 
         // Convert to byte array

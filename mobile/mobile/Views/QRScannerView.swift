@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import AVFoundation
 import AudioToolbox
 
@@ -78,38 +79,48 @@ class QRScannerViewController: UIViewController {
     weak var delegate: QRScannerDelegate?
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
-    
+    private let sessionQueue = DispatchQueue(label: "com.trainfy.qrscanner.session")
+    private var hasScanned = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCamera()
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        hasScanned = false
         if isScanningEnabled {
             startScanning()
         }
     }
-    
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        stopScanning()
-    }
-    
-    private var isScanningEnabled = false
-    
-    func startScanning() {
-        isScanningEnabled = true
-        if captureSession?.isRunning == false {
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                self?.captureSession?.startRunning()
-            }
+        isScanningEnabled = false
+        sessionQueue.sync { [weak self] in
+            guard let session = self?.captureSession, session.isRunning else { return }
+            session.stopRunning()
         }
     }
-    
+
+    private var isScanningEnabled = false
+
+    func startScanning() {
+        isScanningEnabled = true
+        sessionQueue.async { [weak self] in
+            guard let session = self?.captureSession, !session.isRunning else { return }
+            session.startRunning()
+        }
+    }
+
     func stopScanning() {
         isScanningEnabled = false
-        captureSession?.stopRunning()
+        sessionQueue.async { [weak self] in
+            guard let session = self?.captureSession, session.isRunning else { return }
+            session.stopRunning()
+        }
     }
     
     private func setupCamera() {
@@ -126,7 +137,8 @@ class QRScannerViewController: UIViewController {
         }
         
         captureSession = AVCaptureSession()
-        
+        captureSession?.sessionPreset = .medium
+
         if captureSession?.canAddInput(videoInput) ?? false {
             captureSession?.addInput(videoInput)
         } else {
@@ -190,16 +202,14 @@ class QRScannerViewController: UIViewController {
 
 extension QRScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        if let metadataObject = metadataObjects.first {
-            guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
-            guard let stringValue = readableObject.stringValue else { return }
-            
-            AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-            delegate?.didScanQRCode(stringValue)
-            
-            // Stop scanning after successful scan
-            stopScanning()
-        }
+        guard !hasScanned, let metadataObject = metadataObjects.first,
+              let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
+              let stringValue = readableObject.stringValue else { return }
+        hasScanned = true
+
+        stopScanning()
+        AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+        delegate?.didScanQRCode(stringValue)
     }
 }
 

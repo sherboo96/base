@@ -1,0 +1,125 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-6 pb-4 border-b border-gray-200">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+        <i class="fas fa-envelope text-purple-600 text-lg"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 font-poppins">{{ 'course.sendEmail' | translate }}</h2>
+        <p class="text-sm text-gray-600 font-poppins">
+          {{ 'course.sendEmailDescription' | translate }}: 
+          <span class="font-semibold text-accent">{{ selectedEnrollments.length }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="sendEmails()" class="space-y-5">
+    <!-- Template Selection -->
+    <div>
+      <label for="template" class="block text-sm font-semibold text-gray-700 mb-2 font-poppins">
+        <i class="fas fa-file-alt text-accent mr-2"></i>
+        {{ 'course.emailTemplate' | translate }} 
+        <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <select
+          id="template"
+          formControlName="templateFileName"
+          (change)="onTemplateChange()"
+          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all font-poppins bg-white"
+          [class.border-red-300]="form.get('templateFileName')?.invalid && form.get('templateFileName')?.touched"
+          [disabled]="isLoadingTemplates || isSending">
+          <option value="">{{ 'course.selectTemplate' | translate }}</option>
+          <option *ngFor="let template of templates" [value]="template.fileName">
+            {{ template.displayName }}
+          </option>
+        </select>
+        <div *ngIf="isLoadingTemplates" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+          <i class="fas fa-spinner fa-spin text-accent"></i>
+        </div>
+      </div>
+      <p *ngIf="isLoadingTemplates" class="mt-2 text-xs text-gray-500 font-poppins flex items-center gap-1">
+        <i class="fas fa-circle-notch fa-spin text-accent"></i>
+        {{ 'course.loadingTemplates' | translate }}...
+      </p>
+      <p *ngIf="!isLoadingTemplates && templates.length === 0" class="mt-2 text-xs text-yellow-600 font-poppins flex items-center gap-1">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        No templates available
+      </p>
+      <p *ngIf="form.get('templateFileName')?.invalid && form.get('templateFileName')?.touched" class="mt-1 text-xs text-red-600 font-poppins">
+        <i class="fas fa-exclamation-circle mr-1"></i>
+        Template selection is required
+      </p>
+    </div>
+
+    <!-- Subject -->
+    <div>
+      <label for="subject" class="block text-sm font-semibold text-gray-700 mb-2 font-poppins">
+        <i class="fas fa-heading text-accent mr-2"></i>
+        {{ 'course.emailSubject' | translate }} 
+        <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="subject"
+        type="text"
+        formControlName="subject"
+        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all font-poppins"
+        [class.border-red-300]="form.get('subject')?.invalid && form.get('subject')?.touched"
+        [placeholder]="'course.emailSubjectPlaceholder' | translate"
+        [disabled]="isSending">
+      <p *ngIf="form.get('subject')?.invalid && form.get('subject')?.touched" class="mt-1 text-xs text-red-600 font-poppins">
+        <i class="fas fa-exclamation-circle mr-1"></i>
+        Email subject is required
+      </p>
+    </div>
+
+    <!-- Progress Bar (shown while sending) -->
+    <div *ngIf="isSending" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-blue-900 font-poppins">
+          <i class="fas fa-paper-plane mr-2"></i>
+          {{ 'course.sendingEmails' | translate }}
+        </span>
+        <span class="text-sm font-semibold text-blue-900 font-poppins">
+          {{ Math.round((sendingProgress / sendingTotal) * 100) }}%
+        </span>
+      </div>
+      <div class="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+        <div 
+          class="bg-accent h-3 rounded-full transition-all duration-300 ease-out"
+          [style.width.%]="(sendingProgress / sendingTotal) * 100">
+        </div>
+      </div>
+      <p class="text-xs text-blue-700 mt-2 font-poppins">
+        {{ Math.min(Math.round(sendingProgress), sendingTotal) }} / {{ sendingTotal }} {{ 'course.emailsProcessed' | translate }}
+      </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+      <button
+        type="button"
+        (click)="cancel()"
+        class="px-5 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
+        [disabled]="isSending">
+        <i class="fas fa-times mr-2"></i>
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button
+        type="submit"
+        class="px-5 py-2.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-all font-medium font-poppins shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md flex items-center gap-2"
+        [disabled]="form.invalid || isSending || isLoadingTemplates">
+        <span *ngIf="!isSending" class="flex items-center gap-2">
+          <i class="fas fa-paper-plane"></i>
+          {{ 'course.sendEmails' | translate }}
+        </span>
+        <span *ngIf="isSending" class="flex items-center gap-2">
+          <i class="fas fa-spinner fa-spin"></i>
+          {{ 'course.sending' | translate }}...
+        </span>
+      </button>
+    </div>
+  </form>
+</div>

@@ -25,6 +25,8 @@ import { CourseManualEnrollmentComponent } from '../course-manual-enrollment/cou
 import { CourseQuestionFormComponent } from '../course-question-form/course-question-form.component';
 import { EnrollmentAnswersDialogComponent } from './enrollment-answers-dialog/enrollment-answers-dialog.component';
 import { TeamsMeetingService } from '../../../../services/teams-meeting.service';
+import { SendEmailDialogComponent } from './send-email-dialog/send-email-dialog.component';
+import { EnrollmentEmailHistoryDialogComponent } from './enrollment-email-history-dialog/enrollment-email-history-dialog.component';
 
 @Component({
   selector: 'app-course-details',
@@ -1943,6 +1945,145 @@ export class CourseDetailsComponent implements OnInit {
       if (result) {
         // Reload enrollments after successful enrollment
         this.loadEnrollments();
+      }
+    });
+  }
+
+  openSendEmailDialog(): void {
+    if (!this.enrollments || this.enrollments.length === 0) {
+      this.toastr.warning(this.translationService.instant('course.noEnrollmentsToEmail'));
+      return;
+    }
+
+    const dialogRef = this.dialogService.open(SendEmailDialogComponent, {
+      data: { enrollments: this.enrollments },
+      width: '750px',
+      maxHeight: '90vh'
+    });
+
+    dialogRef.afterClosed$.subscribe((result) => {
+      if (result) {
+        // Auto-update UI: Reload enrollments to reflect any changes
+        this.loadEnrollments();
+        // Trigger change detection to update UI immediately
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  viewEmailHistory(enrollment: CourseEnrollment): void {
+    if (!enrollment.id) return;
+
+    const dialogRef = this.dialogService.open(EnrollmentEmailHistoryDialogComponent, {
+      data: { enrollmentId: enrollment.id },
+      width: '900px',
+      maxHeight: '90vh'
+    });
+  }
+
+  printBadge(enrollment: CourseEnrollment): void {
+    if (!enrollment.id) {
+      this.toastr.error(this.translationService.instant('course.enrollmentNotFound'));
+      return;
+    }
+
+    // Create a print-optimized window (4" x 6" badge size, match event registrations)
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (!printWindow) {
+      this.toastr.error('Please allow popups to print badges');
+      return;
+    }
+
+    // Get badge image from backend
+    this.enrollmentService.getBadge(enrollment.id).subscribe({
+      next: (blob: Blob) => {
+        if (blob && blob.size > 0) {
+          const imageUrl = URL.createObjectURL(blob);
+          const name = enrollment.user?.fullName || '';
+
+          // Create print-optimized HTML for 4" x 6" badge (same as event.Registrations print badge)
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Badge - ${name}</title>
+                <style>
+                  @page {
+                    size: 4in 6in;
+                    margin: 0;
+                  }
+                  * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                  }
+                  body {
+                    font-family: 'Poppins', Arial, sans-serif;
+                    width: 4in;
+                    height: 6in;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: white;
+                    overflow: hidden;
+                  }
+                  .badge-container {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.2in;
+                  }
+                  .badge-image {
+                    width: 100%;
+                    height: 100%;
+                    max-width: 3.6in;
+                    max-height: 5.6in;
+                    object-fit: contain;
+                    object-position: center;
+                  }
+                  @media print {
+                    body {
+                      width: 4in;
+                      height: 6in;
+                    }
+                    .badge-container {
+                      page-break-inside: avoid;
+                    }
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="badge-container">
+                  <img src="${imageUrl}" alt="Badge" class="badge-image" />
+                </div>
+                <script>
+                  window.onload = function() {
+                    setTimeout(function() {
+                      window.print();
+                      window.onafterprint = function() {
+                        window.close();
+                      };
+                    }, 500);
+                  };
+                </script>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+        } else {
+          printWindow.close();
+          this.toastr.error(this.translationService.instant('course.badgeError'));
+        }
+      },
+      error: (error) => {
+        printWindow.close();
+        console.error('Error loading badge:', error);
+        this.toastr.error(
+          error.error?.message || this.translationService.instant('course.badgeError')
+        );
       }
     });
   }

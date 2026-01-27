@@ -161,7 +161,43 @@ public class CoursesController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("{id}")]
+    /// <summary>
+    /// Returns active courses for onsite check-in/check-out by QR in the mobile app.
+    /// The mobile app enforces the scan time window (1h before start to 1h after end).
+    /// </summary>
+    [HttpGet("active-for-attendance")]
+    public async Task<IActionResult> GetActiveForAttendance()
+    {
+        var courses = await _context.Courses
+            .AsNoTracking()
+            .Include(c => c.Location)
+            .Where(c => !c.IsDeleted && c.Status == CourseStatus.Active)
+            .OrderBy(c => c.StartDateTime ?? DateTime.MaxValue)
+            .Select(c => new CourseForAttendanceDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                NameAr = c.NameAr,
+                Code = c.Code,
+                CourseTitle = c.CourseTitle,
+                CourseTitleAr = c.CourseTitleAr,
+                StartDateTime = c.StartDateTime,
+                EndDateTime = c.EndDateTime,
+                LocationId = c.LocationId,
+                LocationName = c.Location != null ? c.Location.Name : null,
+                LocationNameAr = c.Location != null ? c.Location.NameAr : null
+            })
+            .ToListAsync();
+
+        return Ok(new BaseResponse<List<CourseForAttendanceDto>>
+        {
+            StatusCode = 200,
+            Message = "Active courses for attendance retrieved successfully.",
+            Result = courses
+        });
+    }
+
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var item = await _unitOfWork.Courses.FindAsync(

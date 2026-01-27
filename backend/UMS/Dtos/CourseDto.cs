@@ -66,6 +66,25 @@ public class CourseDto
     public DateTime? TeamsMeetingCreatedAt { get; set; } // When the Teams meeting was created
 }
 
+/// <summary>
+/// Lightweight DTO for active courses in the mobile attendance (check-in/check-out) view.
+/// Only includes fields needed for listing and time-window validation.
+/// </summary>
+public class CourseForAttendanceDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? NameAr { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string CourseTitle { get; set; } = string.Empty;
+    public string? CourseTitleAr { get; set; }
+    public DateTime? StartDateTime { get; set; }
+    public DateTime? EndDateTime { get; set; }
+    public int? LocationId { get; set; }
+    public string? LocationName { get; set; }
+    public string? LocationNameAr { get; set; }
+}
+
 public class CourseLearningOutcomeDto
 {
     public int Id { get; set; }

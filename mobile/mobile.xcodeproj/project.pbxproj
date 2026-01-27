@@ -20,6 +20,8 @@
 		A1000021 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000022 /* APIService.swift */; };
 		A1000023 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000024 /* Assets.xcassets */; };
 		A1000025 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000026 /* Preview Assets.xcassets */; };
+		A1000047 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000048 /* Course.swift */; };
+		A1000049 /* CourseAttendanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000050 /* CourseAttendanceView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +40,8 @@
 		A1000026 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A1000027 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000028 /* mobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000048 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
+		A1000050 /* CourseAttendanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseAttendanceView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +94,7 @@
 				A1000006 /* HomeView.swift */,
 				A1000008 /* EventRegistrationsView.swift */,
 				A1000010 /* QRScannerView.swift */,
+				A1000050 /* CourseAttendanceView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -101,6 +106,7 @@
 				A1000016 /* User.swift */,
 				A1000018 /* Event.swift */,
 				A1000020 /* EventRegistration.swift */,
+				A1000048 /* Course.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -209,6 +215,8 @@
 				A1000017 /* Event.swift in Sources */,
 				A1000019 /* EventRegistration.swift in Sources */,
 				A1000021 /* APIService.swift in Sources */,
+				A1000047 /* Course.swift in Sources */,
+				A1000049 /* CourseAttendanceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -21,6 +21,65 @@ public class CourseAttendanceController : ControllerBase
         _context = context;
     }
 
+    /// <summary>
+    /// Parse barcode in format {courseId}_{userId} into (courseId, userId).
+    /// Returns (null, null) if invalid.
+    /// </summary>
+    private static (int? courseId, string? userId) ParseBarcode(string? barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode)) return (null, null);
+        var parts = barcode.Trim().Split(new[] { '_' }, 2, StringSplitOptions.None);
+        if (parts.Length != 2) return (null, null);
+        if (!int.TryParse(parts[0].Trim(), out var courseId) || courseId <= 0) return (null, null);
+        var userId = parts[1].Trim();
+        if (string.IsNullOrEmpty(userId)) return (null, null);
+        return (courseId, userId);
+    }
+
+    /// <summary>
+    /// Get all approved onsite enrollments for a course, with latest attendance state. Used for mobile attendance view with manual check-in/out and filter by organization.
+    /// </summary>
+    [HttpGet("course/{courseId}/enrollments")]
+    public async Task<IActionResult> GetEnrollmentsForAttendance(int courseId)
+    {
+        var enrollments = await _context.CourseEnrollments
+            .Include(e => e.User).ThenInclude(u => u.Organization)
+            .Where(e => e.CourseId == courseId && !e.IsDeleted
+                && e.Status == EnrollmentStatus.Approve && e.FinalApproval
+                && (e.EnrollmentType == null || e.EnrollmentType == EnrollmentType.Onsite))
+            .ToListAsync();
+
+        var enrollmentIds = enrollments.Select(e => e.Id).ToList();
+        var attendances = await _context.CourseAttendances
+            .Where(a => enrollmentIds.Contains(a.CourseEnrollmentId))
+            .OrderByDescending(a => a.CheckInTime)
+            .ToListAsync();
+
+        var result = enrollments.Select(e =>
+        {
+            var open = attendances.FirstOrDefault(a => a.CourseEnrollmentId == e.Id && a.CheckOutTime == null);
+            var last = attendances.FirstOrDefault(a => a.CourseEnrollmentId == e.Id);
+            return new CourseEnrollmentForAttendanceDto
+            {
+                Id = e.Id,
+                StudentName = e.User.FullName,
+                OrganizationId = e.User.OrganizationId,
+                OrganizationName = e.User.Organization?.Name,
+                Barcode = $"{courseId}_{e.UserId}",
+                CheckInTime = open?.CheckInTime ?? last?.CheckInTime,
+                CheckOutTime = open != null ? null : last?.CheckOutTime,
+                IsCheckedIn = open != null
+            };
+        }).ToList();
+
+        return Ok(new BaseResponse<List<CourseEnrollmentForAttendanceDto>>
+        {
+            StatusCode = 200,
+            Message = "Enrollments retrieved successfully.",
+            Result = result
+        });
+    }
+
     [HttpGet("course/{courseId}")]
     public async Task<IActionResult> GetAttendanceByCourse(int courseId)
     {
@@ -60,42 +119,29 @@ public class CourseAttendanceController : ControllerBase
         if (enrollment == null)
             return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "Enrollment not found." });
 
+        return await CheckInCore(enrollment);
+    }
+
+    private async Task<IActionResult> CheckInCore(CourseEnrollment enrollment)
+    {
         if (!enrollment.FinalApproval || enrollment.Status != EnrollmentStatus.Approve)
             return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "User enrollment is not approved." });
 
         var course = enrollment.Course;
-        if (course.Status != CourseStatus.Active)
-             return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Course is not active." });
+        if (course == null || course.Status != CourseStatus.Active)
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Course is not active." });
 
-        var now = DateTime.Now;
-        var startTime = course.StartDateTime; // Assuming specific time
-        var endTime = course.EndDateTime;
-
-        if (startTime == null || endTime == null) // Should check dates
-             return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Course dates are undefined." });
-
-        // Allow check-in 1 hour before course starts and until 1 hour after course ends
-        var windowStart = course.StartDateTime?.AddHours(-1);
-        var windowEnd = course.EndDateTime?.AddHours(1);
-
-        if (now < windowStart || now > windowEnd)
-        {
-            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Check-in time is outside the allowed window (1 hour before start and 1 hour after end)." });
-        }
-        
-        // Check if already checked in and not checked out?
-        // Or can have multiple check-ins? 
-        // Let's prevent double check-in without check-out?
         var openSession = await _context.CourseAttendances
-            .AnyAsync(a => a.CourseEnrollmentId == enrollmentId && a.CheckOutTime == null);
-            
+            .AsNoTracking()
+            .AnyAsync(a => a.CourseEnrollmentId == enrollment.Id && a.CheckOutTime == null);
+
         if (openSession)
-             return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "User is already checked in." });
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "User is already checked in." });
 
         var attendance = new CourseAttendance
         {
-            CourseEnrollmentId = enrollmentId,
-            CheckInTime = now,
+            CourseEnrollmentId = enrollment.Id,
+            CheckInTime = DateTime.Now,
             CreatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System"
         };
 
@@ -116,38 +162,64 @@ public class CourseAttendanceController : ControllerBase
         if (lastAttendance == null)
             return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "No active check-in found." });
 
-        // Logic check: "after To 2 Hours too". Strictly speaking, they can check out any time after check-in? 
-        // Or strictly within the window? Usually check-out is allowed whenever, but prompt implies the window logic for operations.
-        // I will apply the same window logic for check-out to be safe, or just let them check out.
-        // Providing they checked in, they should arguably be able to check out. 
-        // But if they forgot and check out next day? 
-        // Let's allow check out if it's reasonable. But strict to window is prompt's likely intent.
-        
-        var enrollment = await _context.CourseEnrollments.Include(e => e.Course).FirstOrDefaultAsync(e => e.Id == enrollmentId);
-        if (enrollment == null || enrollment.Course == null)
-            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Enrollment or course not found." });
-            
-        var course = enrollment.Course;
         var now = DateTime.Now;
-        // Check-out is allowed until 1 hour after course ends
-        var windowEnd = course.EndDateTime?.AddHours(1);
-         
-         if (windowEnd.HasValue && now > windowEnd)
-         {
-             // Maybe auto-close? Or allow late checkout?
-             // Prompt says "Before From 2 hour and after To 2 Hours too".
-             // If manual, maybe restrict.
-             // I'll return bad request if significantly late, but maybe loosen? 
-             // Let's stick to the window for consistency.
-             return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Check-out time is outside the allowed window." });
-         }
-
         lastAttendance.CheckOutTime = now;
         lastAttendance.UpdatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
-        lastAttendance.UpdatedAt = DateTime.Now;
+        lastAttendance.UpdatedAt = now;
 
         await _context.SaveChangesAsync();
 
         return Ok(new BaseResponse<bool> { StatusCode = 200, Message = "Checked out successfully.", Result = true });
+    }
+
+    /// <summary>
+    /// Check-in an onsite course enrollment by scanning the badge barcode (format: {courseId}_{userId}).
+    /// Only onsite enrollments can be checked in. Time window: 1 hour before start to 1 hour after end.
+    /// </summary>
+    [HttpPost("checkin-by-barcode")]
+    public async Task<IActionResult> CheckInByBarcode([FromBody] CourseAttendanceBarcodeRequestDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Barcode))
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Request body with 'barcode' is required. Expected: { \"barcode\": \"{courseId}_{userId}\" }." });
+        var (courseId, userId) = ParseBarcode(dto.Barcode);
+        if (!courseId.HasValue || string.IsNullOrEmpty(userId))
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Invalid barcode format. Expected: {courseId}_{userId}." });
+
+        var enrollment = await _context.CourseEnrollments
+            .Include(e => e.Course)
+            .FirstOrDefaultAsync(e => e.CourseId == courseId.Value && e.UserId == userId && !e.IsDeleted);
+
+        if (enrollment == null)
+            return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "Enrollment not found for this barcode." });
+
+        if (enrollment.EnrollmentType == EnrollmentType.Online)
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Check-in is only allowed for onsite enrollments. This enrollment is online." });
+
+        return await CheckInCore(enrollment);
+    }
+
+    /// <summary>
+    /// Check-out an onsite course enrollment by scanning the badge barcode (format: {courseId}_{userId}).
+    /// </summary>
+    [HttpPost("checkout-by-barcode")]
+    public async Task<IActionResult> CheckOutByBarcode([FromBody] CourseAttendanceBarcodeRequestDto? dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Barcode))
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Request body with 'barcode' is required. Expected: { \"barcode\": \"{courseId}_{userId}\" }." });
+        var (courseId, userId) = ParseBarcode(dto.Barcode);
+        if (!courseId.HasValue || string.IsNullOrEmpty(userId))
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Invalid barcode format. Expected: {courseId}_{userId}." });
+
+        var enrollment = await _context.CourseEnrollments
+            .Include(e => e.Course)
+            .FirstOrDefaultAsync(e => e.CourseId == courseId.Value && e.UserId == userId && !e.IsDeleted);
+
+        if (enrollment == null)
+            return NotFound(new BaseResponse<bool> { StatusCode = 404, Message = "Enrollment not found for this barcode." });
+
+        if (enrollment.EnrollmentType == EnrollmentType.Online)
+            return BadRequest(new BaseResponse<bool> { StatusCode = 400, Message = "Check-out is only for onsite enrollments. This enrollment is online." });
+
+        return await CheckOut(enrollment.Id);
     }
 }

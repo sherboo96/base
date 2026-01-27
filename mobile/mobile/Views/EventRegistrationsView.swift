@@ -5,7 +5,6 @@ struct EventRegistrationsView: View {
     @StateObject private var viewModel = EventRegistrationsViewModel()
     @State private var showQRScanner = false
     @State private var showScanOptions = false
-    @State private var showTimeRestrictionAlert = false
     @State private var scanMode: ScanMode = .checkIn
     @State private var isScanningEnabled = false
     @State private var searchText = ""
@@ -30,70 +29,6 @@ struct EventRegistrationsView: View {
     enum ScanMode {
         case checkIn
         case checkOut
-    }
-    
-    // Check if scanning is allowed (2 hours before event)
-    var isScanningAllowed: Bool {
-        guard let eventDateString = event.date else {
-            return false
-        }
-        
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
-        guard let eventDate = formatter.date(from: eventDateString) else {
-            formatter.formatOptions = [.withInternetDateTime]
-            guard let eventDate = formatter.date(from: eventDateString) else {
-                return false
-            }
-            return isWithinScanWindow(eventDate: eventDate)
-        }
-        
-        return isWithinScanWindow(eventDate: eventDate)
-    }
-    
-    private func isWithinScanWindow(eventDate: Date) -> Bool {
-        let now = Date()
-        let twoHoursBefore = eventDate.addingTimeInterval(-2 * 60 * 60)
-        return now >= twoHoursBefore
-    }
-    
-    private func getTimeRestrictionMessage() -> String {
-        guard let eventDateString = event.date else {
-            return "Event date is not available."
-        }
-        
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
-        var eventDate: Date?
-        if let date = formatter.date(from: eventDateString) {
-            eventDate = date
-        } else {
-            formatter.formatOptions = [.withInternetDateTime]
-            eventDate = formatter.date(from: eventDateString)
-        }
-        
-        guard let eventDate = eventDate else {
-            return "Event date is not available."
-        }
-        
-        let twoHoursBefore = eventDate.addingTimeInterval(-2 * 60 * 60)
-        let now = Date()
-        
-        if now < twoHoursBefore {
-            let timeUntilAllowed = twoHoursBefore.timeIntervalSince(now)
-            let hours = Int(timeUntilAllowed / 3600)
-            let minutes = Int((timeUntilAllowed.truncatingRemainder(dividingBy: 3600)) / 60)
-            
-            if hours > 0 {
-                return "Scanning will be available \(hours) hour\(hours == 1 ? "" : "s") and \(minutes) minute\(minutes == 1 ? "" : "s") before the event."
-            } else {
-                return "Scanning will be available in \(minutes) minute\(minutes == 1 ? "" : "s")."
-            }
-        }
-        
-        return "Scanning is now available."
     }
     
     // Get unique organizations from registrations
@@ -710,33 +645,21 @@ struct EventRegistrationsView: View {
                             Spacer()
                             HStack {
                                 Spacer()
-                                Button(action: {
-                                    if isScanningAllowed {
-                                        showScanOptions = true
-                                    } else {
-                                        showTimeRestrictionAlert = true
-                                    }
-                                }) {
-                                    Image(systemName: isScanningAllowed ? "qrcode.viewfinder" : "clock.fill")
+                                Button(action: { showScanOptions = true }) {
+                                    Image(systemName: "qrcode.viewfinder")
                                         .font(.system(size: 24, weight: .semibold))
                                         .foregroundColor(.white)
                                         .frame(width: 64, height: 64)
                                         .background(
                                             LinearGradient(
-                                                gradient: Gradient(colors: isScanningAllowed ?
-                                                    [Color.systemAccent, Color.systemAccentDark] :
-                                                    [Color.gray, Color.gray.opacity(0.8)]),
+                                                gradient: Gradient(colors: [Color.systemAccent, Color.systemAccentDark]),
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             )
                                         )
                                         .clipShape(Circle())
-                                        .shadow(color: isScanningAllowed ? Color.systemAccent.opacity(0.4) : Color.gray.opacity(0.4), radius: 12, x: 0, y: 6)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: 3)
-                                        )
-                                        .opacity(isScanningAllowed ? 1.0 : 0.6)
+                                        .shadow(color: Color.systemAccent.opacity(0.4), radius: 12, x: 0, y: 6)
+                                        .overlay(Circle().stroke(Color.white, lineWidth: 3))
                                 }
                                 .padding(.trailing, 20)
                                 .padding(.bottom, 20)
@@ -816,11 +739,6 @@ struct EventRegistrationsView: View {
             }
         } message: {
             Text(viewModel.alertMessage)
-        }
-        .alert("Scanning Not Available", isPresented: $showTimeRestrictionAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(getTimeRestrictionMessage())
         }
         .alert("Approve Registration", isPresented: $showApproveConfirmation) {
             Button("Cancel", role: .cancel) { }

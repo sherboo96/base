@@ -1047,7 +1047,8 @@ public class EmailService
         List<(byte[] bytes, string fileName, string contentType)> attachments,
         byte[]? inlineImageBytes = null,
         string? inlineImageContentId = null,
-        string? inlineImageContentType = null)
+        string? inlineImageContentType = null,
+        List<(byte[] bytes, string contentId, string contentType)>? additionalInlineImages = null)
     {
         try
         {
@@ -1078,16 +1079,38 @@ public class EmailService
             message.To.Add(to);
 
             // Create alternate view for HTML body with inline images
+            var alternateView = AlternateView.CreateAlternateViewFromString(body, null, MediaTypeNames.Text.Html);
+            
+            // Add primary inline image if provided
             if (inlineImageBytes != null && !string.IsNullOrEmpty(inlineImageContentId))
             {
-                var alternateView = AlternateView.CreateAlternateViewFromString(body, null, MediaTypeNames.Text.Html);
-                
                 var imageStream = new MemoryStream(inlineImageBytes);
                 var linkedResource = new LinkedResource(imageStream, inlineImageContentType ?? MediaTypeNames.Image.Jpeg)
                 {
                     ContentId = inlineImageContentId
                 };
                 alternateView.LinkedResources.Add(linkedResource);
+            }
+            
+            // Add additional inline images if provided
+            if (additionalInlineImages != null)
+            {
+                foreach (var (bytes, contentId, contentType) in additionalInlineImages)
+                {
+                    if (bytes != null && bytes.Length > 0 && !string.IsNullOrEmpty(contentId))
+                    {
+                        var imageStream = new MemoryStream(bytes);
+                        var linkedResource = new LinkedResource(imageStream, contentType ?? MediaTypeNames.Image.Png)
+                        {
+                            ContentId = contentId
+                        };
+                        alternateView.LinkedResources.Add(linkedResource);
+                    }
+                }
+            }
+            
+            if (alternateView.LinkedResources.Count > 0)
+            {
                 message.AlternateViews.Add(alternateView);
             }
 
@@ -1219,49 +1242,128 @@ public class EmailService
                 posterContentType = "image/jpeg";
             }
 
+            // Load Teams instruction images
+            var teamsInvitationPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "image006.png");
+            var teamsProfilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "image007.png");
+            var teamsContinuePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "image008.png");
+            var teamsPermissionsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "image", "image009.png");
+
+            var teamsImages = new List<(byte[] bytes, string contentId, string contentType)>();
+            
+            if (System.IO.File.Exists(teamsInvitationPath))
+            {
+                var bytes = await System.IO.File.ReadAllBytesAsync(teamsInvitationPath);
+                teamsImages.Add((bytes, "teams-invitation", "image/png"));
+            }
+            if (System.IO.File.Exists(teamsProfilePath))
+            {
+                var bytes = await System.IO.File.ReadAllBytesAsync(teamsProfilePath);
+                teamsImages.Add((bytes, "teams-profile", "image/png"));
+            }
+            if (System.IO.File.Exists(teamsContinuePath))
+            {
+                var bytes = await System.IO.File.ReadAllBytesAsync(teamsContinuePath);
+                teamsImages.Add((bytes, "teams-continue", "image/png"));
+            }
+            if (System.IO.File.Exists(teamsPermissionsPath))
+            {
+                var bytes = await System.IO.File.ReadAllBytesAsync(teamsPermissionsPath);
+                teamsImages.Add((bytes, "teams-permissions", "image/png"));
+            }
+
             // Build conditional messages based on enrollment type (English)
             string onlineMessage = "";
             string onsiteMessage = "";
+            string locationSection = "";
+            string teamsEventLink = "";
 
             // Build conditional messages based on enrollment type (Arabic)
             string onlineMessageAr = "";
             string onsiteMessageAr = "";
+            string locationSectionAr = "";
+            string teamsEventLinkAr = "";
 
             if (enrollmentType == EnrollmentType.Online)
             {
-                onlineMessage = @"<div style='background:#e0f2fe;border-left:4px solid #0ea5e9;padding:16px;margin:20px 0;border-radius:4px;'>
-                                    <p style='margin:0;color:#0c4a6e;font-weight:600;'>📱 Online Attendance via Microsoft Teams</p>
-                                    <p style='margin:8px 0 0;color:#075985;font-size:13px;'>
-                                        You will attend this course only via Microsoft Teams. You will receive a Teams meeting invitation soon. 
-                                        Please be on time on your laptop to attend the course.
+                onlineMessage = @"<p style='margin-bottom:12px;'>
+                                    We're thrilled to have you joining us online via Microsoft Teams and can't wait for you to be part of this innovation‑driven experience.
+                                  </p>";
+                
+                onlineMessageAr = @"<p style='margin-bottom:12px;'>
+                                      يسعدنا أن تنضم إلينا عبر الإنترنت عبر Microsoft Teams ونتطلع إلى أن تكون جزءًا من هذه التجربة المدفوعة بالابتكار.
+                                    </p>";
+
+                teamsEventLink = @"<div style='margin:20px 0;padding:16px;background:#e0f2fe;border-left:4px solid #0ea5e9;border-radius:4px;'>
+                                    <h3 style='margin:0 0 12px;font-size:16px;color:#0c4a6e;font-weight:bold;'>
+                                      🔗 TEAMS EVENT LINK
+                                    </h3>
+                                    <p style='margin:0 0 8px;color:#075985;font-size:14px;'>
+                                      <a href='https://msit.events.teams.microsoft.com/event/msit.5622c356-59d1-4057-b41c-8dc471675a62@72f988bf-86f1-41af-91ab-2d7cd011db47' target='_blank' style='color:#0066cc;text-decoration:underline;font-weight:600;'>Microsoft Virtual Events Powered by Teams</a>
+                                    </p>
+                                    <p style='margin:0;color:#075985;font-size:13px;'>
+                                      To make sure you're fully ready for the hackathon, we'll add all participants to a dedicated Microsoft Teams space where you'll find announcements, collaboration channels, resources, and team interactions.
                                     </p>
                                   </div>";
-                
-                onlineMessageAr = @"<div style='background:#e0f2fe;border-left:4px solid #0ea5e9;padding:16px;margin:20px 0;border-radius:4px;'>
-                                      <p style='margin:0;color:#0c4a6e;font-weight:600;'>📱 الحضور عبر Microsoft Teams</p>
-                                      <p style='margin:8px 0 0;color:#075985;font-size:13px;'>
-                                        ستحضر هذه الدورة التدريبية عبر Microsoft Teams فقط. ستصلك دعوة للاجتماع عبر Teams قريباً. 
-                                        يرجى الحضور في الوقت المحدد على جهاز الكمبيوتر المحمول الخاص بك.
+
+                teamsEventLinkAr = @"<div style='margin:20px 0;padding:16px;background:#e0f2fe;border-left:4px solid #0ea5e9;border-radius:4px;'>
+                                      <h3 style='margin:0 0 12px;font-size:16px;color:#0c4a6e;font-weight:bold;'>
+                                        🔗 رابط فعالية Teams
+                                      </h3>
+                                      <p style='margin:0 0 8px;color:#075985;font-size:14px;'>
+                                        <a href='https://msit.events.teams.microsoft.com/event/msit.5622c356-59d1-4057-b41c-8dc471675a62@72f988bf-86f1-41af-91ab-2d7cd011db47' target='_blank' style='color:#0066cc;text-decoration:underline;font-weight:600;'>Microsoft Virtual Events Powered by Teams</a>
+                                      </p>
+                                      <p style='margin:0;color:#075985;font-size:13px;'>
+                                        لضمان استعدادكم الكامل للهاكاثون، سنقوم بإضافة جميع المشاركين إلى مساحة Microsoft Teams مخصصة حيث ستجدون الإعلانات وقنوات التعاون والموارد وتفاعلات الفريق.
                                       </p>
                                     </div>";
             }
             else
             {
-                onsiteMessage = @"<div style='background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;margin:20px 0;border-radius:4px;'>
-                                    <p style='margin:0;color:#92400e;font-weight:600;'>📍 Onsite Attendance</p>
-                                    <p style='margin:8px 0 0;color:#78350f;font-size:13px;'>
-                                        Please be at the Ministry of Oil before the course time with at least 30 minutes. 
-                                        Your badge with QR code and your name is attached to this email. Please bring it (printed or digital) to the course.
-                                    </p>
-                                  </div>";
+                onsiteMessage = @"<p style='margin-bottom:12px;'>
+                                    We're thrilled to have you onsite at the Oil Training Center (OTC) and can't wait to welcome you in person for an exciting, innovation‑driven experience.
+                                  </p>";
                 
-                onsiteMessageAr = @"<div style='background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;margin:20px 0;border-radius:4px;'>
-                                      <p style='margin:0;color:#92400e;font-weight:600;'>📍 الحضور في الموقع</p>
-                                      <p style='margin:8px 0 0;color:#78350f;font-size:13px;'>
-                                        يرجى الحضور إلى وزارة النفط قبل وقت الدورة التدريبية بثلاثين دقيقة على الأقل. 
-                                        تم إرفاق بطاقتك مع رمز QR واسمك في هذا البريد الإلكتروني. يرجى إحضارها (مطبوعة أو رقمية) إلى الدورة التدريبية.
+                onsiteMessageAr = @"<p style='margin-bottom:12px;'>
+                                      يسعدنا أن تكون معنا في الموقع في مركز تدريب النفط (OTC) ونتطلع إلى الترحيب بكم شخصيًا لتجربة مثيرة مدفوعة بالابتكار.
+                                    </p>";
+
+                locationSection = @"<div style='margin:20px 0;padding:16px;background:#f9fafb;border-left:4px solid #0B4C5F;border-radius:4px;'>
+                                      <h3 style='margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;'>
+                                        Location: Oil Training Center (OTC)
+                                      </h3>
+                                      <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
+                                        Kuwait Petroleum Corporation (KPC) Building – Arabian Gulf Street
+                                      </p>
+                                      <h4 style='margin:12px 0 8px;font-size:14px;color:#0B4C5F;font-weight:600;'>
+                                        Parking Instructions:
+                                      </h4>
+                                      <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
+                                        Park at Shuwaikh Park Parking lot. Shuttles will be available for pick up and drop off to KPC building.
+                                      </p>
+                                      <p style='margin:0;color:#333333;font-size:14px;'>
+                                        Parking location: 
+                                        <a href='https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6' target='_blank' style='color:#0066cc;text-decoration:underline;'>https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6</a>
                                       </p>
                                     </div>";
+
+                locationSectionAr = @"<div style='margin:20px 0;padding:16px;background:#f9fafb;border-left:4px solid #0B4C5F;border-radius:4px;'>
+                                        <h3 style='margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;'>
+                                          الموقع: مركز تدريب النفط (OTC)
+                                        </h3>
+                                        <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
+                                          مبنى مؤسسة البترول الكويتية (KPC) – شارع الخليج العربي
+                                        </p>
+                                        <h4 style='margin:12px 0 8px;font-size:14px;color:#0B4C5F;font-weight:600;'>
+                                          تعليمات مواقف السيارات:
+                                        </h4>
+                                        <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
+                                          قم بركن سيارتك في موقف حديقة الشويخ. ستكون الحافلات متاحة للركوب والنزول إلى مبنى KPC.
+                                        </p>
+                                        <p style='margin:0;color:#333333;font-size:14px;'>
+                                          موقع موقف السيارات: 
+                                          <a href='https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6' target='_blank' style='color:#0066cc;text-decoration:underline;'>https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6</a>
+                                        </p>
+                                      </div>";
             }
 
             // For Arabic placeholders, use provided Arabic versions or fallback to English
@@ -1338,6 +1440,10 @@ public class EmailService
                 .Replace("{{ONLINE_MESSAGE_AR}}", onlineMessageAr)
                 .Replace("{{ONSITE_MESSAGE}}", onsiteMessage)
                 .Replace("{{ONSITE_MESSAGE_AR}}", onsiteMessageAr)
+                .Replace("{{LOCATION_SECTION}}", locationSection)
+                .Replace("{{LOCATION_SECTION_AR}}", locationSectionAr)
+                .Replace("{{TEAMS_EVENT_LINK}}", teamsEventLink)
+                .Replace("{{TEAMS_EVENT_LINK_AR}}", teamsEventLinkAr)
                 .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
 
             // Replace poster placeholder with CID reference
@@ -1352,8 +1458,14 @@ public class EmailService
 
             var subject = $"Course Approval Confirmation - {courseName}";
 
-            // Send email with attachments and embedded poster
-            if (attachments.Any() || posterImageBytes != null)
+            // Prepare additional inline images (Teams instruction images)
+            var additionalInlineImages = new List<(byte[] bytes, string contentId, string contentType)>();
+            
+            // Add Teams images
+            additionalInlineImages.AddRange(teamsImages);
+
+            // Send email with attachments and embedded images
+            if (attachments.Any() || posterImageBytes != null || additionalInlineImages.Any())
             {
                 return await SendEmailWithMultipleAttachmentsAsync(
                     to,
@@ -1362,7 +1474,8 @@ public class EmailService
                     attachments,
                     posterImageBytes,
                     posterContentId,
-                    posterContentType
+                    posterContentType,
+                    additionalInlineImages.Any() ? additionalInlineImages : null
                 );
             }
             else

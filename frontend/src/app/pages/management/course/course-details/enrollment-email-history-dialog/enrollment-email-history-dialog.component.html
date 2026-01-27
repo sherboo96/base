@@ -1,0 +1,125 @@
+<div class="p-6 max-w-5xl max-h-[90vh] overflow-y-auto">
+  <!-- Header -->
+  <div class="mb-6 pb-4 border-b border-gray-200">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <i class="fas fa-envelope-open text-blue-600 text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 font-poppins">{{ 'course.emailHistory' | translate }}</h2>
+          <p class="text-sm text-gray-600 font-poppins">
+            {{ 'course.emailHistoryDescription' | translate }}
+          </p>
+        </div>
+      </div>
+      <button
+        (click)="close()"
+        class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+        <i class="fas fa-times text-gray-500"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Email List View -->
+  <div *ngIf="!selectedEmail" class="space-y-4">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="text-center">
+        <i class="fas fa-spinner fa-spin text-3xl text-accent mb-4"></i>
+        <p class="text-accent font-medium">{{ 'course.loadingEmailHistory' | translate }}</p>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && emailHistory.length === 0" class="text-center py-12">
+      <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+      <p class="text-gray-600 font-poppins">{{ 'course.noEmailHistory' | translate }}</p>
+    </div>
+
+    <!-- Email History List -->
+    <div *ngIf="!isLoading && emailHistory.length > 0" class="space-y-3">
+      <div *ngFor="let email of emailHistory" 
+           (click)="viewEmail(email)"
+           class="p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-accent cursor-pointer transition-all shadow-sm hover:shadow-md">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="fas fa-envelope text-accent"></i>
+              <h3 class="text-sm font-semibold text-gray-900 font-poppins truncate">
+                {{ email.subject }}
+              </h3>
+              <span *ngIf="email.isSuccess" 
+                    class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                <i class="fas fa-check-circle mr-1"></i>
+                {{ 'course.sent' | translate }}
+              </span>
+              <span *ngIf="!email.isSuccess" 
+                    class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                <i class="fas fa-times-circle mr-1"></i>
+                {{ 'course.failed' | translate }}
+              </span>
+            </div>
+            <p class="text-xs text-gray-500 font-poppins mb-1">
+              <i class="fas fa-file-alt mr-1"></i>
+              {{ email.templateFileName }}
+            </p>
+            <p class="text-xs text-gray-500 font-poppins">
+              <i class="fas fa-clock mr-1"></i>
+              {{ formatDate(email.sentAt) }}
+            </p>
+            <p *ngIf="email.sentBy" class="text-xs text-gray-500 font-poppins mt-1">
+              <i class="fas fa-user mr-1"></i>
+              {{ 'course.sentBy' | translate }}: {{ email.sentBy }}
+            </p>
+          </div>
+          <i class="fas fa-chevron-right text-gray-400"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Detail View -->
+  <div *ngIf="selectedEmail" class="space-y-4">
+    <!-- Back Button -->
+    <button
+      (click)="closeEmailView()"
+      class="flex items-center gap-2 text-accent hover:text-accent-dark transition-colors font-medium font-poppins">
+      <i class="fas fa-arrow-left"></i>
+      {{ 'common.back' | translate }}
+    </button>
+
+    <!-- Email Details -->
+    <div class="bg-white border-2 border-gray-200 rounded-lg p-6">
+      <div class="mb-4 pb-4 border-b border-gray-200">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-bold text-gray-900 font-poppins">{{ selectedEmail.subject }}</h3>
+          <span *ngIf="selectedEmail.isSuccess" 
+                class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+            <i class="fas fa-check-circle mr-1"></i>
+            {{ 'course.sent' | translate }}
+          </span>
+          <span *ngIf="!selectedEmail.isSuccess" 
+                class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold">
+            <i class="fas fa-times-circle mr-1"></i>
+            {{ 'course.failed' | translate }}
+          </span>
+        </div>
+        <div class="space-y-1 text-sm text-gray-600 font-poppins">
+          <p><i class="fas fa-file-alt mr-2"></i>{{ selectedEmail.templateFileName }}</p>
+          <p><i class="fas fa-clock mr-2"></i>{{ formatDate(selectedEmail.sentAt) }}</p>
+          <p *ngIf="selectedEmail.sentBy"><i class="fas fa-user mr-2"></i>{{ 'course.sentBy' | translate }}: {{ selectedEmail.sentBy }}</p>
+          <p *ngIf="selectedEmail.errorMessage" class="text-red-600">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            {{ selectedEmail.errorMessage }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Email Body Preview -->
+      <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
+        <div [innerHTML]="selectedEmail.emailBody" class="email-preview"></div>
+      </div>
+    </div>
+  </div>
+</div>

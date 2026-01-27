@@ -1,0 +1,42 @@
+// Enhanced styles for send email dialog
+:host {
+  display: block;
+}
+
+// Custom scrollbar for enrollments list
+.max-h-48::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-48::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.max-h-48::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.max-h-48::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+// Animation for form fields
+select, input {
+  transition: all 0.2s ease-in-out;
+}
+
+select:focus, input:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+// Button hover effects
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+button:not(:disabled):active {
+  transform: translateY(0);
+}

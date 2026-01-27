@@ -64,6 +64,7 @@ export interface CourseEnrollment {
   locationDocumentPath?: string;
   enrollmentType?: number | string; // 1 or "Onsite" = Onsite, 2 or "Online" = Online
   questionAnswers?: string; // JSON string storing answers to course enrollment questions
+  emailHistoryCount?: number; // Count of emails sent to this enrollment
   course?: {
     id: number;
     courseTitle: string;
@@ -183,6 +184,27 @@ export class EnrollmentService {
 
   getPendingHeadApprovals(page: number = 1, pageSize: number = 20): Observable<EnrollmentResponse> {
     return this.http.get<EnrollmentResponse>(`${this.apiUrl}/pending-head-approvals?page=${page}&pageSize=${pageSize}`);
+  }
+
+  getEmailTemplates(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/email-templates`);
+  }
+
+  sendBulkEmail(enrollmentIds: number[], templateFileName: string, subject: string, templateVariables?: { [key: string]: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/send-bulk-email`, {
+      enrollmentIds,
+      templateFileName,
+      subject,
+      templateVariables
+    });
+  }
+
+  getEnrollmentEmailHistory(enrollmentId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${enrollmentId}/email-history`);
+  }
+
+  getBadge(enrollmentId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${enrollmentId}/badge`, { responseType: 'blob' });
   }
 }
 
