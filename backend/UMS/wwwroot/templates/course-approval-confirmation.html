@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GovDev Hackathon - Welcome</title>
+  <title>Course Approval Confirmation</title>
 </head>
 
 <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, Helvetica, sans-serif;">
@@ -14,10 +14,10 @@
         <!-- Email Container -->
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
-          <!-- Header - Event Poster -->
+          <!-- Header - Course Poster -->
           <tr>
             <td style="padding:0;text-align:center;">
-              <img src="{{EVENT_POSTER}}" alt="GovDev Hackathon" style="width:100%;height:auto;display:block;margin:0;" />
+              <img src="{{EVENT_POSTER}}" alt="{{COURSE_NAME}}" style="width:100%;height:auto;display:block;margin:0;" />
             </td>
           </tr>
 
@@ -25,179 +25,83 @@
           <tr>
             <td style="padding:28px;color:#333333;font-size:14px;line-height:1.7;">
 
-              <!-- Bilingual Content - Combined Layout -->
-              
               <!-- Arabic Section -->
               <div style="direction:rtl;text-align:right;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #e5e7eb;">
-                <p style="font-size:16px;font-weight:bold;color:#0B4C5F;margin-bottom:16px;">مرحبًا ومرحبًا بكم،</p>
-
-                <p style="margin-bottom:12px;">
-                  نشكركم لتسجيلكم في هاكاثون GovDev – 28 يناير! 🎉
+                <p style="font-size:16px;font-weight:bold;color:#0B4C5F;margin-bottom:16px;">
+                  عزيزنا/عزيزتنا {{FULL_NAME_AR}},
                 </p>
 
-                <!-- Onsite Message (Arabic) -->
-                {{ONSITE_MESSAGE_AR}}
+                <p style="margin-bottom:12px;">
+                  نشكركم لتسجيلكم في الدورة التدريبية التالية، ويسرّنا إبلاغكم بأن طلب التسجيل الخاص بكم قد تم <strong>الموافقة عليه</strong>.
+                </p>
 
-                <!-- Online Message (Arabic) -->
+                <!-- Course Details (Arabic) -->
+                <div style="margin:24px 0;padding:18px 20px;border-radius:8px;background-color:#f9fafb;border:1px solid #e5e7eb;">
+                  <h3 style="margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;">
+                    تفاصيل الدورة التدريبية
+                  </h3>
+                  <p style="margin:4px 0;"><strong>اسم الدورة:</strong> {{COURSE_NAME_AR}}</p>
+                  <p style="margin:4px 0;"><strong>الوصف:</strong> {{COURSE_DESCRIPTION_AR}}</p>
+                  <p style="margin:4px 0;"><strong>تاريخ ووقت البداية:</strong> {{START_DATE_AR}}</p>
+                  <p style="margin:4px 0;"><strong>تاريخ ووقت الانتهاء:</strong> {{END_DATE_AR}}</p>
+                  <p style="margin:4px 0;"><strong>الموقع:</strong> {{COURSE_LOCATION_AR}}</p>
+                  <p style="margin:4px 0;"><strong>الجهة:</strong> {{ORGANIZATION_NAME_AR}}</p>
+                </div>
+
+                <!-- Calendar link (Arabic) -->
+                <div style="margin:16px 0;">
+                  <a href="{{CALENDAR_LINK}}" style="display:inline-block;padding:10px 18px;border-radius:999px;background-color:#0B4C5F;color:#ffffff;font-size:13px;text-decoration:none;">
+                    إضافة إلى التقويم
+                  </a>
+                </div>
+
+                <!-- Attendance messages (Arabic, conditional from backend) -->
+                {{ONSITE_MESSAGE_AR}}
                 {{ONLINE_MESSAGE_AR}}
 
-                <!-- Location Section (Onsite Only) -->
-                {{LOCATION_SECTION_AR}}
-
-                <!-- Teams Event Link Section (Online Only) -->
-                {{TEAMS_EVENT_LINK_AR}}
-
-                <!-- Get Ready Section (Arabic) -->
-                <div style="margin:24px 0;">
-                  <h3 style="margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;">
-                    💡 استعد للهاكاثون
-                  </h3>
-                  <p style="margin-bottom:12px;">
-                    لضمان استعدادكم الكامل، سنقوم بإضافة جميع المشاركين إلى مساحة Microsoft Teams مخصصة. ستجدون داخلها:
-                  </p>
-                  <ul style="margin:0;padding-right:20px;color:#333333;list-style-type:disc;">
-                    <li style="margin-bottom:8px;">الإعلانات وتحديثات الفعالية</li>
-                    <li style="margin-bottom:8px;">قنوات التعاون</li>
-                    <li style="margin-bottom:8px;">الموارد والمواد</li>
-                    <li style="margin-bottom:8px;">مناقشات الفريق والتنسيق</li>
-                  </ul>
-                </div>
-
-                <!-- Join Teams Channel Section (Arabic) -->
-                <div style="margin:24px 0;">
-                  <h3 style="margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;">
-                    👉 انضم إلى قناة Teams
-                  </h3>
-                  <p style="margin-bottom:12px;">
-                    يرجى اتباع الخطوات التالية للوصول إلى مساحة عمل GovDev في Microsoft Teams:
-                  </p>
-                  
-                  <p style="margin-bottom:12px;">
-                    <strong>1.</strong> ستصلك إشعار بريد إلكتروني بأنه تمت إضافتك إلى فعالية الهاكاثون. افتح Teams لقبول الدعوة.
-                  </p>
-                  
-                  <!-- Teams Invitation Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-invitation" alt="Microsoft Teams Invitation" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-
-                  <p style="margin-bottom:12px;">
-                    <strong>2.</strong> بدلاً من ذلك، أعد تشغيل Microsoft Teams. ثم انقر على ملفك الشخصي. يجب أن ترى منظمة MSFT كما هو موضح في لقطة الشاشة أدناه:
-                  </p>
-                  
-                  <!-- Profile Menu Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-profile" alt="MSFT Organization in Profile" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-
-                  <p style="margin-bottom:12px;">
-                    <strong>3.</strong> انقر عليها واتبع المطالبات لقبول الدعوة.
-                  </p>
-                  
-                  <!-- Continue Button Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-continue" alt="Continue to Accept Invitation" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-
-                  <p style="margin-bottom:12px;">
-                    <strong>4.</strong> ستظهر صفحة طلب أذونات حساب Microsoft. قم بقبول الأذونات للمتابعة.
-                  </p>
-                  
-                  <!-- Permissions Page Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-permissions" alt="Microsoft Account Permissions" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-                </div>
-
                 <p style="margin-top:24px;font-weight:600;color:#0B4C5F;">
-                  نتطلع إلى وجودكم معنا في 28 يناير!!
+                  مع أطيب التحيات،<br/>
+                  مركز تدريب النفط – وزارة النفط
                 </p>
               </div>
 
               <!-- English Section -->
               <div style="direction:ltr;text-align:left;">
-                <p style="font-size:16px;font-weight:bold;color:#0B4C5F;margin-bottom:16px;">Hello and welcome,</p>
-
-                <p style="margin-bottom:12px;">
-                  Thank you for registering for the <strong>GovDev Hackathon – January 28!</strong> 🎉
+                <p style="font-size:16px;font-weight:bold;color:#0B4C5F;margin-bottom:16px;">
+                  Dear {{FULL_NAME}},
                 </p>
 
-                <!-- Onsite Message (English) -->
-                {{ONSITE_MESSAGE}}
+                <p style="margin-bottom:12px;">
+                  Thank you for your registration for the following course. We are pleased to inform you that your registration has been <strong>approved</strong>.
+                </p>
 
-                <!-- Online Message (English) -->
+                <!-- Course Details (English) -->
+                <div style="margin:24px 0;padding:18px 20px;border-radius:8px;background-color:#f9fafb;border:1px solid #e5e7eb;">
+                  <h3 style="margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;">
+                    Course Details
+                  </h3>
+                  <p style="margin:4px 0;"><strong>Course Name:</strong> {{COURSE_NAME}}</p>
+                  <p style="margin:4px 0;"><strong>Description:</strong> {{COURSE_DESCRIPTION}}</p>
+                  <p style="margin:4px 0;"><strong>Start Date &amp; Time:</strong> {{START_DATE}}</p>
+                  <p style="margin:4px 0;"><strong>End Date &amp; Time:</strong> {{END_DATE}}</p>
+                  <p style="margin:4px 0;"><strong>Location:</strong> {{COURSE_LOCATION}}</p>
+                  <p style="margin:4px 0;"><strong>Organization:</strong> {{ORGANIZATION_NAME}}</p>
+                </div>
+
+                <!-- Calendar link (English) -->
+                <div style="margin:16px 0;">
+                  <a href="{{CALENDAR_LINK}}" style="display:inline-block;padding:10px 18px;border-radius:999px;background-color:#0B4C5F;color:#ffffff;font-size:13px;text-decoration:none;">
+                    Add to Calendar
+                  </a>
+                </div>
+
+                <!-- Attendance messages (English, conditional from backend) -->
+                {{ONSITE_MESSAGE}}
                 {{ONLINE_MESSAGE}}
 
-                <!-- Location Section (Onsite Only) -->
-                {{LOCATION_SECTION}}
-
-                <!-- Teams Event Link Section (Online Only) -->
-                {{TEAMS_EVENT_LINK}}
-
-                <!-- Get Ready Section (English) -->
-                <div style="margin:24px 0;">
-                  <h3 style="margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;">
-                    💡 Get Ready for the Hackathon
-                  </h3>
-                  <p style="margin-bottom:12px;">
-                    To make sure you're fully prepared, we will be adding all participants to a dedicated Microsoft Teams space. Inside, you'll find:
-                  </p>
-                  <ul style="margin:0;padding-left:20px;color:#333333;list-style-type:disc;">
-                    <li style="margin-bottom:8px;">Announcements & event updates</li>
-                    <li style="margin-bottom:8px;">Collaboration channels</li>
-                    <li style="margin-bottom:8px;">Resources & materials</li>
-                    <li style="margin-bottom:8px;">Team discussions and coordination</li>
-                  </ul>
-                </div>
-
-                <!-- Join Teams Channel Section (English) -->
-                <div style="margin:24px 0;">
-                  <h3 style="margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;">
-                    👉 Join the Teams Channel
-                  </h3>
-                  <p style="margin-bottom:12px;">
-                    Please follow the steps below to access the GovDev Microsoft Teams workspace:
-                  </p>
-                  
-                  <p style="margin-bottom:12px;">
-                    <strong>1.</strong> You'll get an email notification that you've been added to the Hackathon Event. Open teams to accept the invitation.
-                  </p>
-                  
-                  <!-- Teams Invitation Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-invitation" alt="Microsoft Teams Invitation" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-
-                  <p style="margin-bottom:12px;">
-                    <strong>2.</strong> Alternatively, restart your Microsoft Teams. Then click on your profile. You should see <strong>MSFT</strong> organization as shown in the screenshot below:
-                  </p>
-                  
-                  <!-- Profile Menu Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-profile" alt="MSFT Organization in Profile" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-
-                  <p style="margin-bottom:12px;">
-                    <strong>3.</strong> Click on it and follow prompts to accept invitation.
-                  </p>
-                  
-                  <!-- Continue Button Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-continue" alt="Continue to Accept Invitation" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-
-                  <p style="margin-bottom:12px;">
-                    <strong>4.</strong> You'll see a Microsoft account permissions request page. Accept the permissions to proceed.
-                  </p>
-                  
-                  <!-- Permissions Page Image -->
-                  <div style="margin:16px 0;text-align:center;">
-                    <img src="cid:teams-permissions" alt="Microsoft Account Permissions" style="max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1);" />
-                  </div>
-                </div>
-
                 <p style="margin-top:24px;font-weight:600;color:#0B4C5F;">
-                  We look forward to having you with us on the 28 of January!!
+                  Best regards,<br/>
+                  Oil Training Center – Ministry of Oil
                 </p>
               </div>
 

@@ -8,6 +8,7 @@ import { TranslationService } from './services/translation.service';
 import { AuthService } from './services/auth.service';
 import { ProfileCompletionGuard } from './guards/profile-completion.guard';
 import { filter } from 'rxjs/operators';
+import { ProfileService } from './services/profile.service';
 
 @Component({
   selector: 'app-root',
@@ -30,7 +31,8 @@ export class AppComponent implements OnInit {
     private translationService: TranslationService,
     private authService: AuthService,
     private profileCompletionGuard: ProfileCompletionGuard,
-    private location: Location
+    private location: Location,
+    private profileService: ProfileService
   ) { }
 
   ngOnInit(): void {

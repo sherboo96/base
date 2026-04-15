@@ -1,7 +1,7 @@
 {
     "login": {
         "title": "Welcome Back",
-        "subtitle": "Enter your credentials to access the Oil Training Center (OTC).",
+        "subtitle": "Enter your credentials to access the {{systemName}}.",
         "username": "Username or Email",
         "password": "Password",
         "usernamePlaceholder": "Enter your username or email",
@@ -36,7 +36,7 @@
     "profileCompletion": {
         "title": "Complete Your Profile",
         "subtitle": "Please fill in the required information to continue",
-        "warningMessage": "To use the Oil Training Center, you must fill in your department and job title, and confirm your full name in both English and Arabic for your future certificate.",
+        "warningMessage": "To use the KOC Training Center, you must fill in your department and job title, and confirm your full name in both English and Arabic for your future certificate.",
         "fullName": "Full Name (English)",
         "fullNamePlaceholder": "Enter your full name in English",
         "fullNameAr": "Full Name (Arabic)",
@@ -52,7 +52,7 @@
     },
     "registration": {
         "title": "Create Account",
-        "subtitle": "Register to access the Oil Training Center (OTC)",
+        "subtitle": "Register to access the {{systemName}}",
         "email": "Email",
         "emailPlaceholder": "Enter your email address",
         "fullName": "Full Name (English)",
@@ -152,11 +152,11 @@
         "departments": "Departments",
         "positions": "Positions",
         "systems": "Systems",
-        "ministryOfOil": "Ministry of Oil"
+        "ministryOfOil": "Kuwait Oil Company"
     },
     "sidemenu": {
-        "ministryOfOil": "Ministry of Oil",
-        "usersManagementSystem": "Oil Training center",
+        "ministryOfOil": "Kuwait Oil Company",
+        "usersManagementSystem": "KOC Training Center",
         "mainNavigation": "MAIN NAVIGATION",
         "dashboard": "Dashboard",
         "requests": "Requests",
@@ -189,7 +189,7 @@
         "systemConfiguration": "System Configuration",
         "public": "Public Configuration",
         "logs": "Logs",
-        "copyright": "© {{year}} Ministry of Oil, Kuwait",
+        "copyright": "© {{year}} Kuwait Oil Company, Kuwait",
         "collapse": "Collapse Menu",
         "expand": "Expand Menu"
     },
@@ -233,9 +233,10 @@
         "approvedCoursesList": "Approved Courses List",
         "attendedCoursesList": "Attended Courses List",
         "noStatisticsAvailable": "No statistics available at the moment.",
-        "welcome": "Welcome to the Oil Training Center (OTC)",
+        "welcome": "Welcome to the {{systemName}}",
+        "description": "View system statistics and manage user interactions.",
         "systemOverview": "System Overview",
-        "systemDescription": "The Oil Training Center (OTC) provides a centralized platform for managing users, organizations, departments, positions, and system configurations.",
+        "systemDescription": "The {{systemName}} provides a centralized platform for managing users, organizations, departments, positions, and system configurations.",
         "organizeWorkforce": "Organize your workforce by creating and managing organizational structures, departments, and positions."
     },
     "organization": {

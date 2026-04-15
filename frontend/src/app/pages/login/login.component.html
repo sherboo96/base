@@ -10,13 +10,13 @@
     <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl min-h-[70vh]">
         <!-- Left Section -->
         <div class="flex flex-col items-center justify-center p-6" [ngClass]="{'md:w-1/2': !isRegistrationMode, 'md:w-full': isRegistrationMode}">
-            <img src="assets/images/logo.png" alt="Ministry of Oil Logo" class="h-24 mb-8" />
+            <img [src]="profileConfig.logoLoginPath" [alt]="(currentLang === 'ar' ? profileConfig.nameAr : profileConfig.nameEn) + ' Logo'" class="h-24 mb-8" />
             <h2 class="text-2xl font-bold text-accent mb-2 flex items-center font-poppins">
                 {{ (isRegistrationMode ? 'registration.title' : 'login.title') | translate }}
                 <span class="ml-2 rtl:ml-0 rtl:mr-2">👋</span>
             </h2>
             <p class="text-gray-500 text-sm mb-4 text-center max-w-xs">
-                {{ (isRegistrationMode ? 'registration.subtitle' : 'login.subtitle') | translate }}
+                {{ (isRegistrationMode ? 'registration.subtitle' : 'login.subtitle') | translate: { systemName: currentLang === 'ar' ? profileConfig.nameAr : profileConfig.nameEn } }}
             </p>
 
             <!-- Toggle between Login and Registration -->
@@ -425,14 +425,14 @@
 
         <!-- Right Section (Hidden in Registration Mode) -->
         <div class="hidden md:block md:w-1/2" *ngIf="!isRegistrationMode">
-            <img src="assets/images/moo.png" alt="Ministry of Oil" class="h-full w-full object-cover" />
+            <img [src]="profileConfig.loginImagePath" [alt]="currentLang === 'ar' ? profileConfig.nameAr : profileConfig.nameEn" class="h-full w-full object-cover" />
         </div>
     </div>
     
     <!-- Copyright Footer -->
     <div class="mt-6 text-center w-full max-w-5xl">
         <p class="text-xs text-gray-500 font-poppins" [attr.dir]="currentLang === 'ar' ? 'rtl' : 'ltr'">
-            © {{ currentYear }} Information Systems Center - Ministry of Oil
+            © {{ currentYear }} {{ currentLang === 'ar' ? profileConfig.nameAr : profileConfig.nameEn }}
         </p>
     </div>
 </div>

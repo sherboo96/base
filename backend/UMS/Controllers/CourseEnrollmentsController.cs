@@ -247,7 +247,7 @@ public class CourseEnrollmentsController : ControllerBase
                 IsManualEnrollment = e.IsManualEnrollment,
                 LocationDocumentPath = e.LocationDocumentPath,
                 QuestionAnswers = e.QuestionAnswers,
-                EnrollmentType = e.EnrollmentType,
+                EnrollmentType = e.IsManualEnrollment ? EnrollmentType.Onsite : e.EnrollmentType,
                 EmailHistoryCount = emailCountsForEnrollments.GetValueOrDefault(e.Id, 0),
                 User = new UserEnrollmentDto
                 {
@@ -774,7 +774,7 @@ public class CourseEnrollmentsController : ControllerBase
             IsManualEnrollment = enrollment.IsManualEnrollment,
             QuestionAnswers = enrollment.QuestionAnswers,
             LocationDocumentPath = enrollment.LocationDocumentPath,
-            EnrollmentType = enrollment.EnrollmentType,
+            EnrollmentType = enrollment.IsManualEnrollment ? EnrollmentType.Onsite : enrollment.EnrollmentType,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -955,6 +955,7 @@ public class CourseEnrollmentsController : ControllerBase
             FinalApproval = true, // Manual enrollment is automatically approved
             Status = EnrollmentStatus.Approve, // Set status to Approved
             IsManualEnrollment = true, // Flag as manual enrollment
+            EnrollmentType = EnrollmentType.Onsite, // Manual enrollments are onsite by default
             CreatedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "System"
         };
 
@@ -991,7 +992,7 @@ public class CourseEnrollmentsController : ControllerBase
             Status = enrollment.Status,
             QuestionAnswers = enrollment.QuestionAnswers,
             LocationDocumentPath = enrollment.LocationDocumentPath,
-            EnrollmentType = enrollment.EnrollmentType,
+            EnrollmentType = EnrollmentType.Onsite,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1057,7 +1058,7 @@ public class CourseEnrollmentsController : ControllerBase
             Status = enrollment.Status,
             QuestionAnswers = enrollment.QuestionAnswers,
             LocationDocumentPath = enrollment.LocationDocumentPath,
-            EnrollmentType = enrollment.EnrollmentType,
+            EnrollmentType = enrollment.IsManualEnrollment ? EnrollmentType.Onsite : enrollment.EnrollmentType,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,
@@ -1271,13 +1272,16 @@ public class CourseEnrollmentsController : ControllerBase
         approvalStep.UpdatedAt = DateTime.Now;
         approvalStep.UpdatedBy = currentUserId;
 
-        if (dto.EnrollmentType == EnrollmentType.Online)
+        if (!enrollment.IsManualEnrollment)
         {
-            enrollment.EnrollmentType = EnrollmentType.Online;
-        }
-        else if (dto.EnrollmentType == EnrollmentType.Onsite)
-        {
-            enrollment.EnrollmentType = EnrollmentType.Onsite;
+            if (dto.EnrollmentType == EnrollmentType.Online)
+            {
+                enrollment.EnrollmentType = EnrollmentType.Online;
+            }
+            else if (dto.EnrollmentType == EnrollmentType.Onsite)
+            {
+                enrollment.EnrollmentType = EnrollmentType.Onsite;
+            }
         }
 
         // Check if all steps are approved
@@ -1877,7 +1881,12 @@ public class CourseEnrollmentsController : ControllerBase
         // Simple approval for enrollments without approval steps
         enrollment.FinalApproval = true;
         enrollment.Status = EnrollmentStatus.Approve;
-        enrollment.EnrollmentType = enrollmentType ?? EnrollmentType.Onsite; // Set enrollment type (Onsite or Online), default to Onsite
+
+        // Do not override type for manual enrollments; they are always treated as Onsite
+        if (!enrollment.IsManualEnrollment)
+        {
+            enrollment.EnrollmentType = enrollmentType ?? EnrollmentType.Onsite; // Set enrollment type (Onsite or Online), default to Onsite
+        }
         enrollment.UpdatedAt = DateTime.Now;
         enrollment.UpdatedBy = currentUserId;
 
@@ -2090,7 +2099,7 @@ public class CourseEnrollmentsController : ControllerBase
             IsManualEnrollment = enrollment.IsManualEnrollment,
             QuestionAnswers = enrollment.QuestionAnswers,
             LocationDocumentPath = enrollment.LocationDocumentPath,
-            EnrollmentType = enrollment.EnrollmentType,
+            EnrollmentType = enrollment.IsManualEnrollment ? EnrollmentType.Onsite : enrollment.EnrollmentType,
             User = new UserEnrollmentDto
             {
                 Id = enrollment.User.Id,

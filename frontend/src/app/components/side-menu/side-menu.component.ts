@@ -10,6 +10,9 @@ import { NavigationEnd } from '@angular/router';
 import { CourseTabService, CourseTab } from '../../services/course-tab.service';
 import { CourseService, Course, CourseStatus } from '../../services/course.service';
 import { ToastrService } from 'ngx-toastr';
+import { ProfileService, ProfileConfig } from '../../services/profile.service';
+
+import { TranslationService } from '../../services/translation.service';
 
 @Component({
   selector: 'app-side-menu',
@@ -35,6 +38,8 @@ export class SideMenuComponent implements OnInit, OnDestroy {
   private subscription?: Subscription;
   private routerSubscription?: Subscription;
   private courseTabChangeSubscription?: Subscription;
+  profileConfig!: ProfileConfig;
+  currentLang: 'en' | 'ar' = 'en';
 
   constructor(
     private router: Router,
@@ -43,8 +48,11 @@ export class SideMenuComponent implements OnInit, OnDestroy {
     private courseTabService: CourseTabService,
     private courseService: CourseService,
     private toastr: ToastrService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public profileService: ProfileService,
+    private translationService: TranslationService
   ) {
+    this.profileConfig = this.profileService.getConfig();
     // Subscribe to router events for active route tracking
     this.routerSubscription = this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -81,6 +89,15 @@ export class SideMenuComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const subscriptions = new Subscription();
+
+    // Get current language
+    this.currentLang = this.translationService.getCurrentLanguage() as 'en' | 'ar';
+    subscriptions.add(
+      this.translationService.currentLang$.subscribe(lang => {
+        this.currentLang = lang as 'en' | 'ar';
+        this.cdr.detectChanges();
+      })
+    );
 
     subscriptions.add(
       this.sideMenuService.collapsed$.subscribe(

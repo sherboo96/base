@@ -20,6 +20,8 @@ import { LoadingComponent } from '../../components/loading/loading.component';
 import { DialogService } from '@ngneat/dialog';
 import { SupportDialogComponent } from '../../components/support-dialog/support-dialog.component';
 
+import { ProfileService, ProfileConfig } from '../../services/profile.service';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -43,6 +45,8 @@ export class LoginComponent implements OnInit {
   registrationOtpSent = false; // Track if OTP was sent after registration
   registrationEmail = ''; // Store email for OTP verification
   showRegistrationOtpVerification = false; // Show OTP verification form after registration
+  
+  profileConfig!: ProfileConfig;
 
   constructor(
     private authService: AuthService,
@@ -54,8 +58,11 @@ export class LoginComponent implements OnInit {
     private userService: UserService,
     private storageService: StorageService,
     private translationService: TranslationService,
-    private dialogService: DialogService
-  ) { }
+    private dialogService: DialogService,
+    public profileService: ProfileService
+  ) { 
+    this.profileConfig = this.profileService.getConfig();
+  }
 
   ngOnInit(): void {
     this.initForm();

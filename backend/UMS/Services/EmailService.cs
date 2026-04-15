@@ -1285,85 +1285,61 @@ public class EmailService
 
             if (enrollmentType == EnrollmentType.Online)
             {
-                onlineMessage = @"<p style='margin-bottom:12px;'>
-                                    We're thrilled to have you joining us online via Microsoft Teams and can't wait for you to be part of this innovation‑driven experience.
-                                  </p>";
-                
-                onlineMessageAr = @"<p style='margin-bottom:12px;'>
-                                      يسعدنا أن تنضم إلينا عبر الإنترنت عبر Microsoft Teams ونتطلع إلى أن تكون جزءًا من هذه التجربة المدفوعة بالابتكار.
-                                    </p>";
-
-                teamsEventLink = @"<div style='margin:20px 0;padding:16px;background:#e0f2fe;border-left:4px solid #0ea5e9;border-radius:4px;'>
-                                    <h3 style='margin:0 0 12px;font-size:16px;color:#0c4a6e;font-weight:bold;'>
-                                      🔗 TEAMS EVENT LINK
+                // Online attendance note – tell them they will receive Teams invitation soon
+                onlineMessage = @"<div style='margin:24px 0;padding:16px;background:#fff7ed;border-left:4px solid #ea580c;border-radius:6px;'>
+                                    <h3 style='margin:0 0 8px;font-size:15px;color:#9a3412;font-weight:bold;'>
+                                      Online Attendance
                                     </h3>
-                                    <p style='margin:0 0 8px;color:#075985;font-size:14px;'>
-                                      <a href='https://msit.events.teams.microsoft.com/event/msit.5622c356-59d1-4057-b41c-8dc471675a62@72f988bf-86f1-41af-91ab-2d7cd011db47' target='_blank' style='color:#0066cc;text-decoration:underline;font-weight:600;'>Microsoft Virtual Events Powered by Teams</a>
-                                    </p>
-                                    <p style='margin:0;color:#075985;font-size:13px;'>
-                                      To make sure you're fully ready for the hackathon, we'll add all participants to a dedicated Microsoft Teams space where you'll find announcements, collaboration channels, resources, and team interactions.
+                                    <p style='margin:0;font-size:13px;color:#7c2d12;'>
+                                      You are registered to attend this course online. You will receive a Microsoft Teams invitation with the meeting link on your registered email address shortly. 
+                                      Please join a few minutes before the scheduled start time.
                                     </p>
                                   </div>";
-
-                teamsEventLinkAr = @"<div style='margin:20px 0;padding:16px;background:#e0f2fe;border-left:4px solid #0ea5e9;border-radius:4px;'>
-                                      <h3 style='margin:0 0 12px;font-size:16px;color:#0c4a6e;font-weight:bold;'>
-                                        🔗 رابط فعالية Teams
+                
+                onlineMessageAr = @"<div style='margin:24px 0;padding:16px;background:#fff7ed;border-right:4px solid #ea580c;border-radius:6px;direction:rtl;text-align:right;'>
+                                      <h3 style='margin:0 0 8px;font-size:15px;color:#9a3412;font-weight:bold;'>
+                                        الحضور عن بُعد (Online)
                                       </h3>
-                                      <p style='margin:0 0 8px;color:#075985;font-size:14px;'>
-                                        <a href='https://msit.events.teams.microsoft.com/event/msit.5622c356-59d1-4057-b41c-8dc471675a62@72f988bf-86f1-41af-91ab-2d7cd011db47' target='_blank' style='color:#0066cc;text-decoration:underline;font-weight:600;'>Microsoft Virtual Events Powered by Teams</a>
-                                      </p>
-                                      <p style='margin:0;color:#075985;font-size:13px;'>
-                                        لضمان استعدادكم الكامل للهاكاثون، سنقوم بإضافة جميع المشاركين إلى مساحة Microsoft Teams مخصصة حيث ستجدون الإعلانات وقنوات التعاون والموارد وتفاعلات الفريق.
+                                      <p style='margin:0;font-size:13px;color:#7c2d12;'>
+                                        تم تسجيلكم لحضور هذه الدورة <strong>عن بُعد عبر Microsoft Teams</strong>. ستصلكم قريبًا دعوة عبر Microsoft Teams تحتوي على رابط الانضمام على بريدكم الإلكتروني المسجّل. 
+                                        يُرجى الانضمام قبل موعد بداية الدورة بعدة دقائق.
                                       </p>
                                     </div>";
+
+                // We show only the simple online note in this template
+                teamsEventLink = "";
+                teamsEventLinkAr = "";
+                locationSection = "";
+                locationSectionAr = "";
             }
             else
             {
-                onsiteMessage = @"<p style='margin-bottom:12px;'>
-                                    We're thrilled to have you onsite at the Oil Training Center (OTC) and can't wait to welcome you in person for an exciting, innovation‑driven experience.
-                                  </p>";
+                // Onsite attendance note – remind about arrival time and badge/QR
+                onsiteMessage = @"<div style='margin:24px 0;padding:16px;background:#fff7ed;border-left:4px solid #ea580c;border-radius:6px;'>
+                                    <h3 style='margin:0 0 8px;font-size:15px;color:#9a3412;font-weight:bold;'>
+                                      Onsite Attendance
+                                    </h3>
+                                    <p style='margin:0;font-size:13px;color:#7c2d12;'>
+                                      Please be at the venue at least <strong>30 minutes before</strong> the course start time for registration and seating. 
+                                      Your badge with QR code is attached to this email – kindly bring it with you (printed or digital) to facilitate check‑in.
+                                    </p>
+                                  </div>";
                 
-                onsiteMessageAr = @"<p style='margin-bottom:12px;'>
-                                      يسعدنا أن تكون معنا في الموقع في مركز تدريب النفط (OTC) ونتطلع إلى الترحيب بكم شخصيًا لتجربة مثيرة مدفوعة بالابتكار.
-                                    </p>";
-
-                locationSection = @"<div style='margin:20px 0;padding:16px;background:#f9fafb;border-left:4px solid #0B4C5F;border-radius:4px;'>
-                                      <h3 style='margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;'>
-                                        Location: Oil Training Center (OTC)
+                onsiteMessageAr = @"<div style='margin:24px 0;padding:16px;background:#fff7ed;border-right:4px solid #ea580c;border-radius:6px;direction:rtl;text-align:right;'>
+                                      <h3 style='margin:0 0 8px;font-size:15px;color:#9a3412;font-weight:bold;'>
+                                        الحضور في الموقع
                                       </h3>
-                                      <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
-                                        Kuwait Petroleum Corporation (KPC) Building – Arabian Gulf Street
-                                      </p>
-                                      <h4 style='margin:12px 0 8px;font-size:14px;color:#0B4C5F;font-weight:600;'>
-                                        Parking Instructions:
-                                      </h4>
-                                      <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
-                                        Park at Shuwaikh Park Parking lot. Shuttles will be available for pick up and drop off to KPC building.
-                                      </p>
-                                      <p style='margin:0;color:#333333;font-size:14px;'>
-                                        Parking location: 
-                                        <a href='https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6' target='_blank' style='color:#0066cc;text-decoration:underline;'>https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6</a>
+                                      <p style='margin:0;font-size:13px;color:#7c2d12;'>
+                                        يرجى الحضور إلى مقر الدورة قبل <strong>ثلاثين دقيقة على الأقل</strong> من وقت البداية للتسجيل وتنظيم الجلوس. 
+                                        تم إرفاق بطاقتك التي تحتوي على رمز QR مع هذه الرسالة، يُرجى إحضارها (مطبوعة أو رقمية) لتسهيل عملية الدخول.
                                       </p>
                                     </div>";
 
-                locationSectionAr = @"<div style='margin:20px 0;padding:16px;background:#f9fafb;border-left:4px solid #0B4C5F;border-radius:4px;'>
-                                        <h3 style='margin:0 0 12px;font-size:16px;color:#0B4C5F;font-weight:bold;'>
-                                          الموقع: مركز تدريب النفط (OTC)
-                                        </h3>
-                                        <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
-                                          مبنى مؤسسة البترول الكويتية (KPC) – شارع الخليج العربي
-                                        </p>
-                                        <h4 style='margin:12px 0 8px;font-size:14px;color:#0B4C5F;font-weight:600;'>
-                                          تعليمات مواقف السيارات:
-                                        </h4>
-                                        <p style='margin:0 0 8px;color:#333333;font-size:14px;'>
-                                          قم بركن سيارتك في موقف حديقة الشويخ. ستكون الحافلات متاحة للركوب والنزول إلى مبنى KPC.
-                                        </p>
-                                        <p style='margin:0;color:#333333;font-size:14px;'>
-                                          موقع موقف السيارات: 
-                                          <a href='https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6' target='_blank' style='color:#0066cc;text-decoration:underline;'>https://maps.app.goo.gl/3LypPmQQ3vYeWoLt6</a>
-                                        </p>
-                                      </div>";
+                // Location is already shown in the main course details card; keep extra sections empty here
+                locationSection = "";
+                locationSectionAr = "";
+                teamsEventLink = "";
+                teamsEventLinkAr = "";
             }
 
             // For Arabic placeholders, use provided Arabic versions or fallback to English

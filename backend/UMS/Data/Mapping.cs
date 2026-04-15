@@ -162,6 +162,7 @@ public class Mapping: Profile
             .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.Course != null ? src.Course.Name : null))
             .ForMember(dest => dest.FilesCount, opt => opt.MapFrom(src => src.Files.Count))
             .ReverseMap()
+            .ForMember(dest => dest.Course, opt => opt.Ignore())
             .ForMember(dest => dest.Files, opt => opt.Ignore())
             .ForMember(dest => dest.PosterPath, opt => opt.MapFrom(src => src.PosterPath ?? string.Empty));
 

@@ -5,12 +5,12 @@ module.exports = {
     extend: {
       colors: {
         // Primary colors
-        primary: "#0F4C75",
+        primary: "rgb(var(--color-primary-rgb) / <alpha-value>)",
         // Accent colors (main brand color)
-        accent: "#0B5367",
-        accentLight: "#0D6B7F",
-        accentDark: "#084354",
-        accentDarker: "#063240",
+        accent: "rgb(var(--color-accent-rgb) / <alpha-value>)",
+        accentLight: "rgb(var(--color-accent-light-rgb) / <alpha-value>)",
+        accentDark: "rgb(var(--color-accent-dark-rgb) / <alpha-value>)",
+        accentDarker: "rgb(var(--color-accent-darker-rgb) / <alpha-value>)",
         // Text color
         textDark: "#2E3A3F",
       },

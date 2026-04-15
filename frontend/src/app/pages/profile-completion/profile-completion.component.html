@@ -1,4 +1,7 @@
 <div class="profile-completion-wrapper flex items-center justify-center min-h-screen py-8 px-4 bg-gray-50 relative" style="z-index: 1;">
+    <!-- Watermark layers (runtime asset path to avoid build resolution error) -->
+    <div class="watermark-layer" style="background-image: url('assets/images/logo.png'); background-size: 400px 400px;"></div>
+    <div class="watermark-layer watermark-layer-2" style="background-image: url('assets/images/logo.png');"></div>
     <app-loading></app-loading>
     
     <div class="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden relative" style="z-index: 1; background-color: rgba(255, 255, 255, 0.95);">

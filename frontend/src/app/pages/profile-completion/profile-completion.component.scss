@@ -4,46 +4,29 @@
   min-height: 100vh;
 }
 
-// Watermark using CSS custom properties to avoid build issues
+// Watermark is applied via template (profile-completion.component.html) to avoid build path resolution issues
 .profile-completion-wrapper {
   position: relative;
   min-height: 100vh;
-  
-  // Watermark background with OTC logo - Layer 1
-  &::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('../../../assets/images/logo.png');
-    background-repeat: repeat;
-    background-size: 400px 400px;
-    background-position: 0 0;
-    opacity: 0.1;
-    z-index: 0;
-    pointer-events: none;
-    background-attachment: fixed;
-  }
-  
-  // Additional watermark layers for more coverage - Layer 2
-  &::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('../../../assets/images/logo.png');
-    background-repeat: repeat;
-    background-size: 350px 350px;
-    background-position: 200px 200px;
-    opacity: 0.07;
-    z-index: 0;
-    pointer-events: none;
-    background-attachment: fixed;
-  }
+}
+
+.watermark-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-repeat: repeat;
+  opacity: 0.1;
+  z-index: 0;
+  pointer-events: none;
+  background-attachment: fixed;
+}
+
+.watermark-layer-2 {
+  background-size: 350px 350px;
+  background-position: 200px 200px;
+  opacity: 0.07;
 }
 
 .form-group {
